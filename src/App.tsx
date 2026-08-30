@@ -18,6 +18,8 @@ import { HistoricalView } from './components/history/HistoricalView';
 import { AccountsView } from './components/accounts/AccountsView';
 import { GoogleSheetsView } from './components/sheets/GoogleSheetsView';
 import { ClientsView } from './components/clients/ClientsView';
+import { OperationalDashboard } from './components/dashboard/OperationalDashboard';
+import { CollectionsView } from './components/collections/CollectionsView';
 
 const MainContent: React.FC = () => {
   const {
@@ -43,9 +45,11 @@ const MainContent: React.FC = () => {
         {/* Dynamic Main Workspace */}
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#111113] bg-grid-dots">
           <div className="max-w-7xl mx-auto">
+            {activeTab === 'dashboard_operativo' && <OperationalDashboard />}
             {activeTab === 'dashboard' && <GeneralDashboard />}
             {activeTab === 'operations' && <OperationsMaster />}
             {activeTab === 'clients' && <ClientsView />}
+            {activeTab === 'collections' && <CollectionsView />}
             {activeTab === 'students' && <StudentPayerManager />}
             {activeTab === 'suppliers' && <SuppliersMaster />}
             {activeTab === 'movements' && <FinancialMovementsView />}

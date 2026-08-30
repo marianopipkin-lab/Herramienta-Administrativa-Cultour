@@ -30,7 +30,9 @@ export const Navbar: React.FC = () => {
     exportDatabaseJSON,
     importDatabaseJSON,
     movements,
-    operations
+    operations,
+    currentRole,
+    setCurrentRole
   } = useApp();
 
   const [showBackupMenu, setShowBackupMenu] = useState(false);
@@ -255,6 +257,21 @@ export const Navbar: React.FC = () => {
             <FileSpreadsheet className="w-3.5 h-3.5 text-[#34d399]" />
             <span className="hidden sm:inline">Sheets</span>
           </button>
+
+          {/* Role Switcher */}
+          <div className="flex items-center bg-[#222224] border border-white/10 rounded-lg p-0.5 text-xs">
+            <span className="text-[9px] font-mono uppercase text-zinc-500 px-2 font-bold hidden xl:inline">Rol:</span>
+            <select
+              value={currentRole}
+              onChange={(e) => setCurrentRole(e.target.value as any)}
+              className="bg-transparent text-xs font-mono font-bold text-[#a5b4fc] focus:outline-none cursor-pointer pr-2 py-1"
+              title="Cambiar Rol de Usuario"
+            >
+              <option value="socio" className="bg-[#18181a] text-white">Socio (Full)</option>
+              <option value="administrativo" className="bg-[#18181a] text-white">Administrativo</option>
+              <option value="operativo" className="bg-[#18181a] text-white">Operativo</option>
+            </select>
+          </div>
 
           {/* Import Excel */}
           <button

@@ -19,91 +19,120 @@ import {
 import { useApp } from '../../context/AppContext';
 
 export const Sidebar: React.FC = () => {
-  const { activeTab, setActiveTab, kpis } = useApp();
+  const { activeTab, setActiveTab, kpis, currentRole } = useApp();
 
-  const navItems = [
+  const allNavItems = [
     {
-      id: 'dashboard',
-      label: 'Dashboard General',
-      icon: LayoutDashboard,
-      badge: undefined
+      id: 'dashboard_operativo',
+      label: 'Dashboard Operativo',
+      icon: Compass,
+      badge: undefined,
+      roles: ['socio', 'administrativo', 'operativo']
     },
     {
       id: 'operations',
-      label: 'Master Operaciones',
-      icon: Compass,
-      badge: kpis.activeOperationsCount
+      label: 'Operaciones / Files',
+      icon: Layers,
+      badge: kpis.activeOperationsCount,
+      roles: ['socio', 'administrativo', 'operativo']
     },
     {
       id: 'clients',
-      label: 'Clientes & Colegios',
+      label: 'Clientes & Pagadores',
       icon: Users,
-      badge: undefined
-    },
-    {
-      id: 'students',
-      label: 'Estudiantes y Pagadores',
-      icon: GraduationCap,
-      badge: kpis.pendingStudentsDebtCount > 0 ? `${kpis.pendingStudentsDebtCount} con deuda` : undefined,
-      badgeColor: 'bg-rose-950 text-rose-300 border-rose-800'
+      badge: undefined,
+      roles: ['socio', 'administrativo', 'operativo']
     },
     {
       id: 'suppliers',
-      label: 'Proveedores y Alias MP',
+      label: 'Proveedores & Alias MP',
       icon: Building2,
-      badge: undefined
+      badge: undefined,
+      roles: ['socio', 'administrativo', 'operativo']
+    },
+    {
+      id: 'collections',
+      label: 'Cobranzas & Cuotas',
+      icon: Receipt,
+      badge: kpis.pendingStudentsDebtCount > 0 ? `${kpis.pendingStudentsDebtCount} pend.` : undefined,
+      badgeColor: 'bg-rose-950 text-rose-300 border-rose-800',
+      roles: ['socio', 'administrativo']
+    },
+    {
+      id: 'students',
+      label: 'Estudiantes & Cuotas',
+      icon: GraduationCap,
+      badge: undefined,
+      roles: ['socio', 'administrativo', 'operativo']
+    },
+    {
+      id: 'accounts',
+      label: 'Cuentas & Tesorería',
+      icon: Landmark,
+      badge: undefined,
+      roles: ['socio', 'administrativo']
     },
     {
       id: 'movements',
       label: 'Movimientos Financieros',
-      icon: Receipt,
-      badge: undefined
+      icon: CreditCard,
+      badge: undefined,
+      roles: ['socio', 'administrativo']
     },
     {
       id: 'reconciliation',
       label: 'Conciliación Bancaria/MP',
       icon: Scale,
       badge: kpis.unreconciledMovementsCount > 0 ? `${kpis.unreconciledMovementsCount} pend.` : undefined,
-      badgeColor: 'bg-amber-950 text-amber-300 border-amber-800'
+      badgeColor: 'bg-amber-950 text-amber-300 border-amber-800',
+      roles: ['socio', 'administrativo']
     },
     {
-      id: 'fixed_expenses',
-      label: 'Gastos Fijos Estructura',
-      icon: CreditCard,
-      badge: undefined
+      id: 'dashboard',
+      label: 'Dashboard de Socios',
+      icon: LayoutDashboard,
+      badge: undefined,
+      roles: ['socio', 'administrativo']
     },
     {
       id: 'projection',
       label: 'Proyección Financiera',
       icon: TrendingUp,
-      badge: undefined
+      badge: undefined,
+      roles: ['socio']
     },
     {
       id: 'closing',
       label: 'Cierres Mensuales',
       icon: CalendarCheck,
-      badge: undefined
+      badge: undefined,
+      roles: ['socio', 'administrativo']
+    },
+    {
+      id: 'fixed_expenses',
+      label: 'Gastos Fijos Estructura',
+      icon: CreditCard,
+      badge: undefined,
+      roles: ['socio', 'administrativo']
     },
     {
       id: 'history',
       label: 'Histórico por Unidad',
       icon: History,
-      badge: undefined
+      badge: undefined,
+      roles: ['socio']
     },
     {
       id: 'sheets',
       label: 'Google Sheets & Drive',
       icon: FileSpreadsheet,
       badge: 'Sync',
-      badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200'
-    },
-    {
-      id: 'accounts',
-      label: 'Cuentas & Fecha de Corte',
-      icon: Landmark,
-      badge: undefined
+      badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800',
+      roles: ['socio', 'administrativo']
     }
   ];
+
+  const navItems = allNavItems.filter(item => item.roles.includes(currentRole));
 
   return (
     <aside className="w-64 bg-[#18181a] border-r border-white/10 flex flex-col shrink-0 min-h-[calc(100vh-4rem)]">

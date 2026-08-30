@@ -18,7 +18,7 @@ export type AccountId = string;
 
 export type UserRole = 'socio' | 'administrativo' | 'operativo';
 
-export type ClientType = 'turista' | 'escuela' | 'alumno' | 'empresa' | 'otro';
+export type ClientType = 'turista' | 'agencia' | 'escuela' | 'alumno' | 'empresa' | 'otro';
 
 export type QuotaType = 'seña' | 'cuota_1' | 'cuota_2' | 'cuota_3' | 'saldo' | 'pago_unico';
 
@@ -29,18 +29,29 @@ export type QuotaStatus = 'pendiente' | 'parcial' | 'pagada' | 'vencida';
 // ==========================================
 export interface Client {
   id: string;
-  type: ClientType; // 'turista' | 'escuela' | 'alumno'
+  type: ClientType; // 'turista' | 'agencia' | 'escuela' | 'alumno' | 'empresa'
   name: string;
-  documentId?: string; // DNI / CUIT / Pasaporte
+  documentId?: string; // DNI / CUIT / Pasaporte / Tax ID
   email?: string;
   phone?: string;
   address?: string;
-  country?: string; // e.g. 'Argentina', 'Brasil', 'USA'
+  country?: string; // e.g. 'Argentina', 'Brasil', 'USA', 'Uruguay'
+  
+  // Específico para Agencias de Viajes (B2B)
+  agencyCommercialName?: string;
+  agencyContactPerson?: string;
+  agencyCountry?: string;
+  commissionRate?: number; // Porcentaje de comisión ej: 15
+  commercialConditions?: string;
+  paymentTerms?: string; // ej: 'Pago total 7 días antes de la operación'
+
+  // Específico para Alumnos / Escuelas
   institutionName?: string; // Para alumnos: nombre de la escuela/institución
   gradeOrGroup?: string; // Para alumnos: ej. '7mo Grado A'
   parentOrGuardianName?: string; // Para alumnos: Padre/Madre/Tutor
   parentPhone?: string;
   parentEmail?: string;
+  
   notes?: string;
   createdAt: string;
   updatedAt?: string;
@@ -187,27 +198,58 @@ export interface StudentPayer {
   status: 'al_dia' | 'pago_parcial' | 'pendiente' | 'vencido';
 }
 
+export interface OperationPassenger {
+  id: string;
+  name: string;
+  documentId?: string;
+  country?: string;
+  email?: string;
+  phone?: string;
+  isPayer?: boolean;
+  dietaryRestrictions?: string;
+  notes?: string;
+}
+
+export interface OperationChecklist {
+  transportConfirmed: boolean;
+  guideAssigned: boolean;
+  ticketsAcquired: boolean;
+  insuranceEmitted: boolean;
+  itinerarySent: boolean;
+}
+
 export interface Operation {
   id: string;
   code: string; // e.g. TR-2026-042, SE-2026-015, VE-2026-001
   name: string;
   businessUnit: BusinessUnit; // 'receptivo' | 'salidas' | 'viajes'
+  receptiveChannel?: 'directo' | 'agencia'; // Para Turismo Receptivo
+  educationalModality?: 'salidas' | 'viajes'; // Para Turismo Educativo
   serviceType: string; // e.g. 'Tour Privado Receptivo', 'Salida Museo', 'Viaje Egresados'
   clientOrSchool: string;
   clientId?: string; // Vinculación a Maestro de Clientes
+  agencyId?: string; // Si canal es 'agencia'
+  agencyName?: string;
+  schoolId?: string; // Si es educativo
+  schoolName?: string;
+  destination?: string; // ej: 'Buenos Aires / Tigre', 'Bariloche', 'Mendoza'
   date: string; // YYYY-MM-DD
   endDate?: string;
   passengerCount: number;
   status: OperationStatus;
   responsiblePerson: string;
   observations: string;
-  currency: Currency; // Divisa operativa de la operación
+  currency: Currency; // Divisa operativa de la operación (ARS o USD)
 
   // Financieros
   expectedRevenue: number;
   receivedRevenue: number;
   expectedCost: number;
   paidCost: number;
+
+  // Pasajeros y checklist operativo
+  passengers?: OperationPassenger[];
+  checklist?: OperationChecklist;
 
   // Colecciones operativas y cuotas
   quotas?: PaymentQuota[];
