@@ -10,7 +10,16 @@ import {
   MonthlyClosing,
   CutoffConfig,
   AccountId,
-  PaymentMethod
+  PaymentMethod,
+  UserRole,
+  Client,
+  PaymentQuota,
+  CollectionRecord,
+  SupplierContract,
+  SupplierPaymentRecord,
+  ExchangeRateConfig,
+  CultourFinancialPosition,
+  Currency
 } from '../types';
 import {
   INITIAL_OPERATIONS,
@@ -21,19 +30,26 @@ import {
   INITIAL_RULES,
   INITIAL_HISTORICAL_PERIODS,
   INITIAL_MONTHLY_CLOSINGS,
-  INITIAL_CUTOFF_CONFIG
+  INITIAL_CUTOFF_CONFIG,
+  INITIAL_CLIENTS
 } from '../data/initialData';
 import {
   calculateKPIs,
+  calculateCultourFinancialPosition,
   generateMonthlyCashProjection,
   FinancialKPIs,
-  MonthlyCashEvolution
+  MonthlyCashEvolution,
+  DEFAULT_EXCHANGE_RATE
 } from '../utils/financialCalculations';
 import { ImportPreviewRow } from '../utils/excelParser';
 
-const STORAGE_PREFIX = 'turismo_gestion_v1_';
+const STORAGE_PREFIX = 'turismo_gestion_v2_';
 
 interface AppContextType {
+  // Roles & Permissions
+  currentRole: UserRole;
+  setCurrentRole: (role: UserRole) => void;
+
   // Navigation & UI state
   activeTab: string;
   setActiveTab: (tab: string) => void;
@@ -43,14 +59,19 @@ interface AppContextType {
   setIsNewOpModalOpen: (open: boolean) => void;
   isImportModalOpen: boolean;
   setIsImportModalOpen: (open: boolean) => void;
-  importCenterCategory: 'operations' | 'suppliers' | 'students' | 'movements' | 'fixed_expenses';
-  setImportCenterCategory: (cat: 'operations' | 'suppliers' | 'students' | 'movements' | 'fixed_expenses') => void;
-  openImportCenter: (category?: 'operations' | 'suppliers' | 'students' | 'movements' | 'fixed_expenses') => void;
+  importCenterCategory: 'operations' | 'suppliers' | 'students' | 'movements' | 'fixed_expenses' | 'clients';
+  setImportCenterCategory: (cat: 'operations' | 'suppliers' | 'students' | 'movements' | 'fixed_expenses' | 'clients') => void;
+  openImportCenter: (category?: 'operations' | 'suppliers' | 'students' | 'movements' | 'fixed_expenses' | 'clients') => void;
   selectedStudentOpId: string | null;
   setSelectedStudentOpId: (id: string | null) => void;
 
-  // Data
+  // Exchange rate config
+  exchangeRate: ExchangeRateConfig;
+  setExchangeRate: React.Dispatch<React.SetStateAction<ExchangeRateConfig>>;
+
+  // Data Collections
   operations: Operation[];
+  clients: Client[];
   suppliers: Supplier[];
   accounts: FinancialAccount[];
   movements: FinancialMovement[];
@@ -62,6 +83,7 @@ interface AppContextType {
 
   // Calculated properties
   kpis: FinancialKPIs;
+  financialPosition: CultourFinancialPosition;
   monthlyProjection: MonthlyCashEvolution[];
 
   // Operation Actions
@@ -70,7 +92,42 @@ interface AppContextType {
   deleteOperation: (id: string) => void;
   batchImportOperations: (rows: ImportPreviewRow[]) => { created: number; updated: number; errors: number };
 
-  // Student Actions
+  // Client Actions
+  addClient: (clientData: Omit<Client, 'id' | 'createdAt'>) => Client;
+  updateClient: (id: string, updates: Partial<Client>) => void;
+  deleteClient: (id: string) => void;
+  batchImportClients: (newClients: Array<Omit<Client, 'id' | 'createdAt'>>) => { created: number; updated: number };
+
+  // Collection & Quota Actions
+  recordCollection: (col: {
+    operationId: string;
+    clientId?: string;
+    clientName: string;
+    quotaId?: string;
+    concept: string;
+    amount: number;
+    currency?: Currency;
+    paymentMethod: PaymentMethod;
+    destinationAccountId: AccountId;
+    notes?: string;
+    voucherOrReference?: string;
+  }) => void;
+
+  recordSupplierPayment: (pay: {
+    operationId: string;
+    supplierId: string;
+    supplierName: string;
+    contractId?: string;
+    concept: string;
+    amount: number;
+    currency?: Currency;
+    paymentMethod: PaymentMethod;
+    sourceAccountId: AccountId;
+    notes?: string;
+    reference?: string;
+  }) => void;
+
+  // Student Actions (Legacy & Direct)
   updateStudentPayment: (
     operationId: string,
     studentId: string,
@@ -159,7 +216,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Load initial from localStorage or fall back to demo
+  // Helper for localStorage
   const loadStored = <T,>(key: string, fallback: T): T => {
     try {
       const item = localStorage.getItem(STORAGE_PREFIX + key);
@@ -169,21 +226,30 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
+  // 1. Roles & Permissions State (default: 'socio' for full testability)
+  const [currentRole, setCurrentRole] = useState<UserRole>(() => loadStored('currentRole', 'socio'));
+
+  // 2. Navigation & UI state
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [selectedOperationId, setSelectedOperationId] = useState<string | null>(null);
   const [selectedStudentOpId, setSelectedStudentOpId] = useState<string | null>('op_viaje_1');
   const [isNewOpModalOpen, setIsNewOpModalOpen] = useState<boolean>(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
-  const [importCenterCategory, setImportCenterCategory] = useState<'operations' | 'suppliers' | 'students' | 'movements' | 'fixed_expenses'>('operations');
+  const [importCenterCategory, setImportCenterCategory] = useState<'operations' | 'suppliers' | 'students' | 'movements' | 'fixed_expenses' | 'clients'>('operations');
 
-  const openImportCenter = (category?: 'operations' | 'suppliers' | 'students' | 'movements' | 'fixed_expenses') => {
+  const openImportCenter = (category?: 'operations' | 'suppliers' | 'students' | 'movements' | 'fixed_expenses' | 'clients') => {
     if (category) {
       setImportCenterCategory(category);
     }
     setIsImportModalOpen(true);
   };
 
+  // 3. Exchange Rate Config
+  const [exchangeRate, setExchangeRate] = useState<ExchangeRateConfig>(() => loadStored('exchangeRate', DEFAULT_EXCHANGE_RATE));
+
+  // 4. Data State
   const [operations, setOperations] = useState<Operation[]>(() => loadStored('operations', INITIAL_OPERATIONS));
+  const [clients, setClients] = useState<Client[]>(() => loadStored('clients', INITIAL_CLIENTS));
   const [suppliers, setSuppliers] = useState<Supplier[]>(() => loadStored('suppliers', INITIAL_SUPPLIERS));
   const [accounts, setAccounts] = useState<FinancialAccount[]>(() => loadStored('accounts', INITIAL_ACCOUNTS));
   const [movements, setMovements] = useState<FinancialMovement[]>(() => loadStored('movements', INITIAL_MOVEMENTS));
@@ -193,10 +259,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [monthlyClosings, setMonthlyClosings] = useState<MonthlyClosing[]>(() => loadStored('closings', INITIAL_MONTHLY_CLOSINGS));
   const [cutoffConfig, setCutoffConfig] = useState<CutoffConfig>(() => loadStored('cutoff', INITIAL_CUTOFF_CONFIG));
 
-  // Sync to localStorage
+  // Persistence to localStorage
+  useEffect(() => {
+    localStorage.setItem(STORAGE_PREFIX + 'currentRole', JSON.stringify(currentRole));
+  }, [currentRole]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_PREFIX + 'exchangeRate', JSON.stringify(exchangeRate));
+  }, [exchangeRate]);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_PREFIX + 'operations', JSON.stringify(operations));
   }, [operations]);
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_PREFIX + 'clients', JSON.stringify(clients));
+  }, [clients]);
 
   useEffect(() => {
     localStorage.setItem(STORAGE_PREFIX + 'suppliers', JSON.stringify(suppliers));
@@ -226,10 +304,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     localStorage.setItem(STORAGE_PREFIX + 'cutoff', JSON.stringify(cutoffConfig));
   }, [cutoffConfig]);
 
-  // Derived KPIs
+  // Derived Operational KPIs
   const kpis = useMemo(() => {
     return calculateKPIs(operations, accounts, fixedExpenses, movements);
   }, [operations, accounts, fixedExpenses, movements]);
+
+  // Derived Cultour Financial Position (Strict Model for Socios)
+  const financialPosition = useMemo(() => {
+    return calculateCultourFinancialPosition(operations, accounts, fixedExpenses, exchangeRate);
+  }, [operations, accounts, fixedExpenses, exchangeRate]);
 
   // Derived Monthly Cash Projection
   const monthlyProjection = useMemo(() => {
@@ -258,12 +341,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       businessUnit: opData.businessUnit || 'receptivo',
       serviceType: opData.serviceType || 'Servicio Turístico',
       clientOrSchool: opData.clientOrSchool || 'Cliente General',
+      clientId: opData.clientId,
       date: opData.date || now.split('T')[0],
       endDate: opData.endDate,
       passengerCount: opData.passengerCount || 1,
       status: opData.status || 'confirmada',
       responsiblePerson: opData.responsiblePerson || 'Administración',
       observations: opData.observations || '',
+      currency: opData.currency || 'ARS',
       expectedRevenue: opData.expectedRevenue || 0,
       receivedRevenue: opData.receivedRevenue || 0,
       expectedCost: opData.expectedCost || 0,
@@ -271,6 +356,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       incomes: opData.incomes || [],
       suppliers: opData.suppliers || [],
       students: opData.students || [],
+      quotas: opData.quotas || [],
+      collections: opData.collections || [],
+      supplierContracts: opData.supplierContracts || [],
+      supplierPayments: opData.supplierPayments || [],
       createdAt: now,
       updatedAt: now
     };
@@ -296,7 +385,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           updated.paidCost = updates.suppliers.reduce((sum, sup) => sum + (sup.paidCost || 0), 0);
         }
         if (updates.students && updates.students.length > 0) {
-          // Sync student payments with receivedRevenue if applicable
           const studentPaidTotal = updates.students.reduce((sum, st) => sum + (st.paidAmount || 0), 0);
           if (studentPaidTotal > 0 && (!updates.receivedRevenue || updates.receivedRevenue < studentPaidTotal)) {
             updated.receivedRevenue = studentPaidTotal;
@@ -348,6 +436,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           code: row.code,
           name: row.name,
           businessUnit: row.businessUnit,
+          currency: 'ARS',
           serviceType: row.serviceType,
           clientOrSchool: row.clientOrSchool,
           date: row.date,
@@ -381,6 +470,270 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     });
 
     return { created, updated, errors };
+  };
+
+  // ==========================================
+  // CLIENTES Y PAGADORES CRUD & BATCH
+  // ==========================================
+  const addClient = (clientData: Omit<Client, 'id' | 'createdAt'>): Client => {
+    const newId = `cli_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newClient: Client = {
+      ...clientData,
+      id: newId,
+      createdAt: new Date().toISOString()
+    };
+    setClients(prev => [...prev, newClient]);
+    return newClient;
+  };
+
+  const updateClient = (id: string, updates: Partial<Client>) => {
+    setClients(prev => prev.map(c => (c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c)));
+  };
+
+  const deleteClient = (id: string) => {
+    setClients(prev => prev.filter(c => c.id !== id));
+  };
+
+  const batchImportClients = (newClients: Array<Omit<Client, 'id' | 'createdAt'>>) => {
+    let created = 0;
+    let updated = 0;
+    const existingMap = new Map<string, Client>();
+    clients.forEach(c => existingMap.set(c.name.trim().toLowerCase(), c));
+
+    const toAdd: Client[] = [];
+    const updatesMap = new Map<string, Partial<Client>>();
+
+    newClients.forEach(c => {
+      const key = c.name.trim().toLowerCase();
+      const existing = existingMap.get(key);
+      if (existing) {
+        updatesMap.set(existing.id, {
+          email: c.email || existing.email,
+          phone: c.phone || existing.phone,
+          documentId: c.documentId || existing.documentId,
+          institutionName: c.institutionName || existing.institutionName,
+          parentOrGuardianName: c.parentOrGuardianName || existing.parentOrGuardianName,
+          parentPhone: c.parentPhone || existing.parentPhone,
+          notes: c.notes || existing.notes
+        });
+        updated++;
+      } else {
+        toAdd.push({
+          ...c,
+          id: `cli_imp_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          createdAt: new Date().toISOString()
+        });
+        created++;
+      }
+    });
+
+    setClients(prev => {
+      const merged = prev.map(item => {
+        if (updatesMap.has(item.id)) {
+          return { ...item, ...updatesMap.get(item.id), updatedAt: new Date().toISOString() };
+        }
+        return item;
+      });
+      return [...merged, ...toAdd];
+    });
+
+    return { created, updated };
+  };
+
+  // ==========================================
+  // COBRANZAS REALES & REGISTROS
+  // ==========================================
+  const recordCollection = (col: {
+    operationId: string;
+    clientId?: string;
+    clientName: string;
+    quotaId?: string;
+    concept: string;
+    amount: number;
+    currency?: Currency;
+    paymentMethod: PaymentMethod;
+    destinationAccountId: AccountId;
+    notes?: string;
+    voucherOrReference?: string;
+  }) => {
+    const now = new Date().toISOString();
+    const today = now.split('T')[0];
+    const newCollectionId = `col_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+
+    const targetAccount = accounts.find(a => a.id === col.destinationAccountId);
+    const targetAccountName = targetAccount ? targetAccount.name : col.destinationAccountId;
+    const colCurrency = col.currency || targetAccount?.currency || 'ARS';
+
+    const newCollection: CollectionRecord = {
+      id: newCollectionId,
+      operationId: col.operationId,
+      clientId: col.clientId,
+      clientName: col.clientName,
+      quotaId: col.quotaId,
+      concept: col.concept,
+      date: today,
+      amount: col.amount,
+      currency: colCurrency,
+      paymentMethod: col.paymentMethod,
+      destinationAccountId: col.destinationAccountId,
+      destinationAccountName: targetAccountName,
+      voucherOrReference: col.voucherOrReference,
+      notes: col.notes,
+      createdAt: now
+    };
+
+    // 1. Create corresponding Financial Movement
+    const newMovementId = `mov_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newMov: FinancialMovement = {
+      id: newMovementId,
+      date: today,
+      amount: col.amount,
+      currency: colCurrency,
+      type: 'ingreso',
+      description: `Cobro: ${col.clientName} - ${col.concept}`,
+      rawPayerOrAlias: col.clientName,
+      accountId: col.destinationAccountId,
+      category: 'Cobranza Operativa',
+      operationId: col.operationId,
+      clientId: col.clientId,
+      matchStatus: 'verde',
+      matchConfidence: 100,
+      matchReason: `Cobro registrado en operación #${col.operationId}`,
+      isInternalTransfer: false,
+      importedAt: now
+    };
+
+    setMovements(prev => [newMov, ...prev]);
+
+    // 2. Update Account Balance
+    updateAccountBalance(col.destinationAccountId, (targetAccount?.currentBalance || 0) + col.amount);
+
+    // 3. Update Operation Received Revenue
+    setOperations(prev =>
+      prev.map(op => {
+        if (op.id !== col.operationId) return op;
+        const currentCols = op.collections || [];
+        const updatedCols = [...currentCols, { ...newCollection, movementId: newMovementId }];
+        const newReceived = (op.receivedRevenue || 0) + col.amount;
+
+        // Also add legacy income entry for backwards compatibility
+        const newIncomeEntry = {
+          id: `inc_${newCollectionId}`,
+          operationId: op.id,
+          date: today,
+          amount: col.amount,
+          currency: colCurrency,
+          payerName: col.clientName,
+          paymentMethod: col.paymentMethod,
+          accountId: col.destinationAccountId,
+          status: 'cobrado' as const,
+          reference: col.voucherOrReference,
+          movementId: newMovementId
+        };
+
+        return {
+          ...op,
+          collections: updatedCols,
+          incomes: [...(op.incomes || []), newIncomeEntry],
+          receivedRevenue: newReceived,
+          updatedAt: now
+        };
+      })
+    );
+  };
+
+  const recordSupplierPayment = (pay: {
+    operationId: string;
+    supplierId: string;
+    supplierName: string;
+    contractId?: string;
+    concept: string;
+    amount: number;
+    currency?: Currency;
+    paymentMethod: PaymentMethod;
+    sourceAccountId: AccountId;
+    notes?: string;
+    reference?: string;
+  }) => {
+    const now = new Date().toISOString();
+    const today = now.split('T')[0];
+    const newPaymentId = `spay_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+
+    const sourceAccount = accounts.find(a => a.id === pay.sourceAccountId);
+    const sourceAccountName = sourceAccount ? sourceAccount.name : pay.sourceAccountId;
+    const payCurrency = pay.currency || sourceAccount?.currency || 'ARS';
+
+    const newPaymentRecord: SupplierPaymentRecord = {
+      id: newPaymentId,
+      operationId: pay.operationId,
+      supplierId: pay.supplierId,
+      supplierName: pay.supplierName,
+      contractId: pay.contractId,
+      concept: pay.concept,
+      date: today,
+      amount: pay.amount,
+      currency: payCurrency,
+      paymentMethod: pay.paymentMethod,
+      sourceAccountId: pay.sourceAccountId,
+      sourceAccountName: sourceAccountName,
+      reference: pay.reference,
+      notes: pay.notes,
+      createdAt: now
+    };
+
+    // 1. Create corresponding Financial Movement
+    const newMovementId = `mov_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newMov: FinancialMovement = {
+      id: newMovementId,
+      date: today,
+      amount: pay.amount,
+      currency: payCurrency,
+      type: 'egreso',
+      description: `Pago Proveedor: ${pay.supplierName} - ${pay.concept}`,
+      rawPayerOrAlias: pay.supplierName,
+      accountId: pay.sourceAccountId,
+      category: 'Pago Proveedor',
+      operationId: pay.operationId,
+      supplierId: pay.supplierId,
+      matchStatus: 'verde',
+      matchConfidence: 100,
+      matchReason: `Pago registrado a proveedor ${pay.supplierName}`,
+      isInternalTransfer: false,
+      importedAt: now
+    };
+
+    setMovements(prev => [newMov, ...prev]);
+
+    // 2. Update Account Balance
+    updateAccountBalance(pay.sourceAccountId, (sourceAccount?.currentBalance || 0) - pay.amount);
+
+    // 3. Update Operation Paid Cost
+    setOperations(prev =>
+      prev.map(op => {
+        if (op.id !== pay.operationId) return op;
+        const currentPayments = op.supplierPayments || [];
+        const updatedPayments = [...currentPayments, { ...newPaymentRecord, movementId: newMovementId }];
+        const newPaidCost = (op.paidCost || 0) + pay.amount;
+
+        // Also update supplier cost record status if matching
+        const updatedSuppliers = (op.suppliers || []).map(s => {
+          if (s.supplierId === pay.supplierId || s.supplierName.toLowerCase() === pay.supplierName.toLowerCase()) {
+            const nextPaid = (s.paidCost || 0) + pay.amount;
+            const status = nextPaid >= s.expectedCost ? 'pagado' : nextPaid > 0 ? 'parcial' : 'pendiente';
+            return { ...s, paidCost: nextPaid, status: status as any };
+          }
+          return s;
+        });
+
+        return {
+          ...op,
+          supplierPayments: updatedPayments,
+          suppliers: updatedSuppliers,
+          paidCost: newPaidCost,
+          updatedAt: now
+        };
+      })
+    );
   };
 
   // ==========================================
@@ -497,7 +850,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
     setOperations(prev => {
       return prev.map(op => {
-        // Find matching students for this operation
         const matchingStudents = studentsList.filter(s => {
           const target = (s.operationCodeOrName || '').toLowerCase().trim();
           return (
@@ -563,7 +915,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newSup: Supplier = { ...sup, id: newId };
     setSuppliers(prev => [...prev, newSup]);
 
-    // If alias is provided, auto-learn alias rule
     if (sup.mpAlias) {
       learnRule({
         pattern: sup.mpAlias.trim(),
@@ -688,6 +1039,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: newId,
       date: mov.date || new Date().toISOString().split('T')[0],
       amount: Math.abs(mov.amount || 0),
+      currency: mov.currency || 'ARS',
       type: mov.type || 'ingreso',
       description: mov.description || 'Movimiento manual',
       rawPayerOrAlias: mov.rawPayerOrAlias,
@@ -697,6 +1049,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       operationId: mov.operationId,
       supplierId: mov.supplierId,
       studentId: mov.studentId,
+      clientId: mov.clientId,
       matchStatus: mov.matchStatus || (mov.operationId || mov.supplierId || mov.isInternalTransfer ? 'verde' : 'rojo'),
       matchConfidence: mov.matchConfidence || (mov.operationId ? 95 : 0),
       matchReason: mov.matchReason || (mov.isInternalTransfer ? 'Transferencia interna' : undefined),
@@ -730,7 +1083,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       const alias = raw.rawPayerOrAlias || '';
       const combinedText = `${desc} ${alias}`.toLowerCase();
 
-      // Check rules for auto-matching
       let matchedSupplierId: string | undefined = raw.supplierId;
       let matchedCategory: string | undefined = raw.category;
       let isInternal = !!raw.isInternalTransfer;
@@ -739,7 +1091,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       let confidence = 0;
       let reason = 'Movimiento no reconocido';
 
-      // Check internal transfers
       if (
         combinedText.includes('transferencia entre cuentas') ||
         combinedText.includes('traspaso') ||
@@ -752,7 +1103,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         reason = 'Transferencia interna detectada automáticamente';
       }
 
-      // Check supplier aliases
       if (!isInternal) {
         suppliers.forEach(s => {
           if (s.mpAlias && combinedText.includes(s.mpAlias.toLowerCase())) {
@@ -765,7 +1115,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
       }
 
-      // Check learned rules
       rules.forEach(rule => {
         if (rule.pattern && combinedText.includes(rule.pattern.toLowerCase())) {
           if (rule.targetSupplierId) matchedSupplierId = rule.targetSupplierId;
@@ -784,6 +1133,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         id: `mov_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
         date: raw.date || new Date().toISOString().split('T')[0],
         amount,
+        currency: raw.currency || 'ARS',
         type: isInternal ? 'transferencia_interna' : (raw.type || 'ingreso'),
         description: desc || 'Movimiento importado',
         rawPayerOrAlias: alias,
@@ -793,6 +1143,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         operationId: raw.operationId,
         supplierId: matchedSupplierId,
         studentId: raw.studentId,
+        clientId: raw.clientId,
         matchStatus,
         matchConfidence: confidence,
         matchReason: reason,
@@ -918,7 +1269,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const performMonthlyClosing = (yearMonth: string, notes?: string, actualCashInput?: number) => {
     const actualCash = actualCashInput !== undefined ? actualCashInput : kpis.currentCash;
 
-    // Filter movements belonging to this month
     const monthMovs = movements.filter(m => m.date.startsWith(yearMonth));
     const income = monthMovs.filter(m => m.type === 'ingreso').reduce((sum, m) => sum + m.amount, 0);
     const expense = monthMovs.filter(m => m.type === 'egreso').reduce((sum, m) => sum + m.amount, 0);
@@ -964,6 +1314,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // ==========================================
   const clearAllData = (options?: { resetBalancesToZero?: boolean }) => {
     setOperations([]);
+    setClients([]);
     setSuppliers([]);
     setMovements([]);
     setFixedExpenses([]);
@@ -991,6 +1342,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const resetToDemoData = () => {
     setOperations(INITIAL_OPERATIONS);
+    setClients(INITIAL_CLIENTS);
     setSuppliers(INITIAL_SUPPLIERS);
     setAccounts(INITIAL_ACCOUNTS);
     setMovements(INITIAL_MOVEMENTS);
@@ -1004,8 +1356,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return JSON.stringify(
       {
         exportedAt: new Date().toISOString(),
-        version: '1.0',
+        version: '2.0',
+        currentRole,
+        exchangeRate,
         operations,
+        clients,
         suppliers,
         accounts,
         movements,
@@ -1023,6 +1378,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     try {
       const data = JSON.parse(jsonStr);
       if (data.operations) setOperations(data.operations);
+      if (data.clients) setClients(data.clients);
       if (data.suppliers) setSuppliers(data.suppliers);
       if (data.accounts) setAccounts(data.accounts);
       if (data.movements) setMovements(data.movements);
@@ -1030,6 +1386,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       if (data.rules) setRules(data.rules);
       if (data.monthlyClosings) setMonthlyClosings(data.monthlyClosings);
       if (data.cutoffConfig) setCutoffConfig(data.cutoffConfig);
+      if (data.exchangeRate) setExchangeRate(data.exchangeRate);
       return true;
     } catch {
       return false;
@@ -1039,6 +1396,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   return (
     <AppContext.Provider
       value={{
+        currentRole,
+        setCurrentRole,
+
         activeTab,
         setActiveTab,
         selectedOperationId,
@@ -1053,7 +1413,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         selectedStudentOpId,
         setSelectedStudentOpId,
 
+        exchangeRate,
+        setExchangeRate,
+
         operations,
+        clients,
         suppliers,
         accounts,
         movements,
@@ -1064,12 +1428,21 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         cutoffConfig,
 
         kpis,
+        financialPosition,
         monthlyProjection,
 
         addOperation,
         updateOperation,
         deleteOperation,
         batchImportOperations,
+
+        addClient,
+        updateClient,
+        deleteClient,
+        batchImportClients,
+
+        recordCollection,
+        recordSupplierPayment,
 
         updateStudentPayment,
         addStudentToOperation,

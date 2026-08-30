@@ -4,6 +4,7 @@ import {
   Compass,
   GraduationCap,
   Building2,
+  Users,
   Receipt,
   Scale,
   CreditCard,
@@ -32,6 +33,12 @@ export const Sidebar: React.FC = () => {
       label: 'Master Operaciones',
       icon: Compass,
       badge: kpis.activeOperationsCount
+    },
+    {
+      id: 'clients',
+      label: 'Clientes & Colegios',
+      icon: Users,
+      badge: undefined
     },
     {
       id: 'students',

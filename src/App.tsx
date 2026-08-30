@@ -17,6 +17,7 @@ import { MonthlyClosingView } from './components/closing/MonthlyClosingView';
 import { HistoricalView } from './components/history/HistoricalView';
 import { AccountsView } from './components/accounts/AccountsView';
 import { GoogleSheetsView } from './components/sheets/GoogleSheetsView';
+import { ClientsView } from './components/clients/ClientsView';
 
 const MainContent: React.FC = () => {
   const {
@@ -44,6 +45,7 @@ const MainContent: React.FC = () => {
           <div className="max-w-7xl mx-auto">
             {activeTab === 'dashboard' && <GeneralDashboard />}
             {activeTab === 'operations' && <OperationsMaster />}
+            {activeTab === 'clients' && <ClientsView />}
             {activeTab === 'students' && <StudentPayerManager />}
             {activeTab === 'suppliers' && <SuppliersMaster />}
             {activeTab === 'movements' && <FinancialMovementsView />}

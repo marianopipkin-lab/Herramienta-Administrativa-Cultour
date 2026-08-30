@@ -299,6 +299,7 @@ export const GoogleSheetsView: React.FC = () => {
           code: codeIdx >= 0 && row[codeIdx] ? String(row[codeIdx]) : `OP-GS-${100 + i}`,
           name,
           businessUnit: unit,
+          currency: 'ARS',
           serviceType: 'Importado Google Sheet',
           date,
           status: 'confirmada',

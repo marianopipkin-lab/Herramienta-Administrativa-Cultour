@@ -7,7 +7,8 @@ import {
   HistoricalPeriod,
   MonthlyClosing,
   ClassificationRule,
-  CutoffConfig
+  CutoffConfig,
+  Client
 } from '../types';
 
 export const INITIAL_CUTOFF_CONFIG: CutoffConfig = {
@@ -20,9 +21,114 @@ export const INITIAL_CUTOFF_CONFIG: CutoffConfig = {
     banco_galicia: 6200000,
     caja_efectivo: 1150000,
     plazo_fijo: 12000000,
+    paypal_cultour: 3200,
+    wetravel_cultour: 4500,
+    caja_usd: 2500,
   },
   initialFixedCostsMonthly: 4180000,
 };
+
+export const INITIAL_CLIENTS: Client[] = [
+  {
+    id: 'cli_1',
+    type: 'escuela',
+    name: 'Colegio San Andrés',
+    documentId: '30-65481239-4',
+    email: 'administracion@sanandres.edu.ar',
+    phone: '+54 11 4744-1234',
+    address: 'Olivos, Buenos Aires',
+    notes: 'Cliente recurrente de Viajes de Egresados y Salidas Educativas',
+    createdAt: '2026-01-10T10:00:00Z'
+  },
+  {
+    id: 'cli_2',
+    type: 'escuela',
+    name: 'Instituto Santa María',
+    documentId: '30-58912345-8',
+    email: 'contacto@santamaria.edu.ar',
+    phone: '+54 11 4822-5566',
+    address: 'Recoleta, CABA',
+    notes: 'Viajes de Estudio y Salidas Culturales',
+    createdAt: '2026-02-15T11:00:00Z'
+  },
+  {
+    id: 'cli_3',
+    type: 'escuela',
+    name: 'Colegio Belgrano Day School',
+    documentId: '30-71029384-2',
+    email: 'rectoria@bds.edu.ar',
+    phone: '+54 11 4781-9900',
+    address: 'Belgrano, CABA',
+    createdAt: '2026-03-01T09:00:00Z'
+  },
+  {
+    id: 'cli_4',
+    type: 'escuela',
+    name: 'Colegio San Martín de Tours',
+    documentId: '30-66442211-7',
+    email: 'primaria@smt.edu.ar',
+    phone: '+54 11 4802-1122',
+    address: 'Palermo, CABA',
+    createdAt: '2026-03-12T14:00:00Z'
+  },
+  {
+    id: 'cli_5',
+    type: 'turista',
+    name: 'Brasil Conexao Turismo Eireli',
+    documentId: 'BR-14.283.912/0001-44',
+    email: 'operacoes@brasilconexao.com.br',
+    phone: '+55 11 98822-3344',
+    country: 'Brasil',
+    address: 'São Paulo, SP, Brasil',
+    notes: 'Operador receptivo emisor de grupos corporativos y familiares',
+    createdAt: '2026-04-05T10:00:00Z'
+  },
+  {
+    id: 'cli_6',
+    type: 'turista',
+    name: 'Familia Smith (USA) - Private Group',
+    email: 'john.smith.ny@gmail.com',
+    phone: '+1 212 555-0198',
+    country: 'Estados Unidos',
+    notes: 'Turismo receptivo premium - Pagos con WeTravel / PayPal',
+    createdAt: '2026-07-20T16:00:00Z'
+  },
+  {
+    id: 'cli_7',
+    type: 'alumno',
+    name: 'Sofía Almada',
+    institutionName: 'Colegio San Andrés',
+    gradeOrGroup: '7mo Grado A',
+    parentOrGuardianName: 'Mariano Almada (Padre)',
+    parentPhone: '11-4411-2233',
+    parentEmail: 'mariano.almada@gmail.com',
+    notes: 'Cuota 100% saldada',
+    createdAt: '2026-06-10T10:00:00Z'
+  },
+  {
+    id: 'cli_8',
+    type: 'alumno',
+    name: 'Zoe Vázquez',
+    institutionName: 'Colegio San Andrés',
+    gradeOrGroup: '7mo Grado A',
+    parentOrGuardianName: 'Pablo Vázquez (Padre)',
+    parentPhone: '11-5599-0011',
+    parentEmail: 'pablo.vazquez@live.com',
+    notes: 'Saldo parcial adeudado ($90.000)',
+    createdAt: '2026-06-10T10:00:00Z'
+  },
+  {
+    id: 'cli_9',
+    type: 'alumno',
+    name: 'Bautista Zapata',
+    institutionName: 'Colegio San Andrés',
+    gradeOrGroup: '7mo Grado A',
+    parentOrGuardianName: 'Lorena Zapata (Madre)',
+    parentPhone: '11-6600-1122',
+    notes: 'Cuota vencida adeudada ($180.000)',
+    createdAt: '2026-06-10T10:00:00Z'
+  }
+];
 
 export const INITIAL_ACCOUNTS: FinancialAccount[] = [
   {
@@ -38,7 +144,7 @@ export const INITIAL_ACCOUNTS: FinancialAccount[] = [
   },
   {
     id: 'mp_maria',
-    name: 'Mercado Pago - María',
+    name: 'Mercado Pago - Mariano / María',
     type: 'mercado_pago',
     currency: 'ARS',
     currentBalance: 3890000,
@@ -48,30 +154,50 @@ export const INITIAL_ACCOUNTS: FinancialAccount[] = [
     description: 'Cobros de cuotas de padres en viajes educativos y pagos menores'
   },
   {
+    id: 'paypal_cultour',
+    name: 'PayPal - Cultour Oficial (USD)',
+    type: 'paypal',
+    currency: 'USD',
+    currentBalance: 4850,
+    initialBalance: 3200,
+    holder: 'Cultour Trips LLC / Mariano',
+    description: 'Cobros internacionales en USD de turistas extranjeros'
+  },
+  {
+    id: 'wetravel_cultour',
+    name: 'WeTravel - Cultour Receptivo (USD)',
+    type: 'wetravel',
+    currency: 'USD',
+    currentBalance: 6200,
+    initialBalance: 4500,
+    holder: 'Cultour Trips WeTravel Account',
+    description: 'Pasarela internacional de pagos para tours receptivos y grupos'
+  },
+  {
     id: 'banco_santander',
-    name: 'Banco Santander - CC Operativa',
+    name: 'Banco Santander - CC Operativa (ARS)',
     type: 'banco',
     currency: 'ARS',
     currentBalance: 15840000,
     initialBalance: 14600000,
     cbu: '0720182620000049281723',
-    holder: 'Turismo Integral SRL',
+    holder: 'Cultour SRL',
     description: 'Cuenta corriente empresarial para pagos a grandes proveedores y transferencias'
   },
   {
     id: 'banco_galicia',
-    name: 'Banco Galicia - Cuenta Reserva',
+    name: 'Banco Galicia - Cuenta Reserva (ARS)',
     type: 'banco',
     currency: 'ARS',
     currentBalance: 6450000,
     initialBalance: 6200000,
     cbu: '0070089120000031894562',
-    holder: 'Turismo Integral SRL',
+    holder: 'Cultour SRL',
     description: 'Fondo de respaldo operativo y pago de sueldos'
   },
   {
     id: 'caja_efectivo',
-    name: 'Caja Chica Efectivo (ARS/USD)',
+    name: 'Caja Chica Efectivo (ARS)',
     type: 'efectivo',
     currency: 'ARS',
     currentBalance: 1280000,
@@ -80,8 +206,18 @@ export const INITIAL_ACCOUNTS: FinancialAccount[] = [
     description: 'Efectivo en bóveda para propinas, peajes, guías en mano y gastos inmediatos'
   },
   {
+    id: 'caja_usd',
+    name: 'Bóveda Dólares Efectivo (USD)',
+    type: 'efectivo',
+    currency: 'USD',
+    currentBalance: 3100,
+    initialBalance: 2500,
+    holder: 'Tesorería Socios',
+    description: 'Dólares billete recibidos de turistas y resguardo de reservas'
+  },
+  {
     id: 'plazo_fijo',
-    name: 'Plazo Fijo / Inversión de Liquidez',
+    name: 'Plazo Fijo / Inversión de Liquidez ARS',
     type: 'inversion',
     currency: 'ARS',
     currentBalance: 12000000,
@@ -207,6 +343,7 @@ export const INITIAL_OPERATIONS: Operation[] = [
     code: 'VE-2026-001',
     name: 'Viaje Egresados Primaria Tandil 4D/3N',
     businessUnit: 'viajes',
+    currency: 'ARS',
     serviceType: 'Viaje Educativo & Aventura',
     clientOrSchool: 'Colegio San Andrés - 7mo Grado',
     date: '2026-09-14',
@@ -329,6 +466,7 @@ export const INITIAL_OPERATIONS: Operation[] = [
     code: 'VE-2026-002',
     name: 'Viaje de Estudios Villa Carlos Paz & Sierras 6D/5N',
     businessUnit: 'viajes',
+    currency: 'ARS',
     serviceType: 'Viaje de Estudios',
     clientOrSchool: 'Instituto Santa María - 5to Año',
     date: '2026-10-05',
@@ -434,6 +572,7 @@ export const INITIAL_OPERATIONS: Operation[] = [
     code: 'SE-2026-015',
     name: 'Visita Museo de Ciencias Naturales La Plata',
     businessUnit: 'salidas',
+    currency: 'ARS',
     serviceType: 'Salida Educativa de 1 Día',
     clientOrSchool: 'Colegio Belgrano Day School - 4to Grado',
     date: '2026-09-08',
@@ -512,6 +651,7 @@ export const INITIAL_OPERATIONS: Operation[] = [
     code: 'SE-2026-016',
     name: 'Día de Campo y Granja Don Silvano',
     businessUnit: 'salidas',
+    currency: 'ARS',
     serviceType: 'Salida de Campo & Tradición',
     clientOrSchool: 'Colegio San Martín de Tours - 2do Grado',
     date: '2026-09-22',
@@ -588,6 +728,7 @@ export const INITIAL_OPERATIONS: Operation[] = [
     code: 'TR-2026-042',
     name: 'City Tour Arquitectónico + Navegación Delta Tigre Premium',
     businessUnit: 'receptivo',
+    currency: 'ARS',
     serviceType: 'Tour Receptivo Exclusivo',
     clientOrSchool: 'Agencia Turismo Brasil Conexao (18 pax)',
     date: '2026-09-02',
@@ -681,6 +822,7 @@ export const INITIAL_OPERATIONS: Operation[] = [
     code: 'TR-2026-043',
     name: 'Paquete Experiencia Cataratas del Iguazú 4D/3N',
     businessUnit: 'receptivo',
+    currency: 'ARS',
     serviceType: 'Paquete Nacional Receptivo',
     clientOrSchool: 'Familia Henderson (USA - 6 pax)',
     date: '2026-09-18',
@@ -756,6 +898,7 @@ export const INITIAL_OPERATIONS: Operation[] = [
     code: 'TR-2026-039',
     name: 'Tour San Antonio de Areco & Fiesta Gaucha',
     businessUnit: 'receptivo',
+    currency: 'ARS',
     serviceType: 'Tour de Campo',
     clientOrSchool: 'Grupo Turistas Franceses (12 pax)',
     date: '2026-08-16',

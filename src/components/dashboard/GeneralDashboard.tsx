@@ -35,6 +35,7 @@ import { formatCurrency, formatPercent } from '../../utils/financialCalculations
 export const GeneralDashboard: React.FC = () => {
   const {
     kpis,
+    financialPosition,
     monthlyProjection,
     operations,
     fixedExpenses,
@@ -128,6 +129,145 @@ export const GeneralDashboard: React.FC = () => {
             Evolución Mensual
           </button>
         </div>
+      </div>
+
+      {/* ========================================================
+          POSICIÓN FINANCIERA & GANANCIA DISPONIBLE (SOCIOS)
+      ======================================================== */}
+      <div className="bg-white border border-[#E5E7EB] rounded-xl p-5 shadow-xs">
+        <div className="flex flex-col md:flex-row md:items-center md:justify-between pb-4 border-b border-gray-100 gap-2">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="px-2.5 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-200 text-[10px] font-bold uppercase tracking-wider">
+                Auditoría Ejecutiva de Socios
+              </span>
+              <h2 className="text-sm font-bold text-gray-900">
+                Posición Financiera: Saldo de Cuentas vs. Ganancia Disponible
+              </h2>
+            </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Desglose estricto: el saldo de cuentas incluye anticipos de viajes futuros que no deben confundirse con ganancia disponible.
+            </p>
+          </div>
+          <div className="text-right">
+            <span className="text-[11px] text-gray-400">Tipo de cambio referencial:</span>
+            <span className="font-mono text-xs font-bold text-gray-800 ml-1.5">$1.320 / USD</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-4">
+          
+          {/* Box 1: Dinero en Cuentas */}
+          <div className="bg-gray-50/80 rounded-xl p-4 border border-gray-200">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-gray-500 flex items-center justify-between">
+              <span>1. Dinero en Cuentas</span>
+              <Wallet className="w-3.5 h-3.5 text-indigo-600" />
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-gray-500">En Pesos (ARS):</span>
+                <span className="font-mono text-xs font-bold text-gray-900">{formatCurrency(financialPosition.cashARS, 'ARS')}</span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-gray-500">En Dólares (USD):</span>
+                <span className="font-mono text-xs font-bold text-cyan-800">{formatCurrency(financialPosition.cashUSD, 'USD')}</span>
+              </div>
+              <div className="pt-2 border-t border-gray-200 flex justify-between items-baseline">
+                <span className="text-[11px] font-semibold text-gray-700">Total Equiv.:</span>
+                <span className="font-mono text-xs font-bold text-indigo-700">{formatCurrency(financialPosition.cashEquivalentUSD, 'USD')}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Box 2: Cobros de Operaciones Futuras */}
+          <div className="bg-blue-50/40 rounded-xl p-4 border border-blue-100">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-blue-800 flex items-center justify-between">
+              <span>2. Fondos en Custodia (Futuros)</span>
+              <Clock className="w-3.5 h-3.5 text-blue-600" />
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-blue-950/70">Cobrado ARS:</span>
+                <span className="font-mono text-xs font-semibold text-blue-900">{formatCurrency(financialPosition.futureOpsCollectedARS, 'ARS')}</span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-blue-950/70">Cobrado USD:</span>
+                <span className="font-mono text-xs font-semibold text-cyan-800">{formatCurrency(financialPosition.futureOpsCollectedUSD, 'USD')}</span>
+              </div>
+              <div className="pt-2 border-t border-blue-100 flex justify-between items-baseline">
+                <span className="text-[11px] font-semibold text-blue-900">Total Anticipos:</span>
+                <span className="font-mono text-xs font-bold text-blue-950">{formatCurrency(financialPosition.futureOpsCollectedEquivalentUSD, 'USD')}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Box 3: Dinero Comprometido */}
+          <div className="bg-amber-50/50 rounded-xl p-4 border border-amber-200">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-amber-800 flex items-center justify-between">
+              <span>3. Dinero Comprometido</span>
+              <ArrowDownRight className="w-3.5 h-3.5 text-amber-600" />
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-amber-900/70">Costos Pendientes ARS:</span>
+                <span className="font-mono text-xs font-semibold text-amber-900">-{formatCurrency(financialPosition.committedFundsARS, 'ARS')}</span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-amber-900/70">Costos Pendientes USD:</span>
+                <span className="font-mono text-xs font-semibold text-amber-900">-{formatCurrency(financialPosition.committedFundsUSD, 'USD')}</span>
+              </div>
+              <div className="pt-2 border-t border-amber-200 flex justify-between items-baseline">
+                <span className="text-[11px] font-semibold text-amber-900">Total Comprometido:</span>
+                <span className="font-mono text-xs font-bold text-amber-950">-{formatCurrency(financialPosition.committedFundsEquivalentUSD, 'USD')}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Box 4: Ganancia Disponible Real */}
+          <div className="bg-emerald-50/60 rounded-xl p-4 border border-emerald-300">
+            <div className="text-[11px] font-bold uppercase tracking-wider text-emerald-800 flex items-center justify-between">
+              <span>4. Ganancia Disponible Real</span>
+              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+            </div>
+            <div className="mt-2 space-y-1">
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-emerald-900/70">Disponible ARS:</span>
+                <span className="font-mono text-xs font-bold text-emerald-900">{formatCurrency(financialPosition.availableProfitARS, 'ARS')}</span>
+              </div>
+              <div className="flex justify-between items-baseline">
+                <span className="text-xs text-emerald-900/70">Disponible USD:</span>
+                <span className="font-mono text-xs font-bold text-emerald-900">{formatCurrency(financialPosition.availableProfitUSD, 'USD')}</span>
+              </div>
+              <div className="pt-2 border-t border-emerald-200 flex justify-between items-baseline">
+                <span className="text-[11px] font-bold text-emerald-900">Total Retiro/Inversión:</span>
+                <span className="font-mono text-xs font-black text-emerald-900">{formatCurrency(financialPosition.availableProfitEquivalentUSD, 'USD')}</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        {/* Sub-strip for Realized vs Projected Profit */}
+        <div className="mt-4 pt-3 border-t border-gray-100 grid grid-cols-1 md:grid-cols-2 gap-4 text-xs">
+          <div className="flex items-center justify-between bg-gray-50 px-3.5 py-2.5 rounded-lg border border-gray-200">
+            <span className="text-gray-600">
+              <strong className="text-gray-900">Operaciones ya realizadas:</strong> Ganancia devengada real
+            </span>
+            <span className="font-mono font-bold text-emerald-700">
+              {formatCurrency(financialPosition.pastOpsRealizedProfitARS, 'ARS')} / {formatCurrency(financialPosition.pastOpsRealizedProfitUSD, 'USD')}
+            </span>
+          </div>
+
+          <div className="flex items-center justify-between bg-gray-50 px-3.5 py-2.5 rounded-lg border border-gray-200">
+            <span className="text-gray-600">
+              <strong className="text-gray-900">Operaciones futuras:</strong> Resultado proyectado
+            </span>
+            <span className="font-mono font-bold text-indigo-700">
+              {formatCurrency(financialPosition.futureOpsProjectedProfitARS, 'ARS')} / {formatCurrency(financialPosition.futureOpsProjectedProfitUSD, 'USD')}
+            </span>
+          </div>
+        </div>
+
       </div>
 
       {/* ========================================================

@@ -4,8 +4,17 @@ import {
   FixedExpense,
   FinancialMovement,
   MonthlyClosing,
-  HistoricalPeriod
+  HistoricalPeriod,
+  CultourFinancialPosition,
+  ExchangeRateConfig,
+  Currency
 } from '../types';
+
+export const DEFAULT_EXCHANGE_RATE: ExchangeRateConfig = {
+  usdToArsRate: 1320,
+  rateDate: '2026-08-30',
+  sourceLabel: 'Dólar Financiero / MEP'
+};
 
 export interface FinancialKPIs {
   // Cash & Holdings
@@ -51,8 +60,10 @@ export interface MonthlyCashEvolution {
   isProjected: boolean;
 }
 
-export function formatCurrency(amount: number, currency: 'ARS' | 'USD' = 'ARS'): string {
-  if (isNaN(amount) || amount === null || amount === undefined) return '$0';
+export function formatCurrency(amount: number, currency: Currency = 'ARS'): string {
+  if (isNaN(amount) || amount === null || amount === undefined) {
+    return currency === 'USD' ? 'USD 0' : '$ 0';
+  }
   const prefix = currency === 'USD' ? 'USD ' : '$ ';
   return `${prefix}${new Intl.NumberFormat('es-AR', {
     maximumFractionDigits: 0,
@@ -63,6 +74,158 @@ export function formatCurrency(amount: number, currency: 'ARS' | 'USD' = 'ARS'):
 export function formatPercent(value: number): string {
   if (isNaN(value) || !isFinite(value)) return '0.0%';
   return `${value.toFixed(1)}%`;
+}
+
+/**
+ * Calculates the strict Cultour Financial Position for Partners (SOCIOS).
+ * Clearly differentiates Cash in Accounts vs Future Ops Advances vs Committed Funds vs Available Profit.
+ */
+export function calculateCultourFinancialPosition(
+  operations: Operation[],
+  accounts: FinancialAccount[],
+  fixedExpenses: FixedExpense[],
+  rateConfig: ExchangeRateConfig = DEFAULT_EXCHANGE_RATE
+): CultourFinancialPosition {
+  const rate = rateConfig.usdToArsRate > 0 ? rateConfig.usdToArsRate : 1320;
+  const todayStr = new Date().toISOString().split('T')[0];
+
+  // 1. Dinero actualmente existente en cuentas
+  let cashARS = 0;
+  let cashUSD = 0;
+
+  accounts.forEach(acc => {
+    const bal = acc.currentBalance || 0;
+    if (acc.currency === 'USD') {
+      cashUSD += bal;
+    } else {
+      cashARS += bal;
+    }
+  });
+
+  const cashEquivalentUSD = cashUSD + (cashARS / rate);
+
+  // 2. Separar operaciones pasadas (realizadas) vs operaciones futuras
+  const activeOps = operations.filter(op => op.status !== 'cancelada');
+
+  let futureOpsCollectedARS = 0;
+  let futureOpsCollectedUSD = 0;
+  let futureOpsPendingCostsARS = 0;
+  let futureOpsPendingCostsUSD = 0;
+
+  let pastOpsRealizedProfitARS = 0;
+  let pastOpsRealizedProfitUSD = 0;
+
+  let futureOpsProjectedProfitARS = 0;
+  let futureOpsProjectedProfitUSD = 0;
+
+  // Breakdown by business unit
+  const buMap = {
+    receptivo: { revenue: 0, costs: 0, profit: 0, margin: 0, opsCount: 0, currency: 'USD' as Currency },
+    salidas: { revenue: 0, costs: 0, profit: 0, margin: 0, opsCount: 0, currency: 'ARS' as Currency },
+    viajes: { revenue: 0, costs: 0, profit: 0, margin: 0, opsCount: 0, currency: 'ARS' as Currency }
+  };
+
+  activeOps.forEach(op => {
+    const isFuture = op.date >= todayStr;
+    const isUSD = op.currency === 'USD' || op.businessUnit === 'receptivo';
+    const recRev = op.receivedRevenue || 0;
+    const expRev = op.expectedRevenue || 0;
+    const paidCost = op.paidCost || 0;
+    const expCost = op.expectedCost || 0;
+    const pendingCost = Math.max(0, expCost - paidCost);
+
+    // Business unit stats
+    if (buMap[op.businessUnit]) {
+      buMap[op.businessUnit].revenue += expRev;
+      buMap[op.businessUnit].costs += expCost;
+      buMap[op.businessUnit].opsCount += 1;
+    }
+
+    if (isFuture) {
+      // Dinero cobrado de operaciones que aún no se ejecutaron (anticipos / fondos comprometidos con el servicio)
+      if (isUSD) {
+        futureOpsCollectedUSD += recRev;
+        futureOpsPendingCostsUSD += pendingCost;
+        futureOpsProjectedProfitUSD += (expRev - expCost);
+      } else {
+        futureOpsCollectedARS += recRev;
+        futureOpsPendingCostsARS += pendingCost;
+        futureOpsProjectedProfitARS += (expRev - expCost);
+      }
+    } else {
+      // Operaciones ya ejecutadas (resultado devengado real)
+      if (isUSD) {
+        pastOpsRealizedProfitUSD += (recRev - paidCost);
+      } else {
+        pastOpsRealizedProfitARS += (recRev - paidCost);
+      }
+    }
+  });
+
+  // Calculate BU margins
+  Object.keys(buMap).forEach(key => {
+    const unit = buMap[key as keyof typeof buMap];
+    unit.profit = unit.revenue - unit.costs;
+    unit.margin = unit.revenue > 0 ? (unit.profit / unit.revenue) * 100 : 0;
+  });
+
+  // 3. Gastos fijos mensuales activos
+  const monthlyFixedARS = fixedExpenses
+    .filter(f => f.status === 'activo' && f.currency !== 'USD')
+    .reduce((acc, f) => {
+      if (f.frequency === 'mensual') return acc + f.amount;
+      if (f.frequency === 'anual') return acc + (f.amount / 12);
+      if (f.frequency === 'quincenal') return acc + (f.amount * 2);
+      if (f.frequency === 'trimestral') return acc + (f.amount / 3);
+      return acc + f.amount;
+    }, 0);
+
+  const monthlyFixedUSD = fixedExpenses
+    .filter(f => f.status === 'activo' && f.currency === 'USD')
+    .reduce((acc, f) => acc + f.amount, 0);
+
+  // 4. Dinero comprometido: Costos pendientes de ops futuras + Gastos fijos de estructura inmediata
+  const committedFundsARS = futureOpsPendingCostsARS + monthlyFixedARS;
+  const committedFundsUSD = futureOpsPendingCostsUSD + monthlyFixedUSD;
+  const committedFundsEquivalentUSD = committedFundsUSD + (committedFundsARS / rate);
+
+  // 5. Ganancia disponible real:
+  // Es la liquidez en cuenta menos el dinero comprometido para pagar operaciones futuras y gastos fijos
+  const availableProfitARS = Math.max(0, cashARS - committedFundsARS);
+  const availableProfitUSD = Math.max(0, cashUSD - committedFundsUSD);
+  const availableProfitEquivalentUSD = availableProfitUSD + (availableProfitARS / rate);
+
+  return {
+    cashARS,
+    cashUSD,
+    cashEquivalentUSD,
+
+    futureOpsCollectedARS,
+    futureOpsCollectedUSD,
+    futureOpsCollectedEquivalentUSD: futureOpsCollectedUSD + (futureOpsCollectedARS / rate),
+
+    futureOpsPendingCostsARS,
+    futureOpsPendingCostsUSD,
+    futureOpsPendingCostsEquivalentUSD: futureOpsPendingCostsUSD + (futureOpsPendingCostsARS / rate),
+
+    committedFundsARS,
+    committedFundsUSD,
+    committedFundsEquivalentUSD,
+
+    pastOpsRealizedProfitARS,
+    pastOpsRealizedProfitUSD,
+    pastOpsRealizedProfitEquivalentUSD: pastOpsRealizedProfitUSD + (pastOpsRealizedProfitARS / rate),
+
+    futureOpsProjectedProfitARS,
+    futureOpsProjectedProfitUSD,
+    futureOpsProjectedProfitEquivalentUSD: futureOpsProjectedProfitUSD + (futureOpsProjectedProfitARS / rate),
+
+    availableProfitARS,
+    availableProfitUSD,
+    availableProfitEquivalentUSD,
+
+    byBusinessUnit: buMap
+  };
 }
 
 export function calculateKPIs(
@@ -126,7 +289,6 @@ export function calculateKPIs(
   const committedCash = pendingSupplierPayables + monthlyFixedExpenses;
 
   // Projected Free Cash = Current Cash + pending receivables - pending supplier payables - future fixed costs
-  // Note: already paid costs are already out of current cash, so we ONLY subtract pending costs!
   const projectedCash = currentCash + pendingReceivables - pendingSupplierPayables;
   const projectedFreeCash = currentCash + pendingReceivables - pendingSupplierPayables - monthlyFixedExpenses;
 
@@ -203,7 +365,7 @@ export function generateMonthlyCashProjection(
     .filter(f => f.status === 'activo')
     .reduce((acc, f) => acc + f.amount, 0);
 
-  // 1. Include past 2 months from closings/historical
+  // 1. Include past months
   const pastMonths = ['2026-06', '2026-07', '2026-08'];
   let runningCash = 38200000;
 
@@ -244,7 +406,7 @@ export function generateMonthlyCashProjection(
     });
   });
 
-  // 2. Future 4 months (Sep 2026, Oct 2026, Nov 2026, Dec 2026)
+  // 2. Future months (Sep 2026, Oct 2026, Nov 2026, Dec 2026)
   const futureMonths = ['2026-09', '2026-10', '2026-11', '2026-12'];
   let simCash = currentCash;
 
@@ -253,24 +415,18 @@ export function generateMonthlyCashProjection(
     const mIdx = parseInt(month, 10) - 1;
     const label = `${monthNames[mIdx]} ${year} (Proy.)`;
 
-    // Incomes scheduled or operations in this month
     let monthIncome = 0;
     let monthSupplierCosts = 0;
 
     operations.forEach(op => {
-      // Check operations in this month
       if (op.date && op.date.startsWith(ym)) {
-        // Pending revenue to collect
         const pendingRev = Math.max(0, op.expectedRevenue - op.receivedRevenue);
         monthIncome += pendingRev;
-
-        // Pending supplier costs to pay
         const pendingCost = Math.max(0, op.expectedCost - op.paidCost);
         monthSupplierCosts += pendingCost;
       }
     });
 
-    // In case no operations exist for future months yet, apply baseline projection
     if (monthIncome === 0 && (ym === '2026-11' || ym === '2026-12')) {
       monthIncome = 12500000;
       monthSupplierCosts = 7800000;

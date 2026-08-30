@@ -2,53 +2,150 @@ export type BusinessUnit = 'receptivo' | 'salidas' | 'viajes';
 
 export type OperationStatus = 'confirmada' | 'en_curso' | 'realizada' | 'cancelada' | 'presupuesto';
 
-export type PaymentMethod = 'mercado_pago' | 'transferencia' | 'efectivo' | 'tarjeta' | 'cheque' | 'otro';
+export type Currency = 'ARS' | 'USD';
+
+export type PaymentMethod = 
+  | 'mercado_pago' 
+  | 'wetravel' 
+  | 'paypal' 
+  | 'transferencia' 
+  | 'efectivo' 
+  | 'tarjeta' 
+  | 'cheque' 
+  | 'otro';
 
 export type AccountId = string;
 
-export interface FinancialAccount {
-  id: AccountId;
+export type UserRole = 'socio' | 'administrativo' | 'operativo';
+
+export type ClientType = 'turista' | 'escuela' | 'alumno' | 'empresa' | 'otro';
+
+export type QuotaType = 'seña' | 'cuota_1' | 'cuota_2' | 'cuota_3' | 'saldo' | 'pago_unico';
+
+export type QuotaStatus = 'pendiente' | 'parcial' | 'pagada' | 'vencida';
+
+// ==========================================
+// 1. CLIENTES Y PAGADORES (Maestro Unificado)
+// ==========================================
+export interface Client {
+  id: string;
+  type: ClientType; // 'turista' | 'escuela' | 'alumno'
   name: string;
-  type: 'mercado_pago' | 'banco' | 'efectivo' | 'inversion';
-  currency: 'ARS' | 'USD';
-  currentBalance: number;
-  initialBalance: number; // At cutoff date
-  alias?: string;
-  cbu?: string;
-  holder: string;
-  description: string;
+  documentId?: string; // DNI / CUIT / Pasaporte
+  email?: string;
+  phone?: string;
+  address?: string;
+  country?: string; // e.g. 'Argentina', 'Brasil', 'USA'
+  institutionName?: string; // Para alumnos: nombre de la escuela/institución
+  gradeOrGroup?: string; // Para alumnos: ej. '7mo Grado A'
+  parentOrGuardianName?: string; // Para alumnos: Padre/Madre/Tutor
+  parentPhone?: string;
+  parentEmail?: string;
+  notes?: string;
+  createdAt: string;
+  updatedAt?: string;
 }
 
-export interface StudentPayer {
+// ==========================================
+// 2. CUOTAS Y OBLIGACIONES DE PAGO
+// ==========================================
+export interface PaymentQuota {
   id: string;
   operationId: string;
-  studentName: string;
-  studentDni?: string;
-  payerName: string; // Padre/Madre/Tutor
-  payerDni?: string;
-  payerPhone?: string;
-  payerEmail?: string;
-  expectedAmount: number;
+  clientId?: string; // Vinculado al cliente / pagador específico
+  clientName: string;
+  quotaType: QuotaType;
+  quotaNumber?: number; // 1, 2, 3...
+  amount: number;
+  currency: Currency; // ARS o USD original
+  dueDate: string; // YYYY-MM-DD
+  status: QuotaStatus;
   paidAmount: number;
-  paymentDueDate: string;
-  lastPaymentDate?: string;
-  paymentMethod?: PaymentMethod;
+  balance: number;
+  expectedPaymentMethod?: PaymentMethod;
+  destinationAccountId?: AccountId; // Cuenta real esperada
   notes?: string;
-  status: 'al_dia' | 'pago_parcial' | 'pendiente' | 'vencido';
 }
 
+// ==========================================
+// 3. COBROS REALIZADOS (Ingresos Registrados)
+// ==========================================
+export interface CollectionRecord {
+  id: string;
+  operationId: string;
+  operationCode?: string;
+  clientId?: string;
+  clientName: string;
+  quotaId?: string;
+  concept: string; // ej. 'Seña', 'Cuota 1', 'Pago total'
+  date: string; // YYYY-MM-DD
+  amount: number;
+  currency: Currency; // ARS o USD original
+  paymentMethod: PaymentMethod; // ej. 'mercado_pago', 'paypal', 'wetravel'
+  destinationAccountId: AccountId; // Cuenta destino real ej. 'mp_mariano', 'paypal_cultour'
+  destinationAccountName?: string;
+  voucherOrReference?: string;
+  movementId?: string; // Vinculado a extracto
+  notes?: string;
+  createdAt: string;
+}
+
+// ==========================================
+// 4. SERVICIOS Y COSTOS DE PROVEEDORES
+// ==========================================
+export interface SupplierContract {
+  id: string;
+  operationId: string;
+  supplierId: string;
+  supplierName: string;
+  serviceCategory: string; // 'Transporte', 'Alojamiento', 'Gastronomía', 'Guías', 'Seguros', 'Entradas', 'Otros'
+  serviceDescription?: string;
+  expectedCost: number;
+  currency: Currency; // ARS o USD
+  dueDate: string; // Fecha límite de pago
+  paidAmount: number;
+  balance: number;
+  status: 'pendiente' | 'parcial' | 'pagado' | 'vencido';
+  sourceAccountId?: AccountId; // Cuenta desde la que se paga
+  movementId?: string;
+  notes?: string;
+}
+
+export interface SupplierPaymentRecord {
+  id: string;
+  operationId: string;
+  supplierId: string;
+  supplierName: string;
+  contractId?: string;
+  concept: string;
+  date: string;
+  amount: number;
+  currency: Currency;
+  paymentMethod: PaymentMethod;
+  sourceAccountId: AccountId;
+  sourceAccountName?: string;
+  reference?: string;
+  movementId?: string;
+  notes?: string;
+  createdAt: string;
+}
+
+// ==========================================
+// 5. OPERACIÓN / FILE (Núcleo del Sistema)
+// ==========================================
 export interface OperationIncomeRecord {
   id: string;
   operationId: string;
   date: string;
   amount: number;
+  currency?: Currency;
   payerName: string;
   paymentMethod: PaymentMethod;
   accountId: AccountId;
   status: 'cobrado' | 'pendiente' | 'vencido';
   studentId?: string;
   reference?: string;
-  movementId?: string; // Linked financial movement
+  movementId?: string;
 }
 
 export interface SupplierCostRecord {
@@ -56,40 +153,69 @@ export interface SupplierCostRecord {
   operationId: string;
   supplierId: string;
   supplierName: string;
-  serviceCategory: string; // 'Transporte', 'Alojamiento', 'Guía', 'Gastronomía', 'Entradas', 'Seguros', 'Otros'
+  serviceCategory: string;
   mpAlias?: string;
   expectedCost: number;
   paidCost: number;
+  currency?: Currency;
   expectedPaymentDate: string;
   actualPaymentDate?: string;
   paidFromAccountId?: AccountId;
   paymentMethod?: PaymentMethod;
   status: 'pagado' | 'parcial' | 'pendiente' | 'vencido';
-  movementId?: string; // Linked financial movement
+  movementId?: string;
   notes?: string;
+}
+
+export interface StudentPayer {
+  id: string;
+  operationId: string;
+  studentName: string;
+  studentDni?: string;
+  payerName: string;
+  payerDni?: string;
+  payerPhone?: string;
+  payerEmail?: string;
+  expectedAmount: number;
+  paidAmount: number;
+  currency?: Currency;
+  paymentDueDate: string;
+  lastPaymentDate?: string;
+  paymentMethod?: PaymentMethod;
+  destinationAccountId?: AccountId;
+  notes?: string;
+  status: 'al_dia' | 'pago_parcial' | 'pendiente' | 'vencido';
 }
 
 export interface Operation {
   id: string;
-  code: string; // e.g. OP-2026-084
+  code: string; // e.g. TR-2026-042, SE-2026-015, VE-2026-001
   name: string;
-  businessUnit: BusinessUnit;
-  serviceType: string; // e.g., 'Tour Privado', 'Visita Museo & Fábrica', 'Viaje Egresados Villa Carlos Paz'
+  businessUnit: BusinessUnit; // 'receptivo' | 'salidas' | 'viajes'
+  serviceType: string; // e.g. 'Tour Privado Receptivo', 'Salida Museo', 'Viaje Egresados'
   clientOrSchool: string;
-  date: string; // Main date or start date (YYYY-MM-DD)
+  clientId?: string; // Vinculación a Maestro de Clientes
+  date: string; // YYYY-MM-DD
   endDate?: string;
   passengerCount: number;
   status: OperationStatus;
   responsiblePerson: string;
   observations: string;
+  currency: Currency; // Divisa operativa de la operación
 
-  // Financial aggregates
+  // Financieros
   expectedRevenue: number;
   receivedRevenue: number;
   expectedCost: number;
   paidCost: number;
 
-  // Collections
+  // Colecciones operativas y cuotas
+  quotas?: PaymentQuota[];
+  collections?: CollectionRecord[];
+  supplierContracts?: SupplierContract[];
+  supplierPayments?: SupplierPaymentRecord[];
+
+  // Compatibilidad con registros existentes
   incomes: OperationIncomeRecord[];
   suppliers: SupplierCostRecord[];
   students?: StudentPayer[];
@@ -98,48 +224,92 @@ export interface Operation {
   updatedAt: string;
 }
 
+// ==========================================
+// 6. PROVEEDORES (Maestro Único)
+// ==========================================
 export interface Supplier {
   id: string;
   name: string;
   mpAlias?: string;
   cbu?: string;
   bankAccount?: string;
-  category: string; // 'Transporte', 'Alojamiento', 'Gastronomía', 'Guías', 'Seguros', 'Entradas', 'Coordinación', 'Otros'
+  category: string; // 'Transporte', 'Alojamiento', 'Gastronomía', 'Guías', 'Seguros', 'Entradas', 'Otros'
   serviceDescription: string;
   contactName?: string;
   phone?: string;
   email?: string;
+  currency?: Currency;
   defaultAccountId?: AccountId;
   active: boolean;
 }
 
+// ==========================================
+// 7. CUENTAS & TESORERÍA
+// ==========================================
+export interface FinancialAccount {
+  id: AccountId;
+  name: string; // ej. 'Mercado Pago Mariano', 'PayPal Cultour', 'Banco Santander'
+  type: 'mercado_pago' | 'banco' | 'paypal' | 'wetravel' | 'efectivo' | 'inversion';
+  currency: Currency; // 'ARS' | 'USD'
+  currentBalance: number;
+  initialBalance: number;
+  alias?: string;
+  cbu?: string;
+  holder: string;
+  description: string;
+  active?: boolean;
+}
+
 export type MovementType = 'ingreso' | 'egreso' | 'transferencia_interna';
-export type MatchStatus = 'verde' | 'amarillo' | 'rojo'; // verde=auto/confirmado, amarillo=probable, rojo=sin_asignar
+export type MatchStatus = 'verde' | 'amarillo' | 'rojo';
 
 export interface FinancialMovement {
   id: string;
   date: string; // YYYY-MM-DD
-  amount: number; // Always positive
+  amount: number;
+  currency?: Currency;
   type: MovementType;
   description: string;
   rawPayerOrAlias?: string;
   accountId: AccountId;
-  targetAccountId?: AccountId; // If transferencia_interna
+  targetAccountId?: AccountId; // Para transferencias internas
   category?: string;
   operationId?: string;
   supplierId?: string;
   studentId?: string;
+  clientId?: string;
   matchStatus: MatchStatus;
-  matchConfidence?: number; // 0 to 100
+  matchConfidence?: number;
   matchReason?: string;
   isInternalTransfer: boolean;
   notes?: string;
   importedAt: string;
 }
 
+// ==========================================
+// 8. CONCILIACIÓN DE PLATAFORMAS
+// ==========================================
+export interface PlatformReconciliation {
+  id: string;
+  platform: 'mercado_pago' | 'paypal' | 'wetravel' | 'banco';
+  accountId: AccountId;
+  accountName: string;
+  periodMonth: string; // '2026-08'
+  currency: Currency;
+  systemRegisteredTotal: number;
+  platformImportedTotal: number;
+  difference: number;
+  status: 'conciliado' | 'con_diferencias' | 'pendiente';
+  reconciledAt?: string;
+  notes?: string;
+}
+
+// ==========================================
+// 9. CONFIGURACIÓN Y FINANZAS
+// ==========================================
 export interface ClassificationRule {
   id: string;
-  pattern: string; // regex or keyword in description / alias / rawPayer
+  pattern: string;
   ruleType: 'alias' | 'payer_name' | 'keyword' | 'internal_transfer';
   targetSupplierId?: string;
   targetCategory?: string;
@@ -158,9 +328,9 @@ export interface FixedExpense {
   provider: string;
   description: string;
   amount: number;
-  currency: 'ARS' | 'USD';
+  currency: Currency;
   frequency: 'mensual' | 'anual' | 'quincenal' | 'trimestral';
-  dueDay: number; // Day of month 1-31
+  dueDay: number;
   paidFromAccountId: AccountId;
   status: 'activo' | 'pausado';
   lastPaidDate?: string;
@@ -169,18 +339,18 @@ export interface FixedExpense {
 
 export interface HistoricalPeriod {
   id: string;
-  yearMonth: string; // e.g. '2026-06', '2026-07'
+  yearMonth: string;
   businessUnit: BusinessUnit;
   revenue: number;
   expenses: number;
-  result: number; // revenue - expenses
+  result: number;
   operationsCount: number;
   notes?: string;
 }
 
 export interface MonthlyClosing {
   id: string;
-  yearMonth: string; // e.g. '2026-08'
+  yearMonth: string;
   closedAt?: string;
   status: 'cerrado' | 'pendiente' | 'en_revision';
   initialCash: number;
@@ -196,10 +366,63 @@ export interface MonthlyClosing {
 }
 
 export interface CutoffConfig {
-  cutoffDate: string; // e.g. '2026-08-31'
+  cutoffDate: string;
   description: string;
   accountsInitialBalances: Record<AccountId, number>;
   initialFixedCostsMonthly: number;
+}
+
+export interface ExchangeRateConfig {
+  usdToArsRate: number; // e.g. 1320
+  rateDate: string; // YYYY-MM-DD
+  sourceLabel: string; // e.g. 'Dólar MEP / Referencia Cultour'
+}
+
+// ==========================================
+// 10. MODELO FINANCIERO RIGUROSO (SOCIOS)
+// ==========================================
+export interface CultourFinancialPosition {
+  // 1. Dinero actualmente existente en cuentas
+  cashARS: number;
+  cashUSD: number;
+  cashEquivalentUSD: number;
+
+  // 2. Dinero cobrado correspondiente a operaciones futuras (anticipos / pasivo)
+  futureOpsCollectedARS: number;
+  futureOpsCollectedUSD: number;
+  futureOpsCollectedEquivalentUSD: number;
+
+  // 3. Costos / pagos pendientes de operaciones futuras
+  futureOpsPendingCostsARS: number;
+  futureOpsPendingCostsUSD: number;
+  futureOpsPendingCostsEquivalentUSD: number;
+
+  // 4. Dinero comprometido total (Costos pendientes futuras + Gastos fijos mes)
+  committedFundsARS: number;
+  committedFundsUSD: number;
+  committedFundsEquivalentUSD: number;
+
+  // 5. Resultado / ganancia de operaciones ya realizadas
+  pastOpsRealizedProfitARS: number;
+  pastOpsRealizedProfitUSD: number;
+  pastOpsRealizedProfitEquivalentUSD: number;
+
+  // 6. Resultado proyectado de operaciones futuras
+  futureOpsProjectedProfitARS: number;
+  futureOpsProjectedProfitUSD: number;
+  futureOpsProjectedProfitEquivalentUSD: number;
+
+  // 7. Ganancia disponible real
+  availableProfitARS: number;
+  availableProfitUSD: number;
+  availableProfitEquivalentUSD: number;
+
+  // Rendimiento por Unidad de Negocio
+  byBusinessUnit: {
+    receptivo: { revenue: number; costs: number; profit: number; margin: number; opsCount: number; currency: Currency };
+    salidas: { revenue: number; costs: number; profit: number; margin: number; opsCount: number; currency: Currency };
+    viajes: { revenue: number; costs: number; profit: number; margin: number; opsCount: number; currency: Currency };
+  };
 }
 
 export interface FilterOptions {

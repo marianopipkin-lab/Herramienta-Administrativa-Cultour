@@ -413,6 +413,96 @@ export const FIXED_EXPENSE_FIELDS_SCHEMA: FieldDefinition[] = [
   }
 ];
 
+export const CLIENT_FIELDS_SCHEMA: FieldDefinition[] = [
+  {
+    key: 'name',
+    label: 'Nombre / Razón Social del Cliente',
+    required: true,
+    type: 'string',
+    synonyms: ['nombre', 'cliente', 'razon social', 'razón social', 'institucion', 'institución', 'colegio', 'escuela', 'agencia', 'turista', 'name']
+  },
+  {
+    key: 'type',
+    label: 'Tipo de Cliente',
+    required: false,
+    type: 'select',
+    defaultValue: 'escuela',
+    options: [
+      { value: 'escuela', label: 'Escuela / Colegio' },
+      { value: 'turista', label: 'Turista / Agencia Receptivo' },
+      { value: 'alumno', label: 'Alumno / Pagador Individual' },
+      { value: 'empresa', label: 'Empresa / Corporativo' }
+    ],
+    synonyms: ['tipo', 'tipo cliente', 'categoria', 'rubro', 'perfil']
+  },
+  {
+    key: 'documentId',
+    label: 'CUIT / DNI / Tax ID',
+    required: false,
+    type: 'string',
+    synonyms: ['cuit', 'dni', 'documento', 'identificacion', 'tax id', 'ruc', 'cnpj']
+  },
+  {
+    key: 'email',
+    label: 'Correo Electrónico',
+    required: false,
+    type: 'string',
+    synonyms: ['email', 'correo', 'mail', 'e-mail']
+  },
+  {
+    key: 'phone',
+    label: 'Teléfono / WhatsApp',
+    required: false,
+    type: 'string',
+    synonyms: ['telefono', 'teléfono', 'celular', 'whatsapp', 'phone']
+  },
+  {
+    key: 'institutionName',
+    label: 'Institución / Colegio Vinculado',
+    required: false,
+    type: 'string',
+    synonyms: ['colegio', 'escuela', 'institucion', 'institución']
+  },
+  {
+    key: 'parentOrGuardianName',
+    label: 'Padre / Tutor / Contacto',
+    required: false,
+    type: 'string',
+    synonyms: ['tutor', 'padre', 'madre', 'contacto', 'referente']
+  },
+  {
+    key: 'address',
+    label: 'Dirección / Localidad / País',
+    required: false,
+    type: 'string',
+    synonyms: ['direccion', 'dirección', 'ciudad', 'localidad', 'pais', 'país']
+  },
+  {
+    key: 'notes',
+    label: 'Notas / Observaciones',
+    required: false,
+    type: 'string',
+    synonyms: ['notas', 'observaciones', 'comentarios']
+  }
+];
+
+export interface ClientImportPreviewRow {
+  rowNumber: number;
+  status: 'valid' | 'warning' | 'error';
+  statusMessage?: string;
+  name: string;
+  type: 'escuela' | 'turista' | 'alumno' | 'empresa';
+  documentId?: string;
+  email?: string;
+  phone?: string;
+  institutionName?: string;
+  parentOrGuardianName?: string;
+  parentPhone?: string;
+  address?: string;
+  country?: string;
+  notes?: string;
+}
+
 // ----------------------------------------------------
 // Universal Raw File Reader
 // ----------------------------------------------------
@@ -1079,9 +1169,105 @@ export function parseFixedExpensesWithMapping(
   });
 }
 
+export function parseClientsWithMapping(
+  rawRows: Record<string, any>[],
+  columnMapping: Record<string, string>
+): ClientImportPreviewRow[] {
+  return rawRows.map((row, idx) => {
+    const rowNumber = idx + 2;
+    const getVal = (k: string) => (columnMapping[k] && row[columnMapping[k]] !== undefined ? row[columnMapping[k]] : '');
+
+    const name = String(getVal('name')).trim();
+    if (!name) {
+      return {
+        rowNumber,
+        name: 'Sin nombre',
+        type: 'escuela',
+        status: 'error',
+        statusMessage: 'El nombre o razón social del cliente es requerido.'
+      };
+    }
+
+    const rawType = String(getVal('type')).toLowerCase();
+    let type: 'escuela' | 'turista' | 'alumno' | 'empresa' = 'escuela';
+    if (rawType.includes('turist') || rawType.includes('receptivo') || rawType.includes('viajero')) {
+      type = 'turista';
+    } else if (rawType.includes('alumn') || rawType.includes('estudiant') || rawType.includes('pax') || rawType.includes('padre')) {
+      type = 'alumno';
+    } else if (rawType.includes('empresa') || rawType.includes('corporativ')) {
+      type = 'empresa';
+    }
+
+    const documentId = String(getVal('documentId')).trim() || undefined;
+    const email = String(getVal('email')).trim() || undefined;
+    const phone = String(getVal('phone')).trim() || undefined;
+    const institutionName = String(getVal('institutionName')).trim() || undefined;
+    const parentOrGuardianName = String(getVal('parentOrGuardianName')).trim() || undefined;
+    const address = String(getVal('address')).trim() || undefined;
+    const notes = String(getVal('notes')).trim() || undefined;
+
+    return {
+      rowNumber,
+      name,
+      type,
+      documentId,
+      email,
+      phone,
+      institutionName,
+      parentOrGuardianName,
+      address,
+      notes,
+      status: 'valid'
+    };
+  });
+}
+
 // ----------------------------------------------------
 // Specific Excel Template Generators
 // ----------------------------------------------------
+
+export function generateClientsTemplate(): Uint8Array {
+  const data = [
+    {
+      'Nombre / Razón Social': 'Colegio Belgrano Day School',
+      'Tipo de Cliente': 'Escuela / Colegio',
+      'CUIT / Documento': '30-71029384-2',
+      'Email': 'administracion@bds.edu.ar',
+      'Teléfono': '+54 11 4781-9900',
+      'Institución Vinculada': 'Belgrano Day School',
+      'Contacto / Referente': 'Lic. Andrea Gómez',
+      'Dirección': 'Belgrano, CABA',
+      'Notas': 'Contratación recurrente de Salidas Educativas'
+    },
+    {
+      'Nombre / Razón Social': 'Brasil Conexao Turismo Eireli',
+      'Tipo de Cliente': 'Turista / Agencia Receptivo',
+      'CUIT / Documento': 'BR-14.283.912/0001-44',
+      'Email': 'reservas@brasilconexao.com.br',
+      'Teléfono': '+55 11 98822-3344',
+      'Institución Vinculada': '',
+      'Contacto / Referente': 'Roberto Silva',
+      'Dirección': 'São Paulo, Brasil',
+      'Notas': 'Operador receptivo emisor de grupos internacionales'
+    },
+    {
+      'Nombre / Razón Social': 'Sofía Almada',
+      'Tipo de Cliente': 'Alumno / Pagador Individual',
+      'CUIT / Documento': '20-33445566-7',
+      'Email': 'mariano.almada@gmail.com',
+      'Teléfono': '+54 11 4411-2233',
+      'Institución Vinculada': 'Colegio San Andrés',
+      'Contacto / Referente': 'Mariano Almada (Padre)',
+      'Dirección': 'Olivos, Buenos Aires',
+      'Notas': '7mo Grado A - Viaje de Egresados'
+    }
+  ];
+
+  const ws = XLSX.utils.json_to_sheet(data);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Plantilla Clientes');
+  return XLSX.write(wb, { bookType: 'xlsx', type: 'array' });
+}
 
 export function generateOperationsTemplate(): Uint8Array {
   const data = [

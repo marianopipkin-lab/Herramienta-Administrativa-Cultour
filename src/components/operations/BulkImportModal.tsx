@@ -31,22 +31,26 @@ import {
   STUDENT_FIELDS_SCHEMA,
   MOVEMENT_FIELDS_SCHEMA,
   FIXED_EXPENSE_FIELDS_SCHEMA,
+  CLIENT_FIELDS_SCHEMA,
   FieldDefinition,
   parseOperationsWithMapping,
   parseSuppliersWithMapping,
   parseStudentsWithMapping,
   parseMovementsWithMapping,
   parseFixedExpensesWithMapping,
+  parseClientsWithMapping,
   generateOperationsTemplate,
   generateSuppliersTemplate,
   generateStudentsTemplate,
   generateMovementsTemplate,
   generateFixedExpensesTemplate,
+  generateClientsTemplate,
   ImportPreviewRow,
   SupplierImportPreviewRow,
   StudentImportPreviewRow,
   MovementImportPreviewRow,
-  FixedExpenseImportPreviewRow
+  FixedExpenseImportPreviewRow,
+  ClientImportPreviewRow
 } from '../../utils/excelParser';
 import { formatCurrency } from '../../utils/financialCalculations';
 import { BusinessUnit } from '../../types';
@@ -56,7 +60,7 @@ interface BulkImportModalProps {
   onClose: () => void;
 }
 
-type ImportCategory = 'operations' | 'suppliers' | 'students' | 'movements' | 'fixed_expenses';
+type ImportCategory = 'operations' | 'suppliers' | 'students' | 'movements' | 'fixed_expenses' | 'clients';
 
 export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClose }) => {
   const {
@@ -68,6 +72,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
     batchImportStudents,
     batchImportMovements,
     batchImportFixedExpenses,
+    batchImportClients,
     importCenterCategory,
     setImportCenterCategory
   } = useApp();
@@ -98,6 +103,7 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
   const [studentPreviews, setStudentPreviews] = useState<StudentImportPreviewRow[]>([]);
   const [movementPreviews, setMovementPreviews] = useState<MovementImportPreviewRow[]>([]);
   const [fixedExpensePreviews, setFixedExpensePreviews] = useState<FixedExpenseImportPreviewRow[]>([]);
+  const [clientPreviews, setClientPreviews] = useState<ClientImportPreviewRow[]>([]);
 
   // Filter preview table
   const [previewFilter, setPreviewFilter] = useState<'all' | 'valid' | 'warning' | 'error'>('all');
@@ -124,6 +130,8 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
         return MOVEMENT_FIELDS_SCHEMA;
       case 'fixed_expenses':
         return FIXED_EXPENSE_FIELDS_SCHEMA;
+      case 'clients':
+        return CLIENT_FIELDS_SCHEMA;
       default:
         return OPERATION_FIELDS_SCHEMA;
     }
@@ -165,6 +173,10 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
       case 'fixed_expenses':
         buffer = generateFixedExpensesTemplate();
         filename = 'Plantilla_Gastos_Fijos.xlsx';
+        break;
+      case 'clients':
+        buffer = generateClientsTemplate();
+        filename = 'Plantilla_Clientes_Colegios.xlsx';
         break;
     }
 
@@ -242,6 +254,9 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
     } else if (activeCategory === 'fixed_expenses') {
       const parsed = parseFixedExpensesWithMapping(rawRows, columnMapping, accounts);
       setFixedExpensePreviews(parsed);
+    } else if (activeCategory === 'clients') {
+      const parsed = parseClientsWithMapping(rawRows, columnMapping);
+      setClientPreviews(parsed);
     }
 
     setCurrentStep('preview');
@@ -328,6 +343,29 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
       );
       alert(`Gastos Fijos importados:\n• ${created} conceptos mensuales añadidos a la estructura operativa.`);
       onClose();
+    } else if (activeCategory === 'clients') {
+      const valid = clientPreviews.filter(r => r.status !== 'error');
+      if (valid.length === 0) {
+        alert('No hay clientes válidos para importar.');
+        return;
+      }
+      const { created, updated } = batchImportClients(
+        valid.map(c => ({
+          name: c.name,
+          type: c.type,
+          documentId: c.documentId,
+          email: c.email,
+          phone: c.phone,
+          institutionName: c.institutionName,
+          parentOrGuardianName: c.parentOrGuardianName,
+          parentPhone: c.parentPhone,
+          address: c.address,
+          country: c.country || 'Argentina',
+          notes: c.notes
+        }))
+      );
+      alert(`Clientes importados:\n• ${created} nuevos clientes registrados\n• ${updated} clientes existentes actualizados.`);
+      onClose();
     }
   };
 
@@ -373,10 +411,17 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
         if (r.status === 'error') errors++;
         else valid++;
       });
+    } else if (activeCategory === 'clients') {
+      total = clientPreviews.length;
+      clientPreviews.forEach(r => {
+        if (r.status === 'error') errors++;
+        else if (r.status === 'warning') { warning++; valid++; }
+        else valid++;
+      });
     }
 
     return { total, valid, warning, errors, updates };
-  }, [activeCategory, opPreviews, supplierPreviews, studentPreviews, movementPreviews, fixedExpensePreviews]);
+  }, [activeCategory, opPreviews, supplierPreviews, studentPreviews, movementPreviews, fixedExpensePreviews, clientPreviews]);
 
   // Detected missing required and optional fields
   const missingSummary = useMemo(() => {
@@ -485,6 +530,18 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
           >
             <Building2 className="w-3.5 h-3.5" />
             <span>Gastos Fijos</span>
+          </button>
+
+          <button
+            onClick={() => handleCategoryChange('clients')}
+            className={`px-3 py-1.5 rounded-lg font-medium flex items-center gap-1.5 whitespace-nowrap transition-all ${
+              activeCategory === 'clients'
+                ? 'bg-indigo-600 text-white shadow-xs'
+                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5" />
+            <span>Clientes & Colegios</span>
           </button>
         </div>
 
@@ -1037,6 +1094,42 @@ export const BulkImportModal: React.FC<BulkImportModalProps> = ({ isOpen, onClos
                           <td className="py-2 px-3 text-center text-indigo-700 font-bold">Día {f.dueDay}</td>
                           <td className="py-2 px-3 text-right text-rose-700 font-bold">{formatCurrency(f.amount)}</td>
                           <td className="py-2 px-3 font-sans text-gray-500">{f.description}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
+
+              {/* Preview Table for Clients */}
+              {activeCategory === 'clients' && (
+                <div className="overflow-x-auto rounded-xl border border-gray-200 max-h-80 overflow-y-auto">
+                  <table className="w-full text-left text-xs">
+                    <thead className="bg-gray-50 text-gray-500 uppercase tracking-wider font-semibold border-b border-gray-200 text-[10px] sticky top-0">
+                      <tr>
+                        <th className="py-2 px-3">Fila</th>
+                        <th className="py-2 px-3">Nombre / Razón Social</th>
+                        <th className="py-2 px-3">Tipo</th>
+                        <th className="py-2 px-3">CUIT / ID</th>
+                        <th className="py-2 px-3">Contacto / Tutor</th>
+                        <th className="py-2 px-3">Teléfono / WhatsApp</th>
+                        <th className="py-2 px-3">Email</th>
+                      </tr>
+                    </thead>
+                    <tbody className="divide-y divide-gray-100 font-mono">
+                      {clientPreviews.map((c, idx) => (
+                        <tr key={idx} className={c.status === 'error' ? 'bg-rose-50' : 'hover:bg-gray-50'}>
+                          <td className="py-2 px-3 text-gray-400">{c.rowNumber}</td>
+                          <td className="py-2 px-3 font-sans font-bold text-gray-900">{c.name}</td>
+                          <td className="py-2 px-3 font-sans capitalize">
+                            <span className="px-2 py-0.5 rounded-full bg-indigo-50 text-indigo-700 text-[10px] font-semibold">
+                              {c.type}
+                            </span>
+                          </td>
+                          <td className="py-2 px-3 text-gray-600">{c.documentId || '-'}</td>
+                          <td className="py-2 px-3 font-sans text-gray-700">{c.parentOrGuardianName || c.institutionName || '-'}</td>
+                          <td className="py-2 px-3 text-gray-600">{c.phone || c.parentPhone || '-'}</td>
+                          <td className="py-2 px-3 text-gray-600 font-sans">{c.email || '-'}</td>
                         </tr>
                       ))}
                     </tbody>
