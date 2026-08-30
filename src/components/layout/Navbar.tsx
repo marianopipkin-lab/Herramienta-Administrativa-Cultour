@@ -85,41 +85,41 @@ export const Navbar: React.FC = () => {
   const pendingStudents = kpis.pendingStudentsDebtCount;
 
   return (
-    <header className="bg-white border-b border-[#E5E7EB] text-[#1A1A1A] sticky top-0 z-30 shadow-xs">
+    <header className="bg-[#18181a] border-b border-white/10 text-[#f2f2f2] sticky top-0 z-30 shadow-md">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
         
         {/* Brand & Cutoff Badge */}
         <div className="flex items-center gap-3">
-          <div className="w-9 h-9 rounded-xl bg-indigo-600 flex items-center justify-center shadow-xs text-white">
-            <Wallet className="w-5 h-5 text-white" />
+          <div className="w-8 h-8 rounded bg-[#a5b4fc] flex items-center justify-center text-[#111113] shadow-sm">
+            <Wallet className="w-4 h-4 text-[#111113]" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-bold text-base tracking-tight text-gray-900">SISTEMA GESTIÓN</span>
-              <span className="text-[11px] px-2 py-0.5 rounded-md bg-indigo-50 text-indigo-700 border border-indigo-100 font-semibold">
-                Operativa & Financiera
+              <span className="font-syne font-extrabold text-sm tracking-tight text-white uppercase">SISTEMA GESTIÓN</span>
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#222224] text-[#a5b4fc] border border-white/10 font-bold uppercase">
+                CONTROL SGOF
               </span>
             </div>
-            <p className="text-xs text-gray-500 flex items-center gap-1.5 font-mono">
-              <span>Corte inicial:</span>
-              <span className="text-emerald-700 font-semibold">{cutoffConfig.cutoffDate}</span>
+            <p className="text-[11px] text-zinc-400 flex items-center gap-1.5 font-mono">
+              <span className="text-zinc-500">Corte inicial:</span>
+              <span className="text-[#34d399] font-bold">{cutoffConfig.cutoffDate}</span>
             </p>
           </div>
         </div>
 
         {/* Live Cash Snapshot Ribbon */}
-        <div className="hidden lg:flex items-center gap-4 bg-gray-50 border border-gray-200 rounded-xl px-4 py-1.5">
-          <div className="border-r border-gray-200 pr-4">
-            <span className="text-[10px] uppercase font-bold text-gray-400 tracking-wider block">Caja Actual</span>
-            <span className="text-sm font-bold text-gray-900 font-mono">{formatCurrency(kpis.currentCash)}</span>
+        <div className="hidden lg:flex items-center gap-4 bg-[#222224] border border-white/10 rounded-lg px-4 py-1.5 shadow-inner">
+          <div className="border-r border-white/10 pr-4">
+            <span className="text-[9px] uppercase font-bold text-zinc-400 tracking-wider block font-mono">Caja Actual</span>
+            <span className="text-xs font-bold text-white font-mono">{formatCurrency(kpis.currentCash)}</span>
           </div>
-          <div className="border-r border-gray-200 pr-4">
-            <span className="text-[10px] uppercase font-bold text-amber-600 tracking-wider block">Comprometido</span>
-            <span className="text-sm font-semibold text-amber-700 font-mono">-{formatCurrency(kpis.committedCash)}</span>
+          <div className="border-r border-white/10 pr-4">
+            <span className="text-[9px] uppercase font-bold text-[#fbbf24] tracking-wider block font-mono">Comprometido</span>
+            <span className="text-xs font-semibold text-[#fbbf24] font-mono">-{formatCurrency(kpis.committedCash)}</span>
           </div>
           <div>
-            <span className="text-[10px] uppercase font-bold text-emerald-600 tracking-wider block">Caja Libre Proy.</span>
-            <span className="text-sm font-bold text-emerald-700 font-mono">{formatCurrency(kpis.projectedFreeCash)}</span>
+            <span className="text-[9px] uppercase font-bold text-[#34d399] tracking-wider block font-mono">Caja Libre Proy.</span>
+            <span className="text-xs font-bold text-[#34d399] font-mono">{formatCurrency(kpis.projectedFreeCash)}</span>
           </div>
         </div>
 
@@ -130,34 +130,34 @@ export const Navbar: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setShowAlertsMenu(!showAlertsMenu)}
-              className="p-2 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-600 hover:text-gray-900 border border-gray-200 transition-colors relative"
+              className="p-2 rounded bg-[#222224] hover:bg-[#28282b] text-zinc-300 hover:text-white border border-white/10 transition-colors relative"
               title="Alertas y Notificaciones"
             >
               <Bell className="w-4 h-4" />
               {(unreconciledCount > 0 || pendingStudents > 0) && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-rose-500 text-[10px] font-bold text-white rounded-full flex items-center justify-center animate-pulse">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#fb7185] text-[10px] font-bold text-[#111113] rounded-full flex items-center justify-center animate-pulse font-mono">
                   {unreconciledCount + pendingStudents}
                 </span>
               )}
             </button>
 
             {showAlertsMenu && (
-              <div className="absolute right-0 mt-2 w-80 bg-white border border-gray-200 rounded-xl shadow-xl p-3 z-50 animate-in fade-in zoom-in-95">
-                <div className="flex items-center justify-between border-b border-gray-100 pb-2 mb-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-gray-700">Alertas Activas</h4>
-                  <span className="text-[11px] text-gray-400 font-mono">{unreconciledCount + pendingStudents} items</span>
+              <div className="absolute right-0 mt-2 w-80 bg-[#18181a] border border-white/15 rounded-lg shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95">
+                <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2">
+                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-300 font-mono">Alertas Activas</h4>
+                  <span className="text-[10px] text-zinc-500 font-mono">{unreconciledCount + pendingStudents} items</span>
                 </div>
                 <div className="space-y-2 max-h-72 overflow-y-auto">
                   {unreconciledCount > 0 && (
                     <div 
                       onClick={() => { setActiveTab('reconciliation'); setShowAlertsMenu(false); }}
-                      className="p-2.5 rounded-lg bg-amber-50 border border-amber-200 hover:bg-amber-100/70 cursor-pointer transition-colors"
+                      className="p-2.5 rounded bg-[#fbbf24]/10 border border-[#fbbf24]/30 hover:bg-[#fbbf24]/20 cursor-pointer transition-colors"
                     >
-                      <div className="flex items-center gap-2 text-amber-800 text-xs font-semibold">
-                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
+                      <div className="flex items-center gap-2 text-[#fbbf24] text-xs font-bold">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-[#fbbf24]" />
                         <span>{unreconciledCount} Movimientos sin conciliar</span>
                       </div>
-                      <p className="text-[11px] text-amber-700 mt-1">
+                      <p className="text-[11px] text-zinc-400 mt-1 font-mono">
                         Total {formatCurrency(kpis.unreconciledAmount)} pendientes de clasificar en Mercado Pago / Bancos.
                       </p>
                     </div>
@@ -166,21 +166,21 @@ export const Navbar: React.FC = () => {
                   {pendingStudents > 0 && (
                     <div 
                       onClick={() => { setActiveTab('students'); setShowAlertsMenu(false); }}
-                      className="p-2.5 rounded-lg bg-rose-50 border border-rose-200 hover:bg-rose-100/70 cursor-pointer transition-colors"
+                      className="p-2.5 rounded bg-[#fb7185]/10 border border-[#fb7185]/30 hover:bg-[#fb7185]/20 cursor-pointer transition-colors"
                     >
-                      <div className="flex items-center gap-2 text-rose-800 text-xs font-semibold">
-                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-600" />
+                      <div className="flex items-center gap-2 text-[#fb7185] text-xs font-bold">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-[#fb7185]" />
                         <span>{pendingStudents} Estudiantes con saldo adeudado</span>
                       </div>
-                      <p className="text-[11px] text-rose-700 mt-1">
+                      <p className="text-[11px] text-zinc-400 mt-1 font-mono">
                         Total {formatCurrency(kpis.pendingStudentsDebtAmount)} de cuotas impagas en Viajes Educativos.
                       </p>
                     </div>
                   )}
 
                   {unreconciledCount === 0 && pendingStudents === 0 && (
-                    <div className="text-center py-4 text-gray-500 text-xs flex flex-col items-center gap-1">
-                      <CheckCircle2 className="w-6 h-6 text-emerald-600" />
+                    <div className="text-center py-4 text-zinc-400 text-xs flex flex-col items-center gap-1">
+                      <CheckCircle2 className="w-6 h-6 text-[#34d399]" />
                       <span>Todo al día sin alertas críticas</span>
                     </div>
                   )}
@@ -193,43 +193,43 @@ export const Navbar: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setShowBackupMenu(!showBackupMenu)}
-              className="px-2.5 py-1.5 rounded-lg bg-gray-50 hover:bg-gray-100 text-gray-700 border border-gray-200 transition-colors text-xs font-medium flex items-center gap-1.5"
+              className="px-2.5 py-1.5 rounded bg-[#222224] hover:bg-[#28282b] text-zinc-200 border border-white/10 transition-colors text-xs font-medium flex items-center gap-1.5 font-mono"
               title="Herramientas de Base de Datos y Copias"
             >
-              <Database className="w-3.5 h-3.5 text-gray-500" />
+              <Database className="w-3.5 h-3.5 text-zinc-400" />
               <span className="hidden sm:inline">Datos</span>
             </button>
 
             {showBackupMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-white border border-gray-200 rounded-xl shadow-xl p-2 z-50 space-y-1 text-xs">
+              <div className="absolute right-0 mt-2 w-64 bg-[#18181a] border border-white/15 rounded-lg shadow-2xl p-2 z-50 space-y-1 text-xs">
                 <button
                   onClick={() => { setShowDataManagementModal(true); setShowBackupMenu(false); }}
-                  className="w-full text-left px-3 py-2 rounded-lg bg-indigo-50 hover:bg-indigo-100 text-indigo-800 font-semibold flex items-center gap-2"
+                  className="w-full text-left px-3 py-2 rounded bg-[#a5b4fc]/15 hover:bg-[#a5b4fc]/25 text-[#a5b4fc] font-bold flex items-center gap-2"
                 >
-                  <Database className="w-4 h-4 text-indigo-600" />
+                  <Database className="w-4 h-4 text-[#a5b4fc]" />
                   <span>Empezar de Cero / Limpiar</span>
                 </button>
-                <div className="border-t border-gray-100 my-1"></div>
+                <div className="border-t border-white/10 my-1"></div>
                 <button
                   onClick={() => { handleDownloadTemplate(); setShowBackupMenu(false); }}
-                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700 flex items-center gap-2"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-[#222224] text-zinc-300 flex items-center gap-2"
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+                  <FileSpreadsheet className="w-4 h-4 text-[#34d399]" />
                   <span>Descargar Plantilla Excel</span>
                 </button>
                 <button
                   onClick={() => { handleExportJSON(); setShowBackupMenu(false); }}
-                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700 flex items-center gap-2"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-[#222224] text-zinc-300 flex items-center gap-2"
                 >
-                  <Download className="w-4 h-4 text-indigo-600" />
+                  <Download className="w-4 h-4 text-[#a5b4fc]" />
                   <span>Exportar Backup (JSON)</span>
                 </button>
-                <label className="w-full text-left px-3 py-2 rounded-lg hover:bg-gray-50 text-gray-700 flex items-center gap-2 cursor-pointer">
-                  <Upload className="w-4 h-4 text-purple-600" />
+                <label className="w-full text-left px-3 py-2 rounded hover:bg-[#222224] text-zinc-300 flex items-center gap-2 cursor-pointer">
+                  <Upload className="w-4 h-4 text-purple-400" />
                   <span>Restaurar Backup (JSON)</span>
                   <input type="file" accept=".json" onChange={handleImportJSON} className="hidden" />
                 </label>
-                <div className="border-t border-gray-100 my-1"></div>
+                <div className="border-t border-white/10 my-1"></div>
                 <button
                   onClick={() => {
                     if (confirm('¿Restaurar los datos de demostración iniciales? Se sobreescribirán los cambios no exportados.')) {
@@ -237,9 +237,9 @@ export const Navbar: React.FC = () => {
                       setShowBackupMenu(false);
                     }
                   }}
-                  className="w-full text-left px-3 py-2 rounded-lg hover:bg-rose-50 text-rose-700 flex items-center gap-2"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-[#fb7185]/20 text-[#fb7185] flex items-center gap-2"
                 >
-                  <RotateCcw className="w-4 h-4 text-rose-600" />
+                  <RotateCcw className="w-4 h-4 text-[#fb7185]" />
                   <span>Restablecer Demo Inicial</span>
                 </button>
               </div>
@@ -249,28 +249,28 @@ export const Navbar: React.FC = () => {
           {/* Google Sheets button */}
           <button
             onClick={() => setActiveTab('sheets')}
-            className="px-2.5 py-1.5 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 font-semibold text-xs flex items-center gap-1.5 transition-all shadow-xs"
+            className="px-2.5 py-1.5 rounded bg-[#34d399]/15 hover:bg-[#34d399]/25 text-[#34d399] border border-[#34d399]/30 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm font-mono"
             title="Google Sheets & Google Drive Workspace"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="hidden sm:inline">Google Sheets</span>
+            <FileSpreadsheet className="w-3.5 h-3.5 text-[#34d399]" />
+            <span className="hidden sm:inline">Sheets</span>
           </button>
 
           {/* Import Excel */}
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="px-3 py-1.5 rounded-lg bg-white hover:bg-gray-50 text-gray-700 hover:text-gray-900 border border-gray-200 font-semibold text-xs flex items-center gap-1.5 transition-all shadow-xs"
+            className="px-3 py-1.5 rounded bg-[#222224] hover:bg-[#28282b] text-zinc-200 border border-white/10 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm font-mono uppercase tracking-wider"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5" />
-            <span className="hidden md:inline">Importar Excel</span>
+            <FileSpreadsheet className="w-3.5 h-3.5 text-zinc-400" />
+            <span className="hidden md:inline">Importar</span>
           </button>
 
-          {/* + Nueva Operación */}
+          {/* + Nueva Operación button (Accent button from design HTML) */}
           <button
             onClick={() => setIsNewOpModalOpen(true)}
-            className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white font-medium text-xs flex items-center gap-1.5 transition-all shadow-xs"
+            className="px-3.5 py-1.5 rounded bg-[#a5b4fc] hover:bg-[#c7d2fe] text-[#111113] font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-sm uppercase tracking-wider font-mono"
           >
-            <PlusCircle className="w-4 h-4" />
+            <PlusCircle className="w-4 h-4 text-[#111113]" />
             <span>Nueva Operación</span>
           </button>
 

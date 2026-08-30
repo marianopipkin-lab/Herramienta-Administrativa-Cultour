@@ -31,7 +31,7 @@ const MainContent: React.FC = () => {
   } = useApp();
 
   return (
-    <div className="min-h-screen bg-[#F8F9FA] text-[#1A1A1A] flex flex-col font-sans antialiased selection:bg-indigo-600 selection:text-white">
+    <div className="min-h-screen bg-[#111113] text-[#f2f2f2] flex flex-col font-sans antialiased selection:bg-[#a5b4fc] selection:text-[#111113]">
       {/* Top Navbar */}
       <Navbar />
 
@@ -41,7 +41,7 @@ const MainContent: React.FC = () => {
         <Sidebar />
 
         {/* Dynamic Main Workspace */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#F8F9FA]">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#111113] bg-grid-dots">
           <div className="max-w-7xl mx-auto">
             {activeTab === 'dashboard' && <GeneralDashboard />}
             {activeTab === 'operations' && <OperationsMaster />}
