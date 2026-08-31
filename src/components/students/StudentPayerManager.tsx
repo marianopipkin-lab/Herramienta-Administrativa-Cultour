@@ -19,7 +19,15 @@ import { useApp } from '../../context/AppContext';
 import { formatCurrency, formatPercent } from '../../utils/financialCalculations';
 import { StudentPayer } from '../../types';
 
-export const StudentPayerManager: React.FC = () => {
+interface StudentPayerManagerProps {
+  initialOperationId?: string;
+  onBack?: () => void;
+}
+
+export const StudentPayerManager: React.FC<StudentPayerManagerProps> = ({
+  initialOperationId,
+  onBack
+}) => {
   const { operations, updateStudentPayment, addStudentToOperation, setSelectedOperationId, openImportCenter } = useApp();
 
   // Find educational trips (or operations with students)
@@ -27,7 +35,11 @@ export const StudentPayerManager: React.FC = () => {
     return operations.filter(op => op.businessUnit === 'viajes' || (op.students && op.students.length > 0));
   }, [operations]);
 
-  const [selectedOpId, setSelectedOpId] = useState<string>(educationalTrips[0]?.id || '');
+  const [selectedOpId, setSelectedOpId] = useState<string>(
+    initialOperationId && operations.some(o => o.id === initialOperationId)
+      ? initialOperationId
+      : educationalTrips[0]?.id || ''
+  );
   const [statusFilter, setStatusFilter] = useState<'all' | 'al_dia' | 'pago_parcial' | 'sin_pago'>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -154,14 +166,22 @@ export const StudentPayerManager: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 pb-6 border-b border-[#E5E5E1]">
         <div>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="mb-2 text-xs font-mono text-[#4F46E5] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              ← Volver al Panel de Cobranzas
+            </button>
+          )}
           <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal text-[#1A1A1A] leading-[1.15]">
-            Viajes Educativos<br />
-            <span className="italic font-normal">& Nómina de Pagadores</span>
+            Viajes Educativos & Escuelas<br />
+            <span className="italic font-normal">Nómina de Alumnos & Cuotas</span>
           </h1>
           <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-[#666666]">
             <span className="text-[#4F46E5] font-medium font-mono">[ Turismo Educativo ]</span>
             <span className="text-[#D0D0CC]">•</span>
-            <span>Control nominal de cuotas por alumno: Estudiante ↔ Tutor / Padre ↔ Viaje ↔ Cobranza</span>
+            <span>Control nominal de cuotas por alumno: Estudiante ↔ Tutor / Padre ↔ Escuela ↔ Cobranza</span>
           </div>
         </div>
 

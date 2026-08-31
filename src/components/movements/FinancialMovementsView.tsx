@@ -14,11 +14,14 @@ import {
   Calendar,
   Layers,
   X,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Scale,
+  ShieldCheck
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { FinancialMovement, MovementType, MatchStatus, AccountId } from '../../types';
 import { formatCurrency } from '../../utils/financialCalculations';
+import { ReconciliationView } from '../reconciliation/ReconciliationView';
 
 export const FinancialMovementsView: React.FC = () => {
   const {
@@ -33,12 +36,26 @@ export const FinancialMovementsView: React.FC = () => {
     openImportCenter
   } = useApp();
 
+  const [activeTab, setActiveTab] = useState<'movements' | 'reconciliation'>('movements');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [matchFilter, setMatchFilter] = useState<string>('all');
   const [accountFilter, setAccountFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [showAddModal, setShowAddModal] = useState(false);
   const [editingMovement, setEditingMovement] = useState<FinancialMovement | null>(null);
+
+  const pendingReconciliationCount = movements.filter(m => m.matchStatus !== 'verde').length;
+
+  if (activeTab === 'reconciliation') {
+    return (
+      <div className="space-y-4">
+        <ReconciliationView
+          initialAccountId={accountFilter}
+          onBack={() => setActiveTab('movements')}
+        />
+      </div>
+    );
+  }
 
   const [form, setForm] = useState<{
     date: string;
@@ -144,10 +161,25 @@ export const FinancialMovementsView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+        <div className="flex flex-wrap items-center gap-2.5 self-start sm:self-auto">
+          {/* Button to open Conciliación filtered by selected account */}
+          <button
+            onClick={() => setActiveTab('reconciliation')}
+            className="px-3.5 py-2 rounded-xl bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border border-indigo-200 font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
+            title="Abrir motor de conciliación bancaria y Mercado Pago"
+          >
+            <Scale className="w-4 h-4 text-indigo-600" />
+            <span>Conciliación Bancaria/MP</span>
+            {pendingReconciliationCount > 0 && (
+              <span className="ml-1 px-1.5 py-0.5 rounded-full bg-amber-100 text-amber-800 text-[10px] font-mono font-bold">
+                {pendingReconciliationCount} pend.
+              </span>
+            )}
+          </button>
+
           <button
             onClick={() => openImportCenter('movements')}
-            className="px-3.5 py-2 rounded-xl bg-white hover:bg-gray-50 text-emerald-700 border border-emerald-200 font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-2xs"
+            className="px-3.5 py-2 rounded-xl bg-white hover:bg-gray-50 text-emerald-700 border border-emerald-200 font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-2xs cursor-pointer"
           >
             <FileSpreadsheet className="w-4 h-4" />
             <span>Importar Extractos</span>
@@ -160,7 +192,7 @@ export const FinancialMovementsView: React.FC = () => {
                   clearMovementsOnly();
                 }
               }}
-              className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-xs"
+              className="px-3 py-2 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
               title="Vaciar movimientos para cargar extractos reales"
             >
               <Trash2 className="w-3.5 h-3.5" />
@@ -170,10 +202,10 @@ export const FinancialMovementsView: React.FC = () => {
 
           <button
             onClick={() => setShowAddModal(true)}
-            className="px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-xs"
+            className="px-3.5 py-2 rounded-xl bg-[#1A1A1A] hover:bg-black text-white font-semibold text-xs flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
           >
             <Plus className="w-4 h-4" />
-            <span>+ Cargar Movimiento Manual</span>
+            <span>+ Cargar Movimiento</span>
           </button>
         </div>
       </div>

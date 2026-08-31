@@ -118,7 +118,17 @@ export const TemplatesCatalogView: React.FC<Props> = ({ onOpenImportModal }) => 
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={() => onOpenImportModal('operations')}
+            className="px-3.5 py-2 rounded-lg bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-2 shadow-xs transition-all font-mono cursor-pointer"
+            title="Importar directamente desde Google Sheets o sincronizar enlace público"
+          >
+            <FileSpreadsheet className="w-4 h-4 text-emerald-600" />
+            <span>Google Sheets (Origen)</span>
+          </button>
+
           <button
             type="button"
             onClick={handleDownloadAll}

@@ -16,7 +16,8 @@ import {
   CreditCard,
   Edit2,
   Save,
-  DollarSign
+  DollarSign,
+  GraduationCap
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -396,6 +397,18 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
           >
             <CreditCard className="w-3.5 h-3.5" />
             <span>Costos ({operation.suppliers?.length || 0})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('estudiantes')}
+            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
+              activeTab === 'estudiantes'
+                ? 'border-[#1A1A1A] text-[#4F46E5] font-bold bg-[#FFFFFF]'
+                : 'border-transparent text-[#666666] hover:text-[#1A1A1A]'
+            }`}
+          >
+            <GraduationCap className="w-3.5 h-3.5 text-[#4F46E5]" />
+            <span>Estudiantes & Pagadores ({operation.students?.length || 0})</span>
           </button>
 
           <button

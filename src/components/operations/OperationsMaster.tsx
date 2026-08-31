@@ -84,7 +84,10 @@ export const OperationsMaster: React.FC = () => {
       if (collectionFilter === 'cobro_pendiente' && isCobradoTotal) return false;
 
       // Pagado vs Pendiente
-      const isPagadoTotal = op.paidCost >= op.expectedCost && op.expectedCost > 0;
+      const opPaidCost = (op.supplierPayments && op.supplierPayments.length > 0)
+        ? op.supplierPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+        : (op.paidCost || 0);
+      const isPagadoTotal = opPaidCost >= op.expectedCost && op.expectedCost > 0;
       if (paymentFilter === 'pagado_total' && !isPagadoTotal) return false;
       if (paymentFilter === 'pago_pendiente' && isPagadoTotal) return false;
 
@@ -108,21 +111,27 @@ export const OperationsMaster: React.FC = () => {
 
     filteredOperations.forEach(op => {
       totalPax += op.passengerCount || 0;
+      const opPaidCost = (op.supplierPayments && op.supplierPayments.length > 0)
+        ? op.supplierPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+        : (op.paidCost || 0);
+
       if (op.currency === 'USD') {
         expRevUSD += op.expectedRevenue || 0;
         recRevUSD += op.receivedRevenue || 0;
         expCostUSD += op.expectedCost || 0;
-        paidCostUSD += op.paidCost || 0;
+        paidCostUSD += opPaidCost;
       } else {
         expRevARS += op.expectedRevenue || 0;
         recRevARS += op.receivedRevenue || 0;
         expCostARS += op.expectedCost || 0;
-        paidCostARS += op.paidCost || 0;
+        paidCostARS += opPaidCost;
       }
     });
 
     const expProfitARS = expRevARS - expCostARS;
+    const realProfitARS = recRevARS - paidCostARS;
     const expProfitUSD = expRevUSD - expCostUSD;
+    const realProfitUSD = recRevUSD - paidCostUSD;
 
     return {
       count: filteredOperations.length,
@@ -134,11 +143,14 @@ export const OperationsMaster: React.FC = () => {
       paidCostARS,
       pendCostARS: Math.max(0, expCostARS - paidCostARS),
       expProfitARS,
+      realProfitARS,
       expRevUSD,
       recRevUSD,
       expCostUSD,
       paidCostUSD,
-      expProfitUSD
+      pendCostUSD: Math.max(0, expCostUSD - paidCostUSD),
+      expProfitUSD,
+      realProfitUSD
     };
   }, [filteredOperations]);
 
@@ -317,7 +329,7 @@ export const OperationsMaster: React.FC = () => {
         </div>
 
         {/* Secondary search and dropdowns */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-3 text-xs">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-6 gap-3 text-xs">
           
           {/* Search box */}
           <div className="lg:col-span-2 relative">
@@ -372,6 +384,19 @@ export const OperationsMaster: React.FC = () => {
               <option value="cobrado_total">100% Cobrado</option>
             </select>
           </div>
+
+          {/* Pagos Proveedores filter */}
+          <div>
+            <select
+              value={paymentFilter}
+              onChange={(e) => setPaymentFilter(e.target.value as any)}
+              className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-2.5 py-2 text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5] text-xs font-mono"
+            >
+              <option value="all">Pagos Prov: Todos</option>
+              <option value="pago_pendiente">Pago Pendiente</option>
+              <option value="pagado_total">100% Pagado</option>
+            </select>
+          </div>
         </div>
 
         {hasActiveFilters && (
@@ -397,26 +422,28 @@ export const OperationsMaster: React.FC = () => {
             <thead className="bg-[#F9F9F7] text-[#666666] uppercase font-mono text-[10px] border-b border-[#E5E5E1]">
               <tr>
                 <th className="py-3 px-3.5 font-semibold">Código / File</th>
-                <th className="py-3 px-3 font-semibold">Unidad / Canal</th>
-                <th className="py-3 px-3 font-semibold">Cliente / Colegio</th>
-                <th className="py-3 px-3 font-semibold">Fecha & Pax</th>
-                <th className="py-3 px-3 font-semibold">Estado</th>
+                <th className="py-3 px-2.5 font-semibold">Unidad / Canal</th>
+                <th className="py-3 px-2.5 font-semibold">Cliente / Colegio</th>
+                <th className="py-3 px-2.5 font-semibold">Fecha & Pax</th>
+                <th className="py-3 px-2.5 font-semibold">Estado</th>
                 {currentRole !== 'operativo' && (
                   <>
-                    <th className="py-3 px-3 text-right text-[#059669] font-semibold">Ingreso Esp.</th>
-                    <th className="py-3 px-3 text-right text-[#059669] font-semibold">Cobrado</th>
-                    <th className="py-3 px-3 text-right text-[#D97706] font-semibold">Cobro Pend.</th>
-                    <th className="py-3 px-3 text-right text-[#E11D48] font-semibold">Costo Esp.</th>
-                    <th className="py-3 px-3 text-right text-[#4F46E5] font-bold">Ganancia Esp.</th>
+                    <th className="py-3 px-2.5 text-right text-[#059669] font-semibold" title="Ingreso Esperado">Ingreso Esp.</th>
+                    <th className="py-3 px-2.5 text-right text-[#059669] font-semibold" title="Ingreso Cobrado Efectivamente">Cobrado</th>
+                    <th className="py-3 px-2.5 text-right text-[#E11D48] font-semibold" title="Costo Esperado a Proveedores">Costo Esp.</th>
+                    <th className="py-3 px-2.5 text-right text-[#E11D48] font-semibold" title="Costo Pagado a Proveedores (suma de supplier_payments del file)">Costo Pagado</th>
+                    <th className="py-3 px-2.5 text-right text-[#D97706] font-semibold" title="Costo Pendiente de Pago (Costo Esperado - Pagado)">Costo Pend.</th>
+                    <th className="py-3 px-2.5 text-right text-[#4F46E5] font-bold" title="Ganancia Real (Cobrado - Pagado)">Ganancia</th>
+                    <th className="py-3 px-2.5 text-right text-[#1A1A1A] font-bold" title="Margen % (Ganancia sobre Ingreso Esperado)">Margen %</th>
                   </>
                 )}
-                <th className="py-3 px-3 text-center font-semibold">Acción</th>
+                <th className="py-3 px-2.5 text-center font-semibold">Acción</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#E5E5E1] font-mono">
               {filteredOperations.length === 0 ? (
                 <tr>
-                  <td colSpan={currentRole !== 'operativo' ? 11 : 6} className="py-12 text-center text-[#888888] font-sans">
+                  <td colSpan={currentRole !== 'operativo' ? 13 : 6} className="py-12 text-center text-[#888888] font-sans">
                     <AlertCircle className="w-8 h-8 mx-auto mb-2 text-[#888888]" />
                     <p className="text-sm font-medium text-[#666666]">No se encontraron operaciones con los filtros aplicados.</p>
                     <button
@@ -429,8 +456,13 @@ export const OperationsMaster: React.FC = () => {
                 </tr>
               ) : (
                 filteredOperations.map((op) => {
-                  const pendingRec = Math.max(0, op.expectedRevenue - op.receivedRevenue);
-                  const expectedProfit = op.expectedRevenue - op.expectedCost;
+                  const paidCost = (op.supplierPayments && op.supplierPayments.length > 0)
+                    ? op.supplierPayments.reduce((sum, p) => sum + (p.amount || 0), 0)
+                    : (op.paidCost || 0);
+
+                  const pendingCost = Math.max(0, (op.expectedCost || 0) - paidCost);
+                  const ganancia = (op.receivedRevenue || 0) - paidCost;
+                  const marginPercent = (op.expectedRevenue || 0) > 0 ? (ganancia / op.expectedRevenue) * 100 : 0;
 
                   let channelBadge = (
                     <span className="text-[10px] px-2 py-0.5 rounded bg-[#F4F4F0] text-[#666666] border border-[#E5E5E1] font-bold">
@@ -516,20 +548,45 @@ export const OperationsMaster: React.FC = () => {
                       {/* Financial columns */}
                       {currentRole !== 'operativo' && (
                         <>
-                          <td className="py-3.5 px-3 text-right text-[#059669] font-semibold">
+                          {/* 1. Ingreso Esperado */}
+                          <td className="py-3.5 px-2.5 text-right text-[#059669] font-medium">
                             {formatCurrency(op.expectedRevenue, op.currency)}
                           </td>
-                          <td className="py-3.5 px-3 text-right text-[#059669]">
+                          {/* 2. Cobrado */}
+                          <td className="py-3.5 px-2.5 text-right text-[#059669] font-semibold">
                             {formatCurrency(op.receivedRevenue, op.currency)}
                           </td>
-                          <td className="py-3.5 px-3 text-right text-[#D97706]">
-                            {pendingRec > 0 ? formatCurrency(pendingRec, op.currency) : '-'}
-                          </td>
-                          <td className="py-3.5 px-3 text-right text-[#E11D48]">
+                          {/* 3. Costo Esperado */}
+                          <td className="py-3.5 px-2.5 text-right text-[#E11D48] font-medium">
                             {formatCurrency(op.expectedCost, op.currency)}
                           </td>
-                          <td className="py-3.5 px-3 text-right font-bold text-[#4F46E5]">
-                            {formatCurrency(expectedProfit, op.currency)}
+                          {/* 4. Costo Pagado (suma de supplier_payments del file) */}
+                          <td className="py-3.5 px-2.5 text-right text-[#E11D48] font-semibold">
+                            {formatCurrency(paidCost, op.currency)}
+                          </td>
+                          {/* 5. Costo Pendiente (costo esperado menos pagado) */}
+                          <td className="py-3.5 px-2.5 text-right text-[#D97706] font-medium">
+                            {pendingCost > 0 ? formatCurrency(pendingCost, op.currency) : (
+                              <span className="text-[#059669] text-[10px]">Al día</span>
+                            )}
+                          </td>
+                          {/* 6. Ganancia (cobrado menos pagado) */}
+                          <td className={`py-3.5 px-2.5 text-right font-bold ${ganancia >= 0 ? 'text-[#4F46E5]' : 'text-[#E11D48]'}`}>
+                            {formatCurrency(ganancia, op.currency)}
+                          </td>
+                          {/* 7. Margen % (ganancia sobre ingreso esperado) */}
+                          <td className="py-3.5 px-2.5 text-right font-bold text-[#1A1A1A]">
+                            <span
+                              className={`px-1.5 py-0.5 rounded text-[10px] font-mono font-bold ${
+                                marginPercent >= 20
+                                  ? 'bg-emerald-50 text-[#059669] border border-emerald-200'
+                                  : marginPercent > 0
+                                  ? 'bg-indigo-50 text-[#4F46E5] border border-indigo-200'
+                                  : 'bg-rose-50 text-[#E11D48] border border-rose-200'
+                              }`}
+                            >
+                              {marginPercent.toFixed(1)}%
+                            </span>
                           </td>
                         </>
                       )}

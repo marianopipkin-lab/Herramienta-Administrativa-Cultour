@@ -82,10 +82,10 @@ const MainContent: React.FC = () => {
             {activeTab === 'operations' && <OperationsMaster />}
             {activeTab === 'clients' && <ClientsView />}
             {activeTab === 'collections' && <CollectionsView />}
-            {activeTab === 'students' && <StudentPayerManager />}
+            {activeTab === 'students' && <CollectionsView />}
             {activeTab === 'suppliers' && <SuppliersMaster />}
             {activeTab === 'movements' && <FinancialMovementsView />}
-            {activeTab === 'reconciliation' && <ReconciliationView />}
+            {activeTab === 'reconciliation' && <FinancialMovementsView />}
             {activeTab === 'fixed_expenses' && <FixedExpensesView />}
             {activeTab === 'projection' && <FinancialProjectionView />}
             {activeTab === 'closing' && <MonthlyClosingView />}
@@ -97,7 +97,13 @@ const MainContent: React.FC = () => {
                 }}
               />
             )}
-            {activeTab === 'sheets' && <GoogleSheetsView />}
+            {activeTab === 'sheets' && (
+              <TemplatesCatalogView
+                onOpenImportModal={(_cat) => {
+                  setIsImportModalOpen(true);
+                }}
+              />
+            )}
             {activeTab === 'accounts' && <AccountsView />}
           </div>
         </main>

@@ -16,11 +16,14 @@ import {
   Download,
   Eye,
   FileSpreadsheet,
-  ChevronRight
+  ChevronRight,
+  GraduationCap,
+  Users
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { CollectionRecord, PaymentQuota, PaymentMethod, AccountId, Currency } from '../../types';
 import { formatCurrency } from '../../utils/financialCalculations';
+import { StudentPayerManager } from '../students/StudentPayerManager';
 
 export const CollectionsView: React.FC = () => {
   const {
@@ -31,7 +34,8 @@ export const CollectionsView: React.FC = () => {
     currentRole
   } = useApp();
 
-  const [activeTab, setActiveTab] = useState<'quotas' | 'records'>('quotas');
+  const [activeTab, setActiveTab] = useState<'quotas' | 'records' | 'students'>('quotas');
+  const [selectedSchoolOpId, setSelectedSchoolOpId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'pendiente' | 'parcial' | 'pagada' | 'vencida'>('all');
   const [currencyFilter, setCurrencyFilter] = useState<'all' | Currency>('all');
@@ -340,6 +344,65 @@ export const CollectionsView: React.FC = () => {
         </div>
       </div>
 
+      {/* Escuelas & Viajes Educativos Quick Access Cards */}
+      {operations.some(o => o.businessUnit === 'viajes' || (o.students && o.students.length > 0)) && (
+        <div className="bg-[#FFFFFF] p-4 rounded-xl border border-[#E5E5E1] shadow-xs">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-3 border-b border-[#E5E5E1]">
+            <div className="flex items-center gap-2">
+              <GraduationCap className="w-4 h-4 text-[#4F46E5]" />
+              <span className="text-xs font-bold text-[#1A1A1A] uppercase font-mono">Nóminas por Escuela / Colegio</span>
+              <span className="text-[10px] bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded font-mono font-bold">Turismo Educativo</span>
+            </div>
+            <button
+              onClick={() => {
+                setSelectedSchoolOpId(null);
+                setActiveTab('students');
+              }}
+              className="text-xs font-mono font-bold text-[#4F46E5] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>Ver todas las escuelas y nóminas</span>
+              <ChevronRight className="w-3.5 h-3.5" />
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 pt-3">
+            {operations
+              .filter(o => o.businessUnit === 'viajes' || (o.students && o.students.length > 0))
+              .map(op => {
+                const totalSt = op.students?.length || 0;
+                const paidSt = op.students?.filter(s => s.status === 'al_dia').length || 0;
+                const debtSt = op.students?.filter(s => s.status === 'pendiente' || s.status === 'vencido').length || 0;
+
+                return (
+                  <button
+                    key={op.id}
+                    onClick={() => {
+                      setSelectedSchoolOpId(op.id);
+                      setActiveTab('students');
+                    }}
+                    className="p-3 rounded-lg border border-[#E5E5E1] bg-[#F9F9F7] hover:bg-white hover:border-[#4F46E5] text-left transition-all group cursor-pointer"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="font-serif font-bold text-sm text-[#1A1A1A] group-hover:text-[#4F46E5] transition-colors">
+                        {op.clientOrSchool || op.name}
+                      </span>
+                      <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-white text-[#666666] border border-[#E5E5E1]">
+                        {op.code}
+                      </span>
+                    </div>
+                    <div className="mt-2 flex items-center justify-between text-[11px] font-mono text-[#666666]">
+                      <span>{totalSt} alumnos inscriptos</span>
+                      <span className={debtSt > 0 ? 'text-[#E11D48] font-bold' : 'text-[#059669] font-bold'}>
+                        {paidSt}/{totalSt} al día
+                      </span>
+                    </div>
+                  </button>
+                );
+              })}
+          </div>
+        </div>
+      )}
+
       {/* Tabs & Filters */}
       <div className="bg-[#FFFFFF] p-4 rounded-xl border border-[#E5E5E1] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Sub-tab selection */}
@@ -360,54 +423,75 @@ export const CollectionsView: React.FC = () => {
             }`}
           >
             <Receipt className="w-3.5 h-3.5" />
-            <span>Recibos & Cobros Registrados ({allCollections.length})</span>
+            <span>Recibos & Cobros ({allCollections.length})</span>
+          </button>
+          <button
+            onClick={() => {
+              setActiveTab('students');
+              setSelectedSchoolOpId(null);
+            }}
+            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'students' ? 'bg-[#1A1A1A] text-white shadow-xs' : 'text-[#666666] hover:text-[#1A1A1A]'
+            }`}
+          >
+            <GraduationCap className="w-3.5 h-3.5" />
+            <span>Estudiantes & Nóminas por Escuela</span>
           </button>
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-3">
-          {/* Search */}
-          <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#888888]" />
-            <input
-              type="text"
-              placeholder="Buscar cliente, file..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg pl-8 pr-3 py-2 text-xs text-[#1A1A1A] placeholder-[#888888] focus:outline-none focus:border-[#4F46E5] transition-colors"
-            />
-          </div>
+        {activeTab !== 'students' && (
+          <div className="flex flex-wrap items-center gap-3">
+            {/* Search */}
+            <div className="relative">
+              <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#888888]" />
+              <input
+                type="text"
+                placeholder="Buscar cliente, file..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg pl-8 pr-3 py-2 text-xs text-[#1A1A1A] placeholder-[#888888] focus:outline-none focus:border-[#4F46E5] transition-colors"
+              />
+            </div>
 
-          {/* Currency Filter */}
-          <select
-            value={currencyFilter}
-            onChange={(e) => setCurrencyFilter(e.target.value as any)}
-            className="bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
-          >
-            <option value="all">Todas las divisas</option>
-            <option value="ARS">ARS ($)</option>
-            <option value="USD">USD (US$)</option>
-          </select>
-
-          {/* Status Filter for Quotas */}
-          {activeTab === 'quotas' && (
+            {/* Currency Filter */}
             <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value as any)}
+              value={currencyFilter}
+              onChange={(e) => setCurrencyFilter(e.target.value as any)}
               className="bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
             >
-              <option value="all">Todos los estados</option>
-              <option value="pendiente">Pendientes</option>
-              <option value="parcial">Parciales</option>
-              <option value="pagada">Pagadas</option>
-              <option value="vencida">Vencidas</option>
+              <option value="all">Todas las divisas</option>
+              <option value="ARS">ARS ($)</option>
+              <option value="USD">USD (US$)</option>
             </select>
-          )}
-        </div>
+
+            {/* Status Filter for Quotas */}
+            {activeTab === 'quotas' && (
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value as any)}
+                className="bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
+              >
+                <option value="all">Todos los estados</option>
+                <option value="pendiente">Pendientes</option>
+                <option value="parcial">Parciales</option>
+                <option value="pagada">Pagadas</option>
+                <option value="vencida">Vencidas</option>
+              </select>
+            )}
+          </div>
+        )}
       </div>
 
-      {/* Main Table View */}
-      {activeTab === 'quotas' ? (
+      {/* Main Table View or Student Roster */}
+      {activeTab === 'students' ? (
+        <div className="pt-2">
+          <StudentPayerManager
+            initialOperationId={selectedSchoolOpId || undefined}
+            onBack={() => setActiveTab('quotas')}
+          />
+        </div>
+      ) : activeTab === 'quotas' ? (
         /* Quotas Table */
         <div className="bg-[#FFFFFF] rounded-xl border border-[#E5E5E1] overflow-hidden shadow-xs">
           <div className="p-4 border-b border-[#E5E5E1] bg-[#F9F9F7] flex items-center justify-between">

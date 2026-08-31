@@ -18,10 +18,19 @@ import { useApp } from '../../context/AppContext';
 import { FinancialMovement, Operation, Supplier, MatchStatus, AccountId } from '../../types';
 import { formatCurrency } from '../../utils/financialCalculations';
 
-export const ReconciliationView: React.FC = () => {
+interface ReconciliationViewProps {
+  initialAccountId?: string;
+  onBack?: () => void;
+}
+
+export const ReconciliationView: React.FC<ReconciliationViewProps> = ({
+  initialAccountId = 'all',
+  onBack
+}) => {
   const { movements, operations, suppliers, accounts, rules, reconcileMovement, learnRule, deleteRule } = useApp();
 
   const [filterStatus, setFilterStatus] = useState<string>('pending'); // 'pending' (amarillo/rojo) or 'all' or 'verde'
+  const [accountFilter, setAccountFilter] = useState<string>(initialAccountId);
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedMovement, setSelectedMovement] = useState<FinancialMovement | null>(null);
 
@@ -31,12 +40,13 @@ export const ReconciliationView: React.FC = () => {
   const [selectedSupplierId, setSelectedSupplierId] = useState<string>('');
   const [autoLearnRule, setAutoLearnRule] = useState<boolean>(true);
 
-  const pendingCount = movements.filter(m => m.matchStatus !== 'verde').length;
-  const greenCount = movements.filter(m => m.matchStatus === 'verde').length;
-  const yellowCount = movements.filter(m => m.matchStatus === 'amarillo').length;
-  const redCount = movements.filter(m => m.matchStatus === 'rojo').length;
+  const pendingCount = movements.filter(m => (accountFilter === 'all' || m.accountId === accountFilter) && m.matchStatus !== 'verde').length;
+  const greenCount = movements.filter(m => (accountFilter === 'all' || m.accountId === accountFilter) && m.matchStatus === 'verde').length;
+  const yellowCount = movements.filter(m => (accountFilter === 'all' || m.accountId === accountFilter) && m.matchStatus === 'amarillo').length;
+  const redCount = movements.filter(m => (accountFilter === 'all' || m.accountId === accountFilter) && m.matchStatus === 'rojo').length;
 
   const filteredMovements = movements.filter(m => {
+    if (accountFilter !== 'all' && m.accountId !== accountFilter) return false;
     if (filterStatus === 'pending' && m.matchStatus === 'verde') return false;
     if (filterStatus === 'verde' && m.matchStatus !== 'verde') return false;
     if (filterStatus === 'amarillo' && m.matchStatus !== 'amarillo') return false;
@@ -111,6 +121,14 @@ export const ReconciliationView: React.FC = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-white border border-[#E5E7EB] rounded-2xl p-5 shadow-xs">
         <div>
+          {onBack && (
+            <button
+              onClick={onBack}
+              className="mb-2 text-xs font-mono text-[#4F46E5] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              ← Volver a Movimientos Financieros
+            </button>
+          )}
           <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2.5">
             <ShieldCheck className="w-5 h-5 text-indigo-600" />
             <span>Motor de Conciliación & Reglas de Inteligencia</span>
@@ -120,12 +138,31 @@ export const ReconciliationView: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-xl border border-gray-200 text-xs font-mono">
-          <span className="text-gray-500">Sin Conciliar:</span>
-          <span className="font-bold text-amber-700">{pendingCount}</span>
-          <span className="text-gray-300">/</span>
-          <span className="text-gray-500">Total:</span>
-          <span className="text-gray-900 font-bold">{movements.length}</span>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* Account Filter */}
+          <div className="flex items-center gap-2">
+            <label className="text-xs text-gray-500 font-mono">Cuenta:</label>
+            <select
+              value={accountFilter}
+              onChange={(e) => setAccountFilter(e.target.value)}
+              className="bg-gray-50 border border-gray-200 rounded-xl px-3 py-1.5 text-xs text-gray-800 focus:outline-none focus:border-indigo-500 font-medium cursor-pointer"
+            >
+              <option value="all">Todas las Cuentas</option>
+              {accounts.map((a) => (
+                <option key={a.id} value={a.id}>
+                  {a.name}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 bg-gray-50 px-4 py-2 rounded-xl border border-gray-200 text-xs font-mono">
+            <span className="text-gray-500">Sin Conciliar:</span>
+            <span className="font-bold text-amber-700">{pendingCount}</span>
+            <span className="text-gray-300">/</span>
+            <span className="text-gray-500">Total:</span>
+            <span className="text-gray-900 font-bold">{movements.filter(m => accountFilter === 'all' || m.accountId === accountFilter).length}</span>
+          </div>
         </div>
       </div>
 

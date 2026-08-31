@@ -2,11 +2,9 @@ import React, { useState } from 'react';
 import {
   LayoutDashboard,
   Compass,
-  GraduationCap,
   Building2,
   Users,
   Receipt,
-  Scale,
   CreditCard,
   TrendingUp,
   CalendarCheck,
@@ -18,6 +16,22 @@ import {
   Loader2
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
+
+interface NavItem {
+  id: string;
+  label: string;
+  icon: React.ComponentType<{ className?: string }>;
+  badge?: string | number;
+  badgeColor?: string;
+  roles: string[];
+}
+
+interface NavGroup {
+  id: string;
+  title: string;
+  roles: string[];
+  items: NavItem[];
+}
 
 export const Sidebar: React.FC = () => {
   const { activeTab, setActiveTab, kpis, currentRole, userProfile, logout } = useApp();
@@ -35,172 +49,215 @@ export const Sidebar: React.FC = () => {
     }
   };
 
-  const allNavItems = [
+  const navGroups: NavGroup[] = [
     {
-      id: 'dashboard_operativo',
-      label: 'Dashboard Operativo',
-      icon: Compass,
-      badge: undefined,
-      roles: ['socio', 'administrativo', 'operativo']
+      id: 'operacion',
+      title: 'OPERACIÓN',
+      roles: ['socio', 'administrativo', 'operativo'],
+      items: [
+        {
+          id: 'dashboard_operativo',
+          label: 'Dashboard Operativo',
+          icon: Compass,
+          badge: undefined,
+          roles: ['socio', 'administrativo', 'operativo']
+        },
+        {
+          id: 'operations',
+          label: 'Operaciones / Files',
+          icon: Layers,
+          badge: kpis.activeOperationsCount > 0 ? kpis.activeOperationsCount : undefined,
+          roles: ['socio', 'administrativo', 'operativo']
+        },
+        {
+          id: 'collections',
+          label: 'Cobranzas',
+          icon: Receipt,
+          badge: kpis.pendingStudentsDebtCount > 0 ? `${kpis.pendingStudentsDebtCount} pend.` : undefined,
+          badgeColor: 'bg-rose-50 text-rose-700 border-rose-200',
+          roles: ['socio', 'administrativo', 'operativo']
+        }
+      ]
     },
     {
-      id: 'operations',
-      label: 'Operaciones / Files',
-      icon: Layers,
-      badge: kpis.activeOperationsCount > 0 ? kpis.activeOperationsCount : undefined,
-      roles: ['socio', 'administrativo', 'operativo']
+      id: 'directorios',
+      title: 'DIRECTORIOS',
+      roles: ['socio', 'administrativo', 'operativo'],
+      items: [
+        {
+          id: 'clients',
+          label: 'Clientes & Agencias',
+          icon: Users,
+          badge: undefined,
+          roles: ['socio', 'administrativo', 'operativo']
+        },
+        {
+          id: 'suppliers',
+          label: 'Proveedores',
+          icon: Building2,
+          badge: undefined,
+          roles: ['socio', 'administrativo', 'operativo']
+        }
+      ]
     },
     {
-      id: 'clients',
-      label: 'Clientes & Pagadores',
-      icon: Users,
-      badge: undefined,
-      roles: ['socio', 'administrativo', 'operativo']
+      id: 'tesoreria',
+      title: 'TESORERÍA',
+      roles: ['socio', 'administrativo'],
+      items: [
+        {
+          id: 'accounts',
+          label: 'Cuentas',
+          icon: Landmark,
+          badge: undefined,
+          roles: ['socio', 'administrativo']
+        },
+        {
+          id: 'movements',
+          label: 'Movimientos',
+          icon: CreditCard,
+          badge: kpis.unreconciledMovementsCount > 0 ? `${kpis.unreconciledMovementsCount} pend.` : undefined,
+          badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
+          roles: ['socio', 'administrativo']
+        },
+        {
+          id: 'fixed_expenses',
+          label: 'Gastos Fijos',
+          icon: Receipt,
+          badge: undefined,
+          roles: ['socio', 'administrativo']
+        }
+      ]
     },
     {
-      id: 'suppliers',
-      label: 'Proveedores & Alias MP',
-      icon: Building2,
-      badge: undefined,
-      roles: ['socio', 'administrativo', 'operativo']
-    },
-    {
-      id: 'collections',
-      label: 'Cobranzas & Cuotas',
-      icon: Receipt,
-      badge: kpis.pendingStudentsDebtCount > 0 ? `${kpis.pendingStudentsDebtCount} pend.` : undefined,
-      badgeColor: 'bg-rose-50 text-rose-700 border-rose-200',
-      roles: ['socio', 'administrativo']
-    },
-    {
-      id: 'students',
-      label: 'Estudiantes & Cuotas',
-      icon: GraduationCap,
-      badge: undefined,
-      roles: ['socio', 'administrativo', 'operativo']
-    },
-    {
-      id: 'accounts',
-      label: 'Cuentas & Tesorería',
-      icon: Landmark,
-      badge: undefined,
-      roles: ['socio', 'administrativo']
-    },
-    {
-      id: 'movements',
-      label: 'Movimientos Financieros',
-      icon: CreditCard,
-      badge: undefined,
-      roles: ['socio', 'administrativo']
-    },
-    {
-      id: 'reconciliation',
-      label: 'Conciliación Bancaria/MP',
-      icon: Scale,
-      badge: kpis.unreconciledMovementsCount > 0 ? `${kpis.unreconciledMovementsCount} pend.` : undefined,
-      badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
-      roles: ['socio', 'administrativo']
-    },
-    {
-      id: 'dashboard',
-      label: 'Dashboard de Socios',
-      icon: LayoutDashboard,
-      badge: undefined,
-      roles: ['socio', 'administrativo']
-    },
-    {
-      id: 'projection',
-      label: 'Proyección Financiera',
-      icon: TrendingUp,
-      badge: undefined,
-      roles: ['socio']
-    },
-    {
-      id: 'closing',
-      label: 'Cierres Mensuales',
-      icon: CalendarCheck,
-      badge: undefined,
-      roles: ['socio', 'administrativo']
-    },
-    {
-      id: 'fixed_expenses',
-      label: 'Gastos Fijos Estructura',
-      icon: CreditCard,
-      badge: undefined,
-      roles: ['socio', 'administrativo']
-    },
-    {
-      id: 'history',
-      label: 'Histórico por Unidad',
-      icon: History,
-      badge: undefined,
-      roles: ['socio']
-    },
-    {
-      id: 'templates',
-      label: 'Plantillas & Importación',
-      icon: FileSpreadsheet,
-      badge: '12',
-      badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
-      roles: ['socio', 'administrativo', 'operativo']
-    },
-    {
-      id: 'sheets',
-      label: 'Google Sheets & Drive',
-      icon: FileSpreadsheet,
-      badge: 'Sync',
-      badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-      roles: ['socio', 'administrativo']
+      id: 'socios',
+      title: 'SOCIOS',
+      roles: ['socio', 'administrativo'],
+      items: [
+        {
+          id: 'dashboard',
+          label: 'Dashboard de Socios',
+          icon: LayoutDashboard,
+          badge: undefined,
+          roles: ['socio', 'administrativo']
+        },
+        {
+          id: 'closing',
+          label: 'Cierres Mensuales',
+          icon: CalendarCheck,
+          badge: undefined,
+          roles: ['socio', 'administrativo']
+        },
+        {
+          id: 'projection',
+          label: 'Proyección',
+          icon: TrendingUp,
+          badge: undefined,
+          roles: ['socio']
+        },
+        {
+          id: 'history',
+          label: 'Histórico',
+          icon: History,
+          badge: undefined,
+          roles: ['socio']
+        }
+      ]
     }
   ];
 
-  const navItems = allNavItems.filter(item => item.roles.includes(currentRole));
+  // Loose item at the end
+  const looseImportItem: NavItem = {
+    id: 'templates',
+    label: 'Importación',
+    icon: FileSpreadsheet,
+    badge: undefined,
+    roles: ['socio', 'administrativo', 'operativo']
+  };
+
+  // Filter groups and items by user role
+  const visibleGroups = navGroups
+    .filter(group => group.roles.includes(currentRole))
+    .map(group => ({
+      ...group,
+      items: group.items.filter(item => item.roles.includes(currentRole))
+    }))
+    .filter(group => group.items.length > 0);
+
+  const isLooseImportVisible = looseImportItem.roles.includes(currentRole);
 
   return (
     <aside className="w-[260px] bg-[#FFFFFF] border-r border-[#E5E5E1] flex flex-col shrink-0 sticky top-0 h-[calc(100vh-4.5rem)]">
       
       {/* Brand Header */}
-      <div className="p-6 border-b border-[#E5E5E1]">
+      <div className="p-5 border-b border-[#E5E5E1]">
         <span className="label-mono block mb-1">System v2026</span>
         <div className="font-serif text-2xl font-medium tracking-tight text-[#1A1A1A]">
           SGOF Cultour
         </div>
       </div>
 
-      {/* Main Nav Items */}
-      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
-        <span className="label-mono block px-3 mb-2">Navegación</span>
-        {navItems.map((item) => {
-          const Icon = item.icon;
-          const isActive = activeTab === item.id;
+      {/* Main Nav Items with Groups */}
+      <nav className="flex-1 px-3 py-3 space-y-4 overflow-y-auto">
+        {visibleGroups.map((group) => (
+          <div key={group.id} className="space-y-1">
+            <div className="px-3 py-1 text-[10px] font-mono font-bold tracking-wider text-[#888888] uppercase select-none">
+              {group.title}
+            </div>
+            <div className="space-y-0.5">
+              {group.items.map((item) => {
+                const Icon = item.icon;
+                const isActive = activeTab === item.id;
 
-          return (
+                return (
+                  <button
+                    key={item.id}
+                    onClick={() => setActiveTab(item.id)}
+                    className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md text-xs transition-all group cursor-pointer ${
+                      isActive
+                        ? 'bg-[#E5E5E1] text-[#1A1A1A] font-medium'
+                        : 'text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F7]'
+                    }`}
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-[#1A1A1A]' : 'text-[#888888] group-hover:text-[#1A1A1A]'}`} />
+                      <span className="truncate">{item.label}</span>
+                    </div>
+
+                    {item.badge !== undefined && (
+                      <span
+                        className={`font-mono text-[10px] px-1.5 py-0.2 rounded border font-medium ${
+                          item.badgeColor || (isActive ? 'bg-[#FFFFFF] text-[#1A1A1A] border-[#D0D0CC]' : 'bg-[#F9F9F7] text-[#666666] border-[#E5E5E1]')
+                        }`}
+                      >
+                        {item.badge}
+                      </span>
+                    )}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+
+        {/* Separator before loose Importación item */}
+        {isLooseImportVisible && (
+          <div className="pt-2 border-t border-[#E5E5E1]/80">
             <button
-              key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs transition-all group ${
-                isActive
+              onClick={() => setActiveTab(looseImportItem.id)}
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs transition-all group cursor-pointer ${
+                activeTab === looseImportItem.id
                   ? 'bg-[#E5E5E1] text-[#1A1A1A] font-medium'
                   : 'text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F7]'
               }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-[#1A1A1A]' : 'text-[#888888] group-hover:text-[#1A1A1A]'}`} />
-                <span className="truncate">{item.label}</span>
+                <looseImportItem.icon className={`w-4 h-4 shrink-0 transition-colors ${activeTab === looseImportItem.id ? 'text-[#1A1A1A]' : 'text-[#888888] group-hover:text-[#1A1A1A]'}`} />
+                <span className="truncate">{looseImportItem.label}</span>
               </div>
-
-              {item.badge !== undefined && (
-                <span
-                  className={`font-mono text-[10px] px-1.5 py-0.5 rounded border font-medium ${
-                    item.badgeColor || (isActive ? 'bg-[#FFFFFF] text-[#1A1A1A] border-[#D0D0CC]' : 'bg-[#F9F9F7] text-[#666666] border-[#E5E5E1]')
-                  }`}
-                >
-                  {item.badge}
-                </span>
-              )}
             </button>
-          );
-        })}
+          </div>
+        )}
       </nav>
 
       {/* User Block at bottom matching the design */}
@@ -234,7 +291,7 @@ export const Sidebar: React.FC = () => {
           <button
             onClick={handleLogout}
             disabled={isLoggingOut}
-            className="p-1.5 rounded-md text-[#888888] group-hover:text-[#EF4444] hover:bg-rose-50 hover:text-[#EF4444] transition-colors shrink-0"
+            className="p-1.5 rounded-md text-[#888888] group-hover:text-[#EF4444] hover:bg-rose-50 hover:text-[#EF4444] transition-colors shrink-0 cursor-pointer"
             title="Cerrar sesión"
             aria-label="Cerrar sesión"
           >
