@@ -142,7 +142,7 @@ export const Sidebar: React.FC = () => {
   const navItems = allNavItems.filter(item => item.roles.includes(currentRole));
 
   return (
-    <aside className="w-[260px] bg-[#FFFFFF] border-r border-[#E5E5E1] flex flex-col shrink-0 min-h-[calc(100vh-4.5rem)]">
+    <aside className="w-[260px] bg-[#FFFFFF] border-r border-[#E5E5E1] flex flex-col shrink-0 sticky top-0 h-[calc(100vh-4.5rem)]">
       
       {/* Brand Header */}
       <div className="p-6 border-b border-[#E5E5E1]">

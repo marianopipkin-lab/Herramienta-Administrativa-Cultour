@@ -70,12 +70,12 @@ const MainContent: React.FC = () => {
       <Navbar />
 
       {/* Main Body */}
-      <div className="flex-1 flex overflow-hidden">
+      <div className="flex-1 flex min-h-0">
         {/* Left Sidebar */}
         <Sidebar />
 
         {/* Dynamic Main Workspace */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#F9F9F7]">
+        <main className="flex-1 overflow-y-auto min-h-0 p-4 sm:p-6 lg:p-8 bg-[#F9F9F7]">
           <div className="max-w-[1400px] mx-auto">
             {activeTab === 'dashboard_operativo' && <OperationalDashboard />}
             {activeTab === 'dashboard' && <GeneralDashboard />}
