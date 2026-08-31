@@ -34,10 +34,17 @@ export interface FinancialKPIs {
   monthlyFixedExpensesARS: number;
   monthlyFixedExpensesUSD: number;
   monthlyFixedExpenses: number;
+
+  // Obligaciones (Compromisos pendientes exigibles)
+  obligationsARS?: number;
+  obligationsUSD?: number;
+  obligationsEquivalentUSD?: number;
   committedCashARS: number;
   committedCashUSD: number;
   committedCashEquivalentUSD: number;
   committedCash: number;
+
+  // Caja Libre Real
   freeCashARS: number;
   freeCashUSD: number;
   freeCashEquivalentUSD: number;
@@ -146,6 +153,24 @@ export function formatCurrency(amount: number, currency: Currency = 'ARS'): stri
 export function formatPercent(value: number): string {
   if (isNaN(value) || !isFinite(value)) return '0.0%';
   return `${value.toFixed(1)}%`;
+}
+
+/**
+ * Determines whether an operation represents a future trip whose funds are in custody.
+ * A trip is FUTURE if:
+ * 1. It is not cancelled.
+ * 2. It is not marked as completed ('realizada').
+ * 3. Its scheduled date (or endDate) has not yet passed (< today).
+ *
+ * When a trip is executed, finished, or marked 'realizada', its funds are no longer in custody
+ * and are liberated for free cash calculation.
+ */
+export function isFutureTrip(op: Operation, todayStr: string = new Date().toISOString().split('T')[0]): boolean {
+  if (op.status === 'cancelada') return false;
+  if (op.status === 'realizada') return false;
+  const opDate = op.endDate || op.date;
+  if (!opDate) return true;
+  return opDate >= todayStr;
 }
 
 /**
@@ -285,7 +310,7 @@ export function calculateCultourFinancialPosition(
   };
 
   activeOps.forEach(op => {
-    const isFuture = op.date >= todayStr;
+    const isFuture = isFutureTrip(op, todayStr);
     const isUSD = op.currency === 'USD' || op.businessUnit === 'receptivo';
     const recRev = op.receivedRevenue || 0;
     const expRev = op.expectedRevenue || 0;
@@ -372,9 +397,9 @@ export function calculateCultourFinancialPosition(
     unit.margin = unit.revenue > 0 ? (unit.profit / unit.revenue) * 100 : 0;
   });
 
-  // 3. Gastos fijos mensuales de estructura activos
+  // 3. Gastos fijos mensuales de estructura activos pendientes de pago
   const monthlyFixedARS = fixedExpenses
-    .filter(f => f.status === 'activo' && f.currency !== 'USD')
+    .filter(f => f.status === 'activo' && !f.isPaidCurrentMonth && f.currency !== 'USD')
     .reduce((acc, f) => {
       if (f.frequency === 'mensual') return acc + f.amount;
       if (f.frequency === 'anual') return acc + (f.amount / 12);
@@ -384,28 +409,32 @@ export function calculateCultourFinancialPosition(
     }, 0);
 
   const monthlyFixedUSD = fixedExpenses
-    .filter(f => f.status === 'activo' && f.currency === 'USD')
+    .filter(f => f.status === 'activo' && !f.isPaidCurrentMonth && f.currency === 'USD')
     .reduce((acc, f) => acc + f.amount, 0);
 
-  // 4. Fondos Comprometidos: Obligaciones exigibles a pagar (costos pendientes de operaciones pasadas y futuras + estructura mensual)
-  const committedFundsARS = pastOpsPendingCostsARS + futureOpsPendingCostsARS + monthlyFixedARS;
-  const committedFundsUSD = pastOpsPendingCostsUSD + futureOpsPendingCostsUSD + monthlyFixedUSD;
-  const committedFundsEquivalentUSD = committedFundsUSD + (committedFundsARS / rate);
+  // 4. Obligaciones: compromisos financieros exigibles actualmente pendientes de pago (proveedores de viajes devengados + estructura mensual no pagada)
+  const obligationsARS = pastOpsPendingCostsARS + monthlyFixedARS;
+  const obligationsUSD = pastOpsPendingCostsUSD + monthlyFixedUSD;
+  const obligationsEquivalentUSD = obligationsUSD + (obligationsARS / rate);
 
-  // 5. Caja Libre / Disponible Real (Liquidez disponible tras custodia y obligaciones inmediatas):
-  // FÓRMULA ESTRICTA SIN DOBLE DEDUCCIÓN:
-  // Caja Libre = max(0, Caja Total - Fondos Futuros en Custodia - Deudas de Operaciones Pasadas - Estructura Fija)
-  // Explicación:
-  // Los fondos en custodia (anticipos de viajes futuros) se reservan para cubrir los costos de esos viajes y su margen.
-  // Los costos pendientes de viajes futuros NO se deducen adicionalmente de la caja libre porque están cubiertos por la custodia reservada.
-  // Solo se deducen deudas reales vencidas/exigibles de viajes ya ejecutados (pastOpsPendingCosts) y el gasto de estructura del mes.
-  const availableCashARS = Math.max(0, cashARS - futureOpsCollectedARS - pastOpsPendingCostsARS - monthlyFixedARS);
-  const availableCashUSD = Math.max(0, cashUSD - futureOpsCollectedUSD - pastOpsPendingCostsUSD - monthlyFixedUSD);
-  const availableCashEquivalentUSD = availableCashUSD + (availableCashARS / rate);
+  const committedFundsARS = obligationsARS;
+  const committedFundsUSD = obligationsUSD;
+  const committedFundsEquivalentUSD = obligationsEquivalentUSD;
 
-  const availableProfitARS = availableCashARS;
-  const availableProfitUSD = availableCashUSD;
-  const availableProfitEquivalentUSD = availableCashEquivalentUSD;
+  // 5. Caja Libre Real:
+  // FÓRMULA ESTRICTA: CAJA LIBRE REAL = DINERO EN CUENTAS - FONDOS VIAJES FUTUROS - OBLIGACIONES
+  // Nunca superior a Dinero en Cuentas, nunca negativa.
+  const freeCashARS = Math.min(cashARS, Math.max(0, cashARS - futureOpsCollectedARS - obligationsARS));
+  const freeCashUSD = Math.min(cashUSD, Math.max(0, cashUSD - futureOpsCollectedUSD - obligationsUSD));
+  const freeCashEquivalentUSD = freeCashUSD + (freeCashARS / rate);
+
+  const availableCashARS = freeCashARS;
+  const availableCashUSD = freeCashUSD;
+  const availableCashEquivalentUSD = freeCashEquivalentUSD;
+
+  const availableProfitARS = freeCashARS;
+  const availableProfitUSD = freeCashUSD;
+  const availableProfitEquivalentUSD = freeCashEquivalentUSD;
 
   // Margins
   const pastOpsMarginARS = pastOpsRevenueARS > 0 ? (pastOpsRealizedProfitARS / pastOpsRevenueARS) * 100 : 0;
@@ -421,6 +450,10 @@ export function calculateCultourFinancialPosition(
     futureOpsCollectedARS,
     futureOpsCollectedUSD,
     futureOpsCollectedEquivalentUSD: futureOpsCollectedUSD + (futureOpsCollectedARS / rate),
+
+    obligationsARS,
+    obligationsUSD,
+    obligationsEquivalentUSD,
 
     futureOpsPendingCostsARS,
     futureOpsPendingCostsUSD,
@@ -440,9 +473,9 @@ export function calculateCultourFinancialPosition(
     availableCashARS,
     availableCashUSD,
     availableCashEquivalentUSD,
-    freeCashARS: availableCashARS,
-    freeCashUSD: availableCashUSD,
-    freeCashEquivalentUSD: availableCashEquivalentUSD,
+    freeCashARS,
+    freeCashUSD,
+    freeCashEquivalentUSD,
     availableProfitARS,
     availableProfitUSD,
     availableProfitEquivalentUSD,
@@ -557,12 +590,12 @@ export function calculateKPIs(
     ? (totalExpectedProfitEquivalentUSD / (totalExpectedRevenueUSD + totalExpectedRevenueARS / rate)) * 100
     : 0;
 
-  // Monthly fixed expenses
+  // Monthly fixed expenses (active & unpaid this month)
   let monthlyFixedExpensesARS = 0;
   let monthlyFixedExpensesUSD = 0;
 
   fixedExpenses
-    .filter(f => f.status === 'activo')
+    .filter(f => f.status === 'activo' && !f.isPaidCurrentMonth)
     .forEach(f => {
       let mAmount = f.amount;
       if (f.frequency === 'anual') mAmount = f.amount / 12;
@@ -581,7 +614,7 @@ export function calculateKPIs(
     let futureOpsCollectedUSD = 0;
 
     activeOps
-      .filter(op => op.status !== 'realizada' && op.status !== 'cancelada' && op.date >= todayStr)
+      .filter(op => isFutureTrip(op, todayStr))
       .forEach(op => {
         const isUSD = op.currency === 'USD' || op.businessUnit === 'receptivo';
         if (isUSD) {
@@ -600,7 +633,7 @@ export function calculateKPIs(
     let futureOpsPendingCostsUSD = 0;
 
     activeOps.forEach(op => {
-      const isFuture = op.date >= todayStr;
+      const isFuture = isFutureTrip(op, todayStr);
       const isUSD = op.currency === 'USD' || op.businessUnit === 'receptivo';
       const pendingCost = Math.max(0, (op.expectedCost || 0) - (op.paidCost || 0));
 
@@ -613,13 +646,19 @@ export function calculateKPIs(
       }
     });
 
-    const committedCashARS = pastOpsPendingCostsARS + futureOpsPendingCostsARS + monthlyFixedExpensesARS;
-    const committedCashUSD = pastOpsPendingCostsUSD + futureOpsPendingCostsUSD + monthlyFixedExpensesUSD;
-    const committedCashEquivalentUSD = committedCashUSD + (committedCashARS / rate);
+    // Obligaciones (Compromisos pendientes exigibles: proveedores devengados + estructura mensual activa no pagada)
+    const obligationsARS = pastOpsPendingCostsARS + monthlyFixedExpensesARS;
+    const obligationsUSD = pastOpsPendingCostsUSD + monthlyFixedExpensesUSD;
+    const obligationsEquivalentUSD = obligationsUSD + (obligationsARS / rate);
+
+    const committedCashARS = obligationsARS;
+    const committedCashUSD = obligationsUSD;
+    const committedCashEquivalentUSD = obligationsEquivalentUSD;
     const committedCash = committedCashARS;
 
-    const freeCashARS = Math.max(0, currentCashARS - futureOpsCollectedARS - pastOpsPendingCostsARS - monthlyFixedExpensesARS);
-    const freeCashUSD = Math.max(0, currentCashUSD - futureOpsCollectedUSD - pastOpsPendingCostsUSD - monthlyFixedExpensesUSD);
+    // Caja Libre Real: DINERO EN CUENTAS - FONDOS VIAJES FUTUROS - OBLIGACIONES
+    const freeCashARS = Math.min(currentCashARS, Math.max(0, currentCashARS - futureOpsCollectedARS - obligationsARS));
+    const freeCashUSD = Math.min(currentCashUSD, Math.max(0, currentCashUSD - futureOpsCollectedUSD - obligationsUSD));
     const freeCashEquivalentUSD = freeCashUSD + (freeCashARS / rate);
 
     const availableCashARS = freeCashARS;
@@ -631,8 +670,8 @@ export function calculateKPIs(
 
   // Counts & alerts
   const activeOperationsCount = activeOps.length;
-  const futureOperationsCount = activeOps.filter(op => op.date >= todayStr).length;
-  const pastOperationsCount = activeOps.filter(op => op.date < todayStr).length;
+  const futureOperationsCount = activeOps.filter(op => isFutureTrip(op, todayStr)).length;
+  const pastOperationsCount = activeOps.filter(op => !isFutureTrip(op, todayStr)).length;
 
   const unreconciledMovements = movements.filter(m => m.matchStatus === 'rojo' || m.matchStatus === 'amarillo');
   const unreconciledMovementsCount = unreconciledMovements.length;
@@ -670,6 +709,9 @@ export function calculateKPIs(
     monthlyFixedExpensesARS,
     monthlyFixedExpensesUSD,
     monthlyFixedExpenses: monthlyFixedExpensesARS,
+    obligationsARS,
+    obligationsUSD,
+    obligationsEquivalentUSD,
     committedCashARS,
     committedCashUSD,
     committedCashEquivalentUSD,

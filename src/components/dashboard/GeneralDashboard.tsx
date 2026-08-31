@@ -192,10 +192,10 @@ export const GeneralDashboard: React.FC = () => {
           <div className="flex flex-col">
             <span className="label-mono">04. Caja Libre Real</span>
             <div className="font-sans text-3xl font-semibold tracking-tight text-[#10B981] mt-2">
-              {formatCurrency(financialPosition.availableCashEquivalentUSD ?? financialPosition.availableProfitEquivalentUSD, 'USD')}
+              {formatCurrency(financialPosition.availableCashEquivalentUSD, 'USD')}
             </div>
             <div className="text-xs text-[#666666] mt-1.5 flex items-center justify-between">
-              <span>{formatCurrency(financialPosition.availableCashARS ?? financialPosition.availableProfitARS, 'ARS')}</span>
+              <span>{formatCurrency(financialPosition.availableCashARS, 'ARS')} + {formatCurrency(financialPosition.availableCashUSD, 'USD')}</span>
               <span className="text-[10px] text-[#10B981] font-medium">Liquidez Neta Disponible</span>
             </div>
           </div>

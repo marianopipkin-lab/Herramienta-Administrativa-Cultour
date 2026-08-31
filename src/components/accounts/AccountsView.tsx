@@ -357,13 +357,19 @@ export const AccountsView: React.FC = () => {
                     step="any"
                     value={balances[account.id] !== undefined ? balances[account.id] : (account.currentBalance ?? '')}
                     onChange={(e) => {
-                      const val = e.target.value;
+                      let val = e.target.value;
+                      // Remove leading zeroes so typing on 0 replaces it cleanly (e.g. 05 -> 5)
+                      if (val.length > 1 && val.startsWith('0') && !val.startsWith('0.') && !val.startsWith('0,')) {
+                        val = val.replace(/^0+/, '');
+                        if (val === '') val = '0';
+                      }
                       setBalances(prev => ({
                         ...prev,
                         [account.id]: val
                       }));
                     }}
                     onFocus={(e) => e.target.select()}
+                    onClick={(e) => (e.target as HTMLInputElement).select()}
                     placeholder="0.00"
                     className="w-full bg-white border border-gray-200 rounded-lg p-2 font-mono text-base font-bold text-gray-900 focus:outline-none focus:border-indigo-500"
                   />

@@ -120,15 +120,17 @@ export const Navbar: React.FC = () => {
                 </div>
               </div>
               <div className="border-r border-[#E5E5E1] pr-3.5">
-                <span className="text-[9px] uppercase font-bold text-[#F59E0B] tracking-wider block font-mono">Comprometido</span>
+                <span className="text-[9px] uppercase font-bold text-[#F59E0B] tracking-wider block font-mono">Obligaciones</span>
                 <div className="flex items-center gap-1.5 text-xs font-mono">
                   <span className="font-medium text-[#F59E0B]">-{formatCurrency(kpis.committedCashARS, 'ARS')}</span>
+                  <span className="text-[#888888]">|</span>
+                  <span className="font-medium text-[#F59E0B]">-{formatCurrency(kpis.committedCashUSD, 'USD')}</span>
                 </div>
               </div>
               <div>
                 <span className="text-[9px] uppercase font-bold text-[#10B981] tracking-wider block font-mono">Caja Libre</span>
                 <div className="flex items-center gap-1.5 text-xs font-mono">
-                  <span className="font-semibold text-[#10B981]">{formatCurrency(kpis.freeCashUSD, 'USD')}</span>
+                  <span className="font-semibold text-[#10B981]">{formatCurrency(kpis.freeCashEquivalentUSD, 'USD')}</span>
                 </div>
               </div>
             </div>

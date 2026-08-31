@@ -503,37 +503,41 @@ export interface CultourFinancialPosition {
   futureOpsCollectedUSD: number;
   futureOpsCollectedEquivalentUSD: number;
 
-  // 3. Obligaciones / Costos pendientes de operaciones futuras
+  // 3. Obligaciones / Compromisos exigibles a pagar (Proveedores devengados + Estructura activa)
+  obligationsARS: number;
+  obligationsUSD: number;
+  obligationsEquivalentUSD: number;
+
+  // Costos pendientes desglosados
   futureOpsPendingCostsARS: number;
   futureOpsPendingCostsUSD: number;
   futureOpsPendingCostsEquivalentUSD: number;
 
-  // 4. Obligaciones / Costos pendientes de operaciones pasadas
   pastOpsPendingCostsARS: number;
   pastOpsPendingCostsUSD: number;
   pastOpsPendingCostsEquivalentUSD: number;
 
-  // 5. Gastos fijos del mes
+  // Gastos fijos del mes
   monthlyFixedARS: number;
   monthlyFixedUSD: number;
 
-  // 6. Dinero comprometido total (Costos pendientes + Gastos fijos devengados)
+  // Dinero comprometido total (Alias de compatibilidad con obligaciones)
   committedFundsARS: number;
   committedFundsUSD: number;
   committedFundsEquivalentUSD: number;
 
-  // 7. Caja Libre / Disponible Real (Liquidez disponible tras custodia y obligaciones inmediatas)
+  // 4. Caja Libre / Disponible Real (Liquidez disponible tras custodia y obligaciones)
   availableCashARS: number;
   availableCashUSD: number;
   availableCashEquivalentUSD: number;
-  freeCashARS?: number;
-  freeCashUSD?: number;
-  freeCashEquivalentUSD?: number;
+  freeCashARS: number;
+  freeCashUSD: number;
+  freeCashEquivalentUSD: number;
   availableProfitARS: number; // Alias de compatibilidad
   availableProfitUSD: number;
   availableProfitEquivalentUSD: number;
 
-  // 8. Resultado económico devengado de operaciones ya realizadas
+  // 5. Resultado económico devengado de operaciones ya realizadas
   pastOpsRevenueARS: number;
   pastOpsRevenueUSD: number;
   pastOpsCostsARS: number;
