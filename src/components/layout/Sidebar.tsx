@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
   LayoutDashboard,
   Compass,
@@ -13,12 +13,27 @@ import {
   History,
   Landmark,
   Layers,
-  FileSpreadsheet
+  FileSpreadsheet,
+  LogOut,
+  Loader2
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const Sidebar: React.FC = () => {
-  const { activeTab, setActiveTab, kpis, currentRole, userProfile } = useApp();
+  const { activeTab, setActiveTab, kpis, currentRole, userProfile, logout } = useApp();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleLogout = async (e: React.MouseEvent) => {
+    e.stopPropagation();
+    try {
+      setIsLoggingOut(true);
+      await logout();
+    } catch (err) {
+      console.error('Error during logout:', err);
+    } finally {
+      setIsLoggingOut(false);
+    }
+  };
 
   const allNavItems = [
     {
@@ -190,18 +205,45 @@ export const Sidebar: React.FC = () => {
 
       {/* User Block at bottom matching the design */}
       <div className="p-4 border-t border-[#E5E5E1] bg-[#FFFFFF]">
-        <div className="flex items-center gap-3 p-2 bg-[#FFFFFF] border border-[#E5E5E1] rounded-lg">
-          <div className="w-7 h-7 bg-[#E5E5E1] text-[#1A1A1A] rounded flex items-center justify-center text-xs font-semibold font-mono">
+        <div 
+          onClick={handleLogout}
+          className="flex items-center gap-3 p-2 bg-[#FFFFFF] hover:bg-[#F4F4F0] border border-[#E5E5E1] hover:border-[#D0D0CC] rounded-lg transition-all cursor-pointer group select-none"
+          title="Cerrar sesión en SGOF Cultour"
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              handleLogout(e as any);
+            }
+          }}
+        >
+          <div className="w-7 h-7 bg-[#E5E5E1] group-hover:bg-[#D0D0CC] text-[#1A1A1A] rounded flex items-center justify-center text-xs font-semibold font-mono transition-colors shrink-0">
             {userProfile?.fullName ? userProfile.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'MP'}
           </div>
+          
           <div className="min-w-0 flex-1">
-            <div className="text-xs font-medium text-[#1A1A1A] truncate">
+            <div className="text-xs font-medium text-[#1A1A1A] truncate group-hover:text-black">
               {userProfile?.fullName || 'Mariano Pipkin'}
             </div>
             <div className="text-[11px] text-[#666666] truncate capitalize">
               {currentRole === 'socio' ? 'Socio Administrador' : currentRole}
             </div>
           </div>
+
+          <button
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="p-1.5 rounded-md text-[#888888] group-hover:text-[#EF4444] hover:bg-rose-50 hover:text-[#EF4444] transition-colors shrink-0"
+            title="Cerrar sesión"
+            aria-label="Cerrar sesión"
+          >
+            {isLoggingOut ? (
+              <Loader2 className="w-4 h-4 animate-spin text-[#4F46E5]" />
+            ) : (
+              <LogOut className="w-4 h-4" />
+            )}
+          </button>
         </div>
       </div>
     </aside>
