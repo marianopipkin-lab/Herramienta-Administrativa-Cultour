@@ -287,32 +287,32 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
     <div className="space-y-6">
       {/* 15-DAY OPERATIONAL ALERT BANNER (Regla de los 15 días) */}
       {fifteenDayAlerts.isWithin15Days && (fifteenDayAlerts.unconfirmed.length > 0 || fifteenDayAlerts.withBalance.length > 0) && (
-        <div className="bg-rose-950/40 border-2 border-rose-600 rounded-xl p-5 shadow-2xl relative overflow-hidden animate-pulse">
+        <div className="bg-rose-50 border-2 border-rose-400 rounded-2xl p-5 shadow-xs relative overflow-hidden">
           <div className="flex items-start gap-3.5">
-            <div className="p-2 bg-rose-600/20 text-rose-400 rounded-lg border border-rose-500/50 mt-0.5">
-              <ShieldAlert className="w-7 h-7 text-rose-400" />
+            <div className="p-2 bg-rose-100 text-rose-600 rounded-lg border border-rose-300 mt-0.5">
+              <ShieldAlert className="w-7 h-7 text-rose-600" />
             </div>
             <div className="flex-1">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <h4 className="text-base font-black text-rose-200 tracking-wide flex items-center gap-2">
+                <h4 className="text-base font-black text-rose-900 tracking-wide flex items-center gap-2 font-serif">
                   <span>ALERTA OPERATIVA CRÍTICA (REGLA DE LOS 15 DÍAS)</span>
-                  <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-xs font-black">
+                  <span className="px-2.5 py-0.5 rounded-full bg-rose-600 text-white text-xs font-black font-mono">
                     FALTAN {fifteenDayAlerts.daysLeft} DÍAS
                   </span>
                 </h4>
               </div>
-              <p className="text-xs text-rose-300/90 mt-1">
+              <p className="text-xs text-rose-800 mt-1">
                 La fecha de salida del File <strong>{operation.code}</strong> es el <strong>{operation.date}</strong>. Existen servicios con reservas sin reconfirmar o saldos pendientes de pago que requieren acción inmediata del equipo de operaciones.
               </p>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mt-3">
                 {fifteenDayAlerts.unconfirmed.length > 0 && (
-                  <div className="bg-[#111113]/80 border border-rose-800/80 rounded-lg p-3">
-                    <span className="text-xs font-bold text-rose-300 flex items-center gap-1.5">
-                      <AlertTriangle className="w-4 h-4 text-rose-400" />
+                  <div className="bg-[#FFFFFF] border border-rose-200 rounded-xl p-3 shadow-xs">
+                    <span className="text-xs font-bold text-rose-800 flex items-center gap-1.5 font-mono">
+                      <AlertTriangle className="w-4 h-4 text-rose-600" />
                       {fifteenDayAlerts.unconfirmed.length} Proveedores Sin Confirmación:
                     </span>
-                    <ul className="text-xs text-zinc-300 mt-1.5 space-y-1 pl-4 list-disc">
+                    <ul className="text-xs text-[#1A1A1A] mt-1.5 space-y-1 pl-4 list-disc">
                       {fifteenDayAlerts.unconfirmed.map(u => (
                         <li key={u.id}>
                           <strong>Día {u.dayNumber}:</strong> {u.locationOrActivity} ({u.supplierName || 'Sin asignar'}) - <em>Estado: {u.supplierStatus}</em>
@@ -323,12 +323,12 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
                 )}
 
                 {fifteenDayAlerts.withBalance.length > 0 && (
-                  <div className="bg-[#111113]/80 border border-amber-800/80 rounded-lg p-3">
-                    <span className="text-xs font-bold text-amber-300 flex items-center gap-1.5">
-                      <CreditCard className="w-4 h-4 text-amber-400" />
+                  <div className="bg-[#FFFFFF] border border-amber-200 rounded-xl p-3 shadow-xs">
+                    <span className="text-xs font-bold text-amber-800 flex items-center gap-1.5 font-mono">
+                      <CreditCard className="w-4 h-4 text-amber-600" />
                       {fifteenDayAlerts.withBalance.length} Proveedores Con Saldo Pendiente:
                     </span>
-                    <ul className="text-xs text-zinc-300 mt-1.5 space-y-1 pl-4 list-disc">
+                    <ul className="text-xs text-[#1A1A1A] mt-1.5 space-y-1 pl-4 list-disc">
                       {fifteenDayAlerts.withBalance.map(b => (
                         <li key={b.id}>
                           <strong>{b.supplierName}:</strong> Saldo de {formatCurrency(b.balance, b.currency)} (Total: {formatCurrency(b.totalCost, b.currency)})
@@ -344,21 +344,21 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
       )}
 
       {/* Header Toolbar */}
-      <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+      <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl p-4 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 shadow-xs">
         <div>
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Calendar className="w-5 h-5 text-indigo-400" />
+          <h3 className="text-base font-bold text-[#1A1A1A] flex items-center gap-2 font-serif">
+            <Calendar className="w-5 h-5 text-[#4F46E5]" />
             Itinerario Operativo Integrado del File
           </h3>
-          <p className="text-xs text-[#a1a1aa] mt-0.5">
+          <p className="text-xs text-[#666666] mt-0.5">
             Cronograma cronológico de actividades, prestadores, costos pactados, anticipos y confirmaciones en tiempo real.
           </p>
         </div>
 
         <div className="flex flex-wrap items-center gap-2">
           {/* Import Button */}
-          <label className="cursor-pointer px-3 py-1.5 rounded-lg bg-[#202024] hover:bg-[#27272a] border border-[#27272a] text-zinc-300 text-xs font-medium flex items-center gap-1.5 transition-colors">
-            <Upload className="w-3.5 h-3.5 text-indigo-400" />
+          <label className="cursor-pointer px-3 py-1.5 rounded-lg bg-[#FFFFFF] hover:bg-[#F4F4F0] border border-[#E5E5E1] text-[#1A1A1A] text-xs font-medium flex items-center gap-1.5 transition-colors shadow-xs">
+            <Upload className="w-3.5 h-3.5 text-[#4F46E5]" />
             Importar
             <input
               type="file"
@@ -372,9 +372,9 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
           <button
             type="button"
             onClick={handleExportXLSX}
-            className="px-3 py-1.5 rounded-lg bg-[#202024] hover:bg-[#27272a] border border-[#27272a] text-zinc-300 text-xs font-medium flex items-center gap-1.5 transition-colors"
+            className="cursor-pointer px-3 py-1.5 rounded-lg bg-[#FFFFFF] hover:bg-[#F4F4F0] border border-[#E5E5E1] text-[#1A1A1A] text-xs font-medium flex items-center gap-1.5 transition-colors shadow-xs"
           >
-            <Download className="w-3.5 h-3.5 text-emerald-400" />
+            <Download className="w-3.5 h-3.5 text-[#059669]" />
             Exportar Excel
           </button>
 
@@ -382,7 +382,7 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
           <button
             type="button"
             onClick={() => setIsAddingItem(true)}
-            className="px-3.5 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-md shadow-indigo-950 transition-colors"
+            className="cursor-pointer px-3.5 py-1.5 rounded-lg bg-[#1A1A1A] hover:bg-black text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
           >
             <Plus className="w-4 h-4" />
             Nueva Actividad
@@ -392,16 +392,16 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
 
       {/* Add New Item Inline Form Modal / Box */}
       {isAddingItem && (
-        <div className="bg-[#1c1c21] border border-indigo-900/60 rounded-xl p-5 shadow-xl space-y-4">
-          <div className="flex items-center justify-between border-b border-[#27272a] pb-3">
-            <h4 className="text-sm font-bold text-white flex items-center gap-2">
-              <Plus className="w-4 h-4 text-indigo-400" />
+        <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl p-5 shadow-xs space-y-4">
+          <div className="flex items-center justify-between border-b border-[#E5E5E1] pb-3">
+            <h4 className="text-sm font-bold text-[#1A1A1A] flex items-center gap-2 font-serif">
+              <Plus className="w-4 h-4 text-[#4F46E5]" />
               Agregar Servicio / Tarea al Itinerario
             </h4>
             <button
               type="button"
               onClick={() => setIsAddingItem(false)}
-              className="p-1 text-zinc-400 hover:text-white rounded"
+              className="p-1 text-[#666666] hover:text-[#1A1A1A] rounded cursor-pointer"
             >
               <X className="w-4 h-4" />
             </button>
@@ -409,42 +409,42 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
 
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-medium text-[#a1a1aa] mb-1">N° de Día *</label>
+              <label className="block text-xs font-medium text-[#666666] mb-1">N° de Día *</label>
               <input
                 type="number"
                 min="1"
                 value={itemForm.dayNumber}
                 onChange={e => setItemForm({ ...itemForm, dayNumber: Number(e.target.value) })}
-                className="w-full bg-[#111113] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white"
+                className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Fecha *</label>
+              <label className="block text-xs font-medium text-[#666666] mb-1">Fecha *</label>
               <input
                 type="date"
                 value={itemForm.date}
                 onChange={e => setItemForm({ ...itemForm, date: e.target.value })}
-                className="w-full bg-[#111113] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white"
+                className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Hora *</label>
+              <label className="block text-xs font-medium text-[#666666] mb-1">Hora *</label>
               <input
                 type="time"
                 value={itemForm.time}
                 onChange={e => setItemForm({ ...itemForm, time: e.target.value })}
-                className="w-full bg-[#111113] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white"
+                className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Categoría</label>
+              <label className="block text-xs font-medium text-[#666666] mb-1">Categoría</label>
               <select
                 value={itemForm.serviceCategory}
                 onChange={e => setItemForm({ ...itemForm, serviceCategory: e.target.value })}
-                className="w-full bg-[#111113] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white"
+                className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
               >
                 <option value="Transporte">Transporte</option>
                 <option value="Alojamiento">Alojamiento</option>
@@ -459,68 +459,68 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Lugar / Actividad *</label>
+              <label className="block text-xs font-medium text-[#666666] mb-1">Lugar / Actividad *</label>
               <input
                 type="text"
                 placeholder="Ej. Salida en Bus hacia Bariloche / City Tour Histórico"
                 value={itemForm.locationOrActivity}
                 onChange={e => setItemForm({ ...itemForm, locationOrActivity: e.target.value })}
-                className="w-full bg-[#111113] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white"
+                className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Proveedor Asignado</label>
+              <label className="block text-xs font-medium text-[#666666] mb-1">Proveedor Asignado</label>
               <input
                 type="text"
                 placeholder="Ej. Transportes Andes del Sur SRL"
                 value={itemForm.supplierName}
                 onChange={e => setItemForm({ ...itemForm, supplierName: e.target.value })}
-                className="w-full bg-[#111113] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white"
+                className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
               />
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-4 gap-4">
             <div>
-              <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Guía / Contacto en Sitio</label>
+              <label className="block text-xs font-medium text-[#666666] mb-1">Guía / Contacto en Sitio</label>
               <input
                 type="text"
                 placeholder="Ej. Esteban Gómez (+54 9 11...)"
                 value={itemForm.guideOrContact}
                 onChange={e => setItemForm({ ...itemForm, guideOrContact: e.target.value })}
-                className="w-full bg-[#111113] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white"
+                className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Costo Total Pactado</label>
+              <label className="block text-xs font-medium text-[#666666] mb-1">Costo Total Pactado</label>
               <input
                 type="number"
                 min="0"
                 value={itemForm.totalCost}
                 onChange={e => setItemForm({ ...itemForm, totalCost: Number(e.target.value) })}
-                className="w-full bg-[#111113] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white"
+                className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Anticipo / Reserva Ya Pagada</label>
+              <label className="block text-xs font-medium text-[#666666] mb-1">Anticipo / Reserva Ya Pagada</label>
               <input
                 type="number"
                 min="0"
                 value={itemForm.depositPaid}
                 onChange={e => setItemForm({ ...itemForm, depositPaid: Number(e.target.value) })}
-                className="w-full bg-[#111113] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white"
+                className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
               />
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-[#a1a1aa] mb-1">Estado del Proveedor</label>
+              <label className="block text-xs font-medium text-[#666666] mb-1">Estado del Proveedor</label>
               <select
                 value={itemForm.supplierStatus}
                 onChange={e => setItemForm({ ...itemForm, supplierStatus: e.target.value as any })}
-                className="w-full bg-[#111113] border border-[#27272a] rounded-lg px-3 py-2 text-xs text-white"
+                className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
               >
                 <option value="presupuestado">Presupuestado</option>
                 <option value="contactado">Contactado</option>
@@ -532,18 +532,18 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-2 border-t border-[#27272a]">
+          <div className="flex justify-end gap-2 pt-2 border-t border-[#E5E5E1]">
             <button
               type="button"
               onClick={() => setIsAddingItem(false)}
-              className="px-4 py-2 rounded-lg bg-[#202024] hover:bg-[#27272a] text-zinc-300 text-xs font-medium"
+              className="px-4 py-2 rounded-lg bg-[#FFFFFF] hover:bg-[#F4F4F0] border border-[#E5E5E1] text-[#1A1A1A] text-xs font-medium cursor-pointer"
             >
               Cancelar
             </button>
             <button
               type="button"
               onClick={handleSaveItem}
-              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md"
+              className="px-4 py-2 rounded-lg bg-[#1A1A1A] hover:bg-black text-white text-xs font-semibold shadow-xs cursor-pointer"
             >
               Guardar en Itinerario
             </button>
@@ -553,27 +553,27 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
 
       {/* Itinerary Chronological Table */}
       {itinerary.length === 0 ? (
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-10 text-center space-y-3">
-          <Calendar className="w-10 h-10 text-zinc-600 mx-auto" />
-          <h4 className="text-base font-semibold text-white">El Itinerario Operativo está vacío</h4>
-          <p className="text-xs text-[#a1a1aa] max-w-md mx-auto">
+        <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl p-10 text-center space-y-3 shadow-xs">
+          <Calendar className="w-10 h-10 text-[#888888] mx-auto" />
+          <h4 className="text-base font-semibold text-[#1A1A1A] font-serif">El Itinerario Operativo está vacío</h4>
+          <p className="text-xs text-[#666666] max-w-md mx-auto">
             Comience cargando las actividades cronológicas del viaje o importe directamente una planilla de itinerario en formato Excel/CSV.
           </p>
           <div className="flex justify-center gap-3 pt-2">
             <button
               type="button"
               onClick={() => setIsAddingItem(true)}
-              className="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold flex items-center gap-1.5"
+              className="px-4 py-2 rounded-lg bg-[#1A1A1A] hover:bg-black text-white text-xs font-semibold flex items-center gap-1.5 shadow-xs cursor-pointer"
             >
               <Plus className="w-4 h-4" /> Agregar Primer Servicio
             </button>
           </div>
         </div>
       ) : (
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl overflow-hidden shadow-lg">
+        <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-[#a1a1aa]">
-              <thead className="bg-[#202024] text-zinc-300 uppercase tracking-wider font-semibold border-b border-[#27272a]">
+            <table className="w-full text-left text-xs text-[#666666]">
+              <thead className="bg-[#F9F9F7] text-[#666666] uppercase tracking-wider font-semibold border-b border-[#E5E5E1]">
                 <tr>
                   <th className="py-3 px-3 text-center w-16">Día</th>
                   <th className="py-3 px-3 w-24">Hora</th>
@@ -586,7 +586,7 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
                   <th className="py-3 px-3 text-center w-28">Acciones</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#27272a]">
+              <tbody className="divide-y divide-[#E5E5E1]">
                 {itinerary.map(item => {
                   const isUnconfirmed = item.supplierStatus !== 'reserva_confirmada' && item.supplierStatus !== 'reconfirmado_48h';
                   const hasPendingBalance = item.balance > 0;
@@ -594,51 +594,51 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
                   return (
                     <tr
                       key={item.id}
-                      className={`hover:bg-[#202024]/60 transition-colors ${
+                      className={`hover:bg-[#F9F9F7]/60 transition-colors ${
                         fifteenDayAlerts.isWithin15Days && (isUnconfirmed || hasPendingBalance)
-                          ? 'bg-rose-950/10'
+                          ? 'bg-rose-50/40'
                           : ''
                       }`}
                     >
                       {/* Día */}
                       <td className="py-3 px-3 text-center">
-                        <span className="inline-block px-2.5 py-1 rounded bg-indigo-950 text-indigo-300 font-black text-xs border border-indigo-800">
+                        <span className="inline-block px-2.5 py-1 rounded bg-indigo-50 text-indigo-700 font-bold text-xs border border-indigo-200 font-mono">
                           Día {item.dayNumber}
                         </span>
                       </td>
 
                       {/* Hora */}
-                      <td className="py-3 px-3 font-mono text-zinc-200">
+                      <td className="py-3 px-3 font-mono text-[#1A1A1A]">
                         <div className="flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-zinc-500" />
+                          <Clock className="w-3 h-3 text-[#888888]" />
                           <span>{item.time} hs</span>
                         </div>
                         {item.date && (
-                          <span className="text-[10px] text-zinc-500 block">{item.date}</span>
+                          <span className="text-[10px] text-[#888888] block">{item.date}</span>
                         )}
                       </td>
 
                       {/* Actividad */}
                       <td className="py-3 px-4">
-                        <div className="font-semibold text-white">{item.locationOrActivity}</div>
+                        <div className="font-semibold text-[#1A1A1A]">{item.locationOrActivity}</div>
                         {item.serviceCategory && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-zinc-800 text-zinc-400 font-medium mr-2">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#F4F4F0] text-[#666666] font-medium mr-2">
                             {item.serviceCategory}
                           </span>
                         )}
                         {item.notes && (
-                          <span className="text-[11px] text-zinc-400 italic block mt-0.5">{item.notes}</span>
+                          <span className="text-[11px] text-[#666666] italic block mt-0.5">{item.notes}</span>
                         )}
                       </td>
 
                       {/* Proveedor / Guía */}
                       <td className="py-3 px-4">
-                        <div className="flex items-center gap-1.5 text-zinc-200 font-medium">
-                          <Building2 className="w-3.5 h-3.5 text-zinc-400" />
+                        <div className="flex items-center gap-1.5 text-[#1A1A1A] font-medium">
+                          <Building2 className="w-3.5 h-3.5 text-[#888888]" />
                           <span>{item.supplierName || 'Sin asignar'}</span>
                         </div>
                         {item.guideOrContact && (
-                          <div className="flex items-center gap-1 text-[11px] text-indigo-300 mt-0.5">
+                          <div className="flex items-center gap-1 text-[11px] text-[#4F46E5] mt-0.5">
                             <UserCheck className="w-3 h-3" />
                             <span>{item.guideOrContact}</span>
                           </div>
@@ -646,23 +646,23 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
                       </td>
 
                       {/* Costo Total */}
-                      <td className="py-3 px-3 text-right font-mono font-medium text-white">
+                      <td className="py-3 px-3 text-right font-mono font-medium text-[#1A1A1A]">
                         {formatCurrency(item.totalCost, item.currency)}
                       </td>
 
                       {/* Anticipo Pagado */}
-                      <td className="py-3 px-3 text-right font-mono text-emerald-400 font-medium">
+                      <td className="py-3 px-3 text-right font-mono text-[#059669] font-medium">
                         {formatCurrency(item.depositPaid, item.currency)}
                       </td>
 
                       {/* Saldo Pendiente */}
                       <td className="py-3 px-3 text-right font-mono">
                         {item.balance > 0 ? (
-                          <span className="text-amber-400 font-bold">
+                          <span className="text-[#D97706] font-bold">
                             {formatCurrency(item.balance, item.currency)}
                           </span>
                         ) : (
-                          <span className="text-emerald-400 font-medium flex items-center justify-end gap-1">
+                          <span className="text-[#059669] font-medium flex items-center justify-end gap-1">
                             <CheckCircle2 className="w-3.5 h-3.5" /> Saldado
                           </span>
                         )}
@@ -675,12 +675,12 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
                           onChange={e => handleUpdateItem(item.id, { supplierStatus: e.target.value as any })}
                           className={`text-xs font-semibold px-2 py-1 rounded border ${
                             item.supplierStatus === 'reconfirmado_48h'
-                              ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                               : item.supplierStatus === 'reserva_confirmada'
-                              ? 'bg-sky-950 text-sky-300 border-sky-800'
+                              ? 'bg-sky-50 text-sky-700 border-sky-300'
                               : item.supplierStatus === 'con_problema'
-                              ? 'bg-rose-950 text-rose-300 border-rose-800'
-                              : 'bg-amber-950 text-amber-300 border-amber-800'
+                              ? 'bg-rose-50 text-rose-700 border-rose-300'
+                              : 'bg-amber-50 text-amber-700 border-amber-300'
                           }`}
                         >
                           <option value="reserva_confirmada">Reserva Confirmada</option>
@@ -699,7 +699,7 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
                           <button
                             type="button"
                             onClick={() => handleOpenPayment(item)}
-                            className="p-1.5 rounded hover:bg-emerald-950/60 text-emerald-400 hover:text-emerald-300 border border-emerald-900/60 transition-colors"
+                            className="p-1.5 rounded hover:bg-emerald-50 text-[#059669] border border-emerald-200 transition-colors cursor-pointer"
                             title="Registrar Pago Contable de Anticipo o Saldo"
                           >
                             <CreditCard className="w-3.5 h-3.5" />
@@ -708,7 +708,7 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
                           <button
                             type="button"
                             onClick={() => handleDeleteItem(item.id)}
-                            className="p-1.5 rounded hover:bg-rose-950/60 text-zinc-500 hover:text-rose-400 transition-colors"
+                            className="p-1.5 rounded hover:bg-rose-50 text-[#888888] hover:text-rose-600 transition-colors cursor-pointer"
                             title="Eliminar ítem"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -726,44 +726,44 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
 
       {/* FINANCIAL SUPPLIER PAYMENT MODAL (Rule 2: Derivative UI, Traceable action) */}
       {paymentModalItem && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#18181b] border border-[#27272a] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95">
-            <div className="px-6 py-4 bg-[#202024] border-b border-[#27272a] flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="px-6 py-4 bg-[#F9F9F7] border-b border-[#E5E5E1] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <CreditCard className="w-5 h-5 text-emerald-400" />
-                <h3 className="text-base font-bold text-white">Registrar Pago a Proveedor (Itinerario)</h3>
+                <CreditCard className="w-5 h-5 text-[#059669]" />
+                <h3 className="text-base font-bold text-[#1A1A1A] font-serif">Registrar Pago a Proveedor (Itinerario)</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setPaymentModalItem(null)}
-                className="p-1.5 text-zinc-400 hover:text-white rounded-lg"
+                className="p-1.5 text-[#666666] hover:text-[#1A1A1A] rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleConfirmFinancialPayment} className="p-6 space-y-4">
-              <div className="bg-[#111113] p-3.5 rounded-xl border border-[#27272a] space-y-1">
+              <div className="bg-[#F9F9F7] p-3.5 rounded-xl border border-[#E5E5E1] space-y-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-[#a1a1aa]">Servicio:</span>
-                  <span className="font-semibold text-white">{paymentModalItem.locationOrActivity}</span>
+                  <span className="text-[#666666]">Servicio:</span>
+                  <span className="font-semibold text-[#1A1A1A]">{paymentModalItem.locationOrActivity}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-[#a1a1aa]">Proveedor:</span>
-                  <span className="font-semibold text-indigo-300">{paymentModalItem.supplierName}</span>
+                  <span className="text-[#666666]">Proveedor:</span>
+                  <span className="font-semibold text-[#4F46E5]">{paymentModalItem.supplierName}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-[#a1a1aa]">Costo Total:</span>
-                  <span className="font-mono text-white">{formatCurrency(paymentModalItem.totalCost, paymentModalItem.currency)}</span>
+                  <span className="text-[#666666]">Costo Total:</span>
+                  <span className="font-mono text-[#1A1A1A]">{formatCurrency(paymentModalItem.totalCost, paymentModalItem.currency)}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-[#a1a1aa]">Saldo Restante:</span>
-                  <span className="font-mono font-bold text-amber-400">{formatCurrency(paymentModalItem.balance, paymentModalItem.currency)}</span>
+                  <span className="text-[#666666]">Saldo Restante:</span>
+                  <span className="font-mono font-bold text-[#D97706]">{formatCurrency(paymentModalItem.balance, paymentModalItem.currency)}</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#a1a1aa] mb-1">
+                <label className="block text-xs font-semibold text-[#666666] mb-1">
                   Monto a Pagar ({paymentModalItem.currency}) *
                 </label>
                 <input
@@ -772,17 +772,17 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
                   required
                   value={paymentForm.amount}
                   onChange={e => setPaymentForm({ ...paymentForm, amount: Number(e.target.value) })}
-                  className="w-full bg-[#111113] border border-[#27272a] rounded-xl px-4 py-2.5 text-sm text-white font-mono font-bold focus:border-emerald-500 focus:outline-none"
+                  className="w-full bg-[#FFFFFF] border border-[#E5E5E1] rounded-xl px-4 py-2.5 text-sm text-[#1A1A1A] font-mono font-bold focus:border-[#059669] focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#a1a1aa] mb-1">Medio de Pago *</label>
+                  <label className="block text-xs font-semibold text-[#666666] mb-1">Medio de Pago *</label>
                   <select
                     value={paymentForm.paymentMethod}
                     onChange={e => setPaymentForm({ ...paymentForm, paymentMethod: e.target.value as any })}
-                    className="w-full bg-[#111113] border border-[#27272a] rounded-xl px-3 py-2.5 text-xs text-white"
+                    className="w-full bg-[#FFFFFF] border border-[#E5E5E1] rounded-xl px-3 py-2.5 text-xs text-[#1A1A1A]"
                   >
                     <option value="transferencia">Transferencia Bancaria</option>
                     <option value="mercado_pago">Mercado Pago / CVU</option>
@@ -793,11 +793,11 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#a1a1aa] mb-1">Cuenta Origen (Débito) *</label>
+                  <label className="block text-xs font-semibold text-[#666666] mb-1">Cuenta Origen (Débito) *</label>
                   <select
                     value={paymentForm.sourceAccountId}
                     onChange={e => setPaymentForm({ ...paymentForm, sourceAccountId: e.target.value })}
-                    className="w-full bg-[#111113] border border-[#27272a] rounded-xl px-3 py-2.5 text-xs text-white"
+                    className="w-full bg-[#FFFFFF] border border-[#E5E5E1] rounded-xl px-3 py-2.5 text-xs text-[#1A1A1A]"
                   >
                     {accounts.map(acc => (
                       <option key={acc.id} value={acc.id}>
@@ -809,37 +809,37 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#a1a1aa] mb-1">N° Comprobante / Transferencia</label>
+                <label className="block text-xs font-semibold text-[#666666] mb-1">N° Comprobante / Transferencia</label>
                 <input
                   type="text"
                   placeholder="Ej. TRANSF-GAL-884129"
                   value={paymentForm.reference}
                   onChange={e => setPaymentForm({ ...paymentForm, reference: e.target.value })}
-                  className="w-full bg-[#111113] border border-[#27272a] rounded-xl px-4 py-2 text-xs text-white"
+                  className="w-full bg-[#FFFFFF] border border-[#E5E5E1] rounded-xl px-4 py-2 text-xs text-[#1A1A1A]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#a1a1aa] mb-1">Concepto / Glosa</label>
+                <label className="block text-xs font-semibold text-[#666666] mb-1">Concepto / Glosa</label>
                 <input
                   type="text"
                   value={paymentForm.concept}
                   onChange={e => setPaymentForm({ ...paymentForm, concept: e.target.value })}
-                  className="w-full bg-[#111113] border border-[#27272a] rounded-xl px-4 py-2 text-xs text-white"
+                  className="w-full bg-[#FFFFFF] border border-[#E5E5E1] rounded-xl px-4 py-2 text-xs text-[#1A1A1A]"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-[#27272a]">
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#E5E5E1]">
                 <button
                   type="button"
                   onClick={() => setPaymentModalItem(null)}
-                  className="px-4 py-2.5 rounded-xl bg-[#202024] hover:bg-[#27272a] text-zinc-300 text-xs font-semibold"
+                  className="px-4 py-2.5 rounded-xl bg-[#FFFFFF] hover:bg-[#F4F4F0] border border-[#E5E5E1] text-[#1A1A1A] text-xs font-semibold cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold shadow-lg shadow-emerald-950"
+                  className="px-5 py-2.5 rounded-xl bg-[#1A1A1A] hover:bg-black text-white text-xs font-bold shadow-xs cursor-pointer"
                 >
                   Confirmar y Debitar de Cuenta
                 </button>

@@ -166,50 +166,46 @@ export const OperationsMaster: React.FC = () => {
   const hasActiveFilters = searchQuery || channelFilter !== 'all' || statusFilter !== 'all' || timeFilter !== 'all' || collectionFilter !== 'all' || paymentFilter !== 'all';
 
   return (
-    <div className="space-y-5 pb-12 animate-in fade-in duration-300">
+    <div className="space-y-8 pb-16 animate-in fade-in duration-300">
       
       {/* Top Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#18181a] border border-white/10 rounded-xl p-5 shadow-sm">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 pb-6 border-b border-[#E5E5E1]">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#a5b4fc] bg-[#222224] px-2 py-0.5 rounded border border-white/10">
-              Files & Operaciones
-            </span>
-            <span className="text-xs text-zinc-400 font-mono">Cultour Core</span>
-          </div>
-          <h1 className="text-2xl font-extrabold text-white font-syne flex items-center gap-2.5">
-            <Compass className="w-6 h-6 text-[#a5b4fc]" />
-            <span>Master de Operaciones</span>
+          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal text-[#1A1A1A] leading-[1.15]">
+            Master de Operaciones<br />
+            <span className="italic font-normal">Files, Receptivo & Educativo</span>
           </h1>
-          <p className="text-xs text-zinc-400 mt-1">
-            Seguimiento integral de Files: Turismo Receptivo (Directo & Agencias B2B) y Turismo Educativo (Salidas & Viajes).
-          </p>
+          <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-[#666666]">
+            <span className="text-[#4F46E5] font-medium font-mono">[ Cultour Core Operations ]</span>
+            <span className="text-[#D0D0CC]">•</span>
+            <span>Seguimiento integral: Receptivo (Directo & Agencias B2B) y Turismo Educativo</span>
+          </div>
         </div>
 
-        <div className="flex items-center gap-2.5 self-start sm:self-auto">
+        <div className="flex items-center gap-3 self-start sm:self-auto">
           <button
             onClick={handleExport}
-            className="px-3 py-1.5 rounded-lg bg-[#222224] hover:bg-[#28282b] text-zinc-200 border border-white/10 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors"
+            className="px-3.5 py-2 rounded-lg bg-[#FFFFFF] hover:bg-[#F4F4F0] text-[#1A1A1A] border border-[#E5E5E1] text-xs font-mono font-bold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
             title="Exportar listado actual a Excel"
           >
-            <Download className="w-3.5 h-3.5 text-[#34d399]" />
+            <Download className="w-3.5 h-3.5 text-[#059669]" />
             <span>Exportar Excel</span>
           </button>
           
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="px-3 py-1.5 rounded-lg bg-[#222224] hover:bg-[#28282b] text-zinc-200 border border-white/10 text-xs font-mono font-bold flex items-center gap-1.5 transition-colors"
+            className="px-3.5 py-2 rounded-lg bg-[#FFFFFF] hover:bg-[#F4F4F0] text-[#1A1A1A] border border-[#E5E5E1] text-xs font-mono font-bold flex items-center gap-1.5 transition-colors shadow-xs cursor-pointer"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-[#34d399]" />
+            <FileSpreadsheet className="w-3.5 h-3.5 text-[#059669]" />
             <span>Importar</span>
           </button>
 
           {currentRole !== 'operativo' && (
             <button
               onClick={() => setIsNewOpModalOpen(true)}
-              className="px-3.5 py-1.5 rounded-lg bg-[#a5b4fc] hover:bg-[#c7d2fe] text-[#111113] font-mono font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all uppercase tracking-wider"
+              className="px-4 py-2 rounded-lg bg-[#1A1A1A] hover:bg-black text-white font-mono font-bold text-xs flex items-center gap-1.5 shadow-sm transition-all uppercase tracking-wider cursor-pointer"
             >
-              <PlusCircle className="w-4 h-4 text-[#111113]" />
+              <PlusCircle className="w-4 h-4 text-white" />
               <span>+ Nuevo File</span>
             </button>
           )}
@@ -218,74 +214,74 @@ export const OperationsMaster: React.FC = () => {
 
       {/* Aggregate KPI Ribbon */}
       <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
-        <div className="bg-[#18181a] border border-white/10 rounded-xl p-3 shadow-sm">
-          <span className="text-[10px] font-mono uppercase font-bold text-zinc-400 block">Operaciones</span>
-          <span className="text-base font-bold text-white font-mono">{summary.count} files</span>
-          <span className="text-[10px] text-zinc-500 font-mono block mt-0.5">{summary.totalPax} pasajeros</span>
+        <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl p-4 shadow-xs">
+          <span className="text-[10px] font-mono uppercase font-bold text-[#666666] block">Operaciones</span>
+          <span className="text-base font-bold text-[#1A1A1A] font-mono">{summary.count} files</span>
+          <span className="text-[10px] text-[#888888] font-mono block mt-0.5">{summary.totalPax} pasajeros</span>
         </div>
 
         {currentRole !== 'operativo' ? (
           <>
-            <div className="bg-[#18181a] border border-white/10 rounded-xl p-3 shadow-sm">
-              <span className="text-[10px] font-mono uppercase font-bold text-[#34d399] block">Ingresos (ARS)</span>
-              <span className="text-sm font-bold text-white font-mono">{formatCurrency(summary.expRevARS, 'ARS')}</span>
-              <span className="text-[10px] text-[#34d399] font-mono block mt-0.5">Cobrado: {formatCurrency(summary.recRevARS, 'ARS')}</span>
+            <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl p-4 shadow-xs">
+              <span className="text-[10px] font-mono uppercase font-bold text-[#059669] block">Ingresos (ARS)</span>
+              <span className="text-sm font-bold text-[#1A1A1A] font-mono">{formatCurrency(summary.expRevARS, 'ARS')}</span>
+              <span className="text-[10px] text-[#059669] font-mono block mt-0.5">Cobrado: {formatCurrency(summary.recRevARS, 'ARS')}</span>
             </div>
 
-            <div className="bg-[#18181a] border border-white/10 rounded-xl p-3 shadow-sm">
-              <span className="text-[10px] font-mono uppercase font-bold text-[#34d399] block">Ingresos (USD)</span>
-              <span className="text-sm font-bold text-[#a5b4fc] font-mono">{formatCurrency(summary.expRevUSD, 'USD')}</span>
-              <span className="text-[10px] text-[#34d399] font-mono block mt-0.5">Cobrado: {formatCurrency(summary.recRevUSD, 'USD')}</span>
+            <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl p-4 shadow-xs">
+              <span className="text-[10px] font-mono uppercase font-bold text-[#0284C7] block">Ingresos (USD)</span>
+              <span className="text-sm font-bold text-[#4F46E5] font-mono">{formatCurrency(summary.expRevUSD, 'USD')}</span>
+              <span className="text-[10px] text-[#059669] font-mono block mt-0.5">Cobrado: {formatCurrency(summary.recRevUSD, 'USD')}</span>
             </div>
 
-            <div className="bg-[#18181a] border border-white/10 rounded-xl p-3 shadow-sm">
-              <span className="text-[10px] font-mono uppercase font-bold text-[#fb7185] block">Costos Estimados</span>
-              <span className="text-sm font-bold text-zinc-200 font-mono">{formatCurrency(summary.expCostARS, 'ARS')}</span>
+            <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl p-4 shadow-xs">
+              <span className="text-[10px] font-mono uppercase font-bold text-[#E11D48] block">Costos Estimados</span>
+              <span className="text-sm font-bold text-[#1A1A1A] font-mono">{formatCurrency(summary.expCostARS, 'ARS')}</span>
               {summary.expCostUSD > 0 && (
-                <span className="text-[10px] text-[#fb7185] font-mono block mt-0.5">+ {formatCurrency(summary.expCostUSD, 'USD')}</span>
+                <span className="text-[10px] text-[#E11D48] font-mono block mt-0.5">+ {formatCurrency(summary.expCostUSD, 'USD')}</span>
               )}
             </div>
 
-            <div className="bg-[#18181a] border border-white/10 rounded-xl p-3 shadow-sm">
-              <span className="text-[10px] font-mono uppercase font-bold text-[#fbbf24] block">Cobro Pendiente</span>
-              <span className="text-sm font-bold text-[#fbbf24] font-mono">{formatCurrency(summary.pendRevARS, 'ARS')}</span>
+            <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl p-4 shadow-xs">
+              <span className="text-[10px] font-mono uppercase font-bold text-[#D97706] block">Cobro Pendiente</span>
+              <span className="text-sm font-bold text-[#D97706] font-mono">{formatCurrency(summary.pendRevARS, 'ARS')}</span>
               {summary.expRevUSD - summary.recRevUSD > 0 && (
-                <span className="text-[10px] text-[#fbbf24] font-mono block mt-0.5">+ {formatCurrency(summary.expRevUSD - summary.recRevUSD, 'USD')}</span>
+                <span className="text-[10px] text-[#D97706] font-mono block mt-0.5">+ {formatCurrency(summary.expRevUSD - summary.recRevUSD, 'USD')}</span>
               )}
             </div>
 
-            <div className="bg-[#18181a] border border-[#a5b4fc]/30 rounded-xl p-3 shadow-sm bg-indigo-950/20">
-              <span className="text-[10px] font-mono uppercase font-bold text-[#a5b4fc] block">Ganancia Proyectada</span>
-              <span className="text-sm font-bold text-white font-mono">{formatCurrency(summary.expProfitARS, 'ARS')}</span>
+            <div className="bg-[#FFFFFF] border border-indigo-200 rounded-2xl p-4 shadow-xs bg-indigo-50/40">
+              <span className="text-[10px] font-mono uppercase font-bold text-[#4F46E5] block">Ganancia Proyectada</span>
+              <span className="text-sm font-bold text-[#1A1A1A] font-mono">{formatCurrency(summary.expProfitARS, 'ARS')}</span>
               {summary.expProfitUSD > 0 && (
-                <span className="text-[10px] text-[#a5b4fc] font-mono block mt-0.5">+ {formatCurrency(summary.expProfitUSD, 'USD')}</span>
+                <span className="text-[10px] text-[#4F46E5] font-mono block mt-0.5">+ {formatCurrency(summary.expProfitUSD, 'USD')}</span>
               )}
             </div>
           </>
         ) : (
-          <div className="col-span-5 bg-[#18181a] border border-white/10 rounded-xl p-3 flex items-center justify-between">
-            <span className="text-xs text-zinc-400 font-mono">Modo Operativo Activo (Valores financieros restringidos)</span>
-            <span className="text-xs text-[#a5b4fc] font-mono font-bold">Total Pasajeros a Operar: {summary.totalPax}</span>
+          <div className="col-span-5 bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl p-4 flex items-center justify-between shadow-xs">
+            <span className="text-xs text-[#666666] font-mono">Modo Operativo Activo (Valores financieros restringidos)</span>
+            <span className="text-xs text-[#4F46E5] font-mono font-bold">Total Pasajeros a Operar: {summary.totalPax}</span>
           </div>
         )}
       </div>
 
       {/* Multi-Filters Filter Bar */}
-      <div className="bg-[#18181a] border border-white/10 rounded-xl p-4 space-y-3 shadow-sm">
+      <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-xl p-4 space-y-3 shadow-xs">
         {/* Sub-Channel tabs */}
-        <div className="flex flex-wrap items-center bg-[#222224] p-1 rounded-lg border border-white/10 text-xs gap-1">
+        <div className="flex flex-wrap items-center bg-[#F4F4F0] p-1 rounded-lg border border-[#E5E5E1] text-xs gap-1">
           <button
             onClick={() => setChannelFilter('all')}
-            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors ${
-              channelFilter === 'all' ? 'bg-[#a5b4fc] text-[#111113]' : 'text-zinc-400 hover:text-white'
+            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors cursor-pointer ${
+              channelFilter === 'all' ? 'bg-[#1A1A1A] text-white shadow-xs' : 'text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
             Todas ({operations.length})
           </button>
           <button
             onClick={() => setChannelFilter('receptivo_directo')}
-            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-              channelFilter === 'receptivo_directo' ? 'bg-cyan-950 text-cyan-300 font-bold border border-cyan-800' : 'text-zinc-400 hover:text-white'
+            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+              channelFilter === 'receptivo_directo' ? 'bg-cyan-50 text-cyan-800 font-bold border border-cyan-300' : 'text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
             <Plane className="w-3.5 h-3.5" />
@@ -293,8 +289,8 @@ export const OperationsMaster: React.FC = () => {
           </button>
           <button
             onClick={() => setChannelFilter('receptivo_agencia')}
-            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-              channelFilter === 'receptivo_agencia' ? 'bg-purple-950 text-purple-300 font-bold border border-purple-800' : 'text-zinc-400 hover:text-white'
+            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+              channelFilter === 'receptivo_agencia' ? 'bg-purple-50 text-purple-800 font-bold border border-purple-300' : 'text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
             <Briefcase className="w-3.5 h-3.5" />
@@ -302,8 +298,8 @@ export const OperationsMaster: React.FC = () => {
           </button>
           <button
             onClick={() => setChannelFilter('salidas')}
-            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-              channelFilter === 'salidas' ? 'bg-emerald-950 text-emerald-300 font-bold border border-emerald-800' : 'text-zinc-400 hover:text-white'
+            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+              channelFilter === 'salidas' ? 'bg-emerald-50 text-emerald-800 font-bold border border-emerald-300' : 'text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
             <Building className="w-3.5 h-3.5" />
@@ -311,8 +307,8 @@ export const OperationsMaster: React.FC = () => {
           </button>
           <button
             onClick={() => setChannelFilter('viajes')}
-            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-              channelFilter === 'viajes' ? 'bg-indigo-950 text-indigo-300 font-bold border border-indigo-800' : 'text-zinc-400 hover:text-white'
+            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+              channelFilter === 'viajes' ? 'bg-indigo-50 text-indigo-800 font-bold border border-indigo-300' : 'text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
             <GraduationCap className="w-3.5 h-3.5" />
@@ -325,13 +321,13 @@ export const OperationsMaster: React.FC = () => {
           
           {/* Search box */}
           <div className="lg:col-span-2 relative">
-            <Search className="w-3.5 h-3.5 text-zinc-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-[#888888] absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Buscar file por nombre, código, colegio, responsable..."
-              className="w-full bg-[#222224] border border-white/10 rounded-lg pl-8 pr-3 py-2 text-white placeholder-zinc-500 focus:outline-none focus:border-[#a5b4fc] text-xs font-mono"
+              className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg pl-8 pr-3 py-2 text-[#1A1A1A] placeholder-[#888888] focus:outline-none focus:border-[#4F46E5] text-xs font-mono transition-colors"
             />
           </div>
 
@@ -340,7 +336,7 @@ export const OperationsMaster: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full bg-[#222224] border border-white/10 rounded-lg px-2.5 py-2 text-zinc-300 focus:outline-none focus:border-[#a5b4fc] text-xs font-mono"
+              className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-2.5 py-2 text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5] text-xs font-mono"
             >
               <option value="all">Estado: Todos</option>
               <option value="confirmada">Confirmada</option>
@@ -355,7 +351,7 @@ export const OperationsMaster: React.FC = () => {
             <select
               value={timeFilter}
               onChange={(e) => setTimeFilter(e.target.value as any)}
-              className="w-full bg-[#222224] border border-white/10 rounded-lg px-2.5 py-2 text-zinc-300 focus:outline-none focus:border-[#a5b4fc] text-xs font-mono"
+              className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-2.5 py-2 text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5] text-xs font-mono"
             >
               <option value="all">Fechas: Todas</option>
               <option value="futuras">Operaciones Futuras</option>
@@ -369,7 +365,7 @@ export const OperationsMaster: React.FC = () => {
             <select
               value={collectionFilter}
               onChange={(e) => setCollectionFilter(e.target.value as any)}
-              className="w-full bg-[#222224] border border-white/10 rounded-lg px-2.5 py-2 text-zinc-300 focus:outline-none focus:border-[#a5b4fc] text-xs font-mono"
+              className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-2.5 py-2 text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5] text-xs font-mono"
             >
               <option value="all">Cobranza: Todas</option>
               <option value="cobro_pendiente">Cobro Pendiente</option>
@@ -379,13 +375,13 @@ export const OperationsMaster: React.FC = () => {
         </div>
 
         {hasActiveFilters && (
-          <div className="flex items-center justify-between pt-2 border-t border-white/10 text-xs font-mono">
-            <span className="text-zinc-400">
-              Mostrando <strong className="text-white">{filteredOperations.length}</strong> de <strong className="text-white">{operations.length}</strong> operaciones
+          <div className="flex items-center justify-between pt-2 border-t border-[#E5E5E1] text-xs font-mono">
+            <span className="text-[#666666]">
+              Mostrando <strong className="text-[#1A1A1A]">{filteredOperations.length}</strong> de <strong className="text-[#1A1A1A]">{operations.length}</strong> operaciones
             </span>
             <button
               onClick={clearFilters}
-              className="text-xs text-[#fb7185] hover:underline flex items-center gap-1 font-bold"
+              className="text-xs text-[#E11D48] hover:underline flex items-center gap-1 font-bold cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
               <span>Limpiar filtros</span>
@@ -395,37 +391,37 @@ export const OperationsMaster: React.FC = () => {
       </div>
 
       {/* Operations Master Table */}
-      <div className="bg-[#18181a] border border-white/10 rounded-xl overflow-hidden shadow-sm">
+      <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-xl overflow-hidden shadow-xs">
         <div className="overflow-x-auto">
           <table className="w-full text-left text-xs border-collapse">
-            <thead className="bg-[#141416] text-zinc-400 uppercase font-mono text-[10px] border-b border-white/10">
+            <thead className="bg-[#F9F9F7] text-[#666666] uppercase font-mono text-[10px] border-b border-[#E5E5E1]">
               <tr>
-                <th className="py-3 px-3.5">Código / File</th>
-                <th className="py-3 px-3">Unidad / Canal</th>
-                <th className="py-3 px-3">Cliente / Colegio</th>
-                <th className="py-3 px-3">Fecha & Pax</th>
-                <th className="py-3 px-3">Estado</th>
+                <th className="py-3 px-3.5 font-semibold">Código / File</th>
+                <th className="py-3 px-3 font-semibold">Unidad / Canal</th>
+                <th className="py-3 px-3 font-semibold">Cliente / Colegio</th>
+                <th className="py-3 px-3 font-semibold">Fecha & Pax</th>
+                <th className="py-3 px-3 font-semibold">Estado</th>
                 {currentRole !== 'operativo' && (
                   <>
-                    <th className="py-3 px-3 text-right text-[#34d399]">Ingreso Esp.</th>
-                    <th className="py-3 px-3 text-right text-[#34d399]">Cobrado</th>
-                    <th className="py-3 px-3 text-right text-[#fbbf24]">Cobro Pend.</th>
-                    <th className="py-3 px-3 text-right text-[#fb7185]">Costo Esp.</th>
-                    <th className="py-3 px-3 text-right text-[#a5b4fc] font-bold">Ganancia Esp.</th>
+                    <th className="py-3 px-3 text-right text-[#059669] font-semibold">Ingreso Esp.</th>
+                    <th className="py-3 px-3 text-right text-[#059669] font-semibold">Cobrado</th>
+                    <th className="py-3 px-3 text-right text-[#D97706] font-semibold">Cobro Pend.</th>
+                    <th className="py-3 px-3 text-right text-[#E11D48] font-semibold">Costo Esp.</th>
+                    <th className="py-3 px-3 text-right text-[#4F46E5] font-bold">Ganancia Esp.</th>
                   </>
                 )}
-                <th className="py-3 px-3 text-center">Acción</th>
+                <th className="py-3 px-3 text-center font-semibold">Acción</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-white/5 font-mono">
+            <tbody className="divide-y divide-[#E5E5E1] font-mono">
               {filteredOperations.length === 0 ? (
                 <tr>
-                  <td colSpan={currentRole !== 'operativo' ? 11 : 6} className="py-12 text-center text-zinc-500 font-sans">
-                    <AlertCircle className="w-8 h-8 mx-auto mb-2 text-zinc-600" />
-                    <p className="text-sm font-medium text-zinc-400">No se encontraron operaciones con los filtros aplicados.</p>
+                  <td colSpan={currentRole !== 'operativo' ? 11 : 6} className="py-12 text-center text-[#888888] font-sans">
+                    <AlertCircle className="w-8 h-8 mx-auto mb-2 text-[#888888]" />
+                    <p className="text-sm font-medium text-[#666666]">No se encontraron operaciones con los filtros aplicados.</p>
                     <button
                       onClick={clearFilters}
-                      className="mt-2 text-xs text-[#a5b4fc] font-bold hover:underline font-mono"
+                      className="mt-2 text-xs text-[#4F46E5] font-bold hover:underline font-mono cursor-pointer"
                     >
                       Restablecer filtros
                     </button>
@@ -437,30 +433,30 @@ export const OperationsMaster: React.FC = () => {
                   const expectedProfit = op.expectedRevenue - op.expectedCost;
 
                   let channelBadge = (
-                    <span className="text-[10px] px-2 py-0.5 rounded bg-[#222224] text-zinc-400 border border-white/10 font-bold">
+                    <span className="text-[10px] px-2 py-0.5 rounded bg-[#F4F4F0] text-[#666666] border border-[#E5E5E1] font-bold">
                       {op.businessUnit}
                     </span>
                   );
 
                   if (op.businessUnit === 'receptivo') {
                     channelBadge = op.receptiveChannel === 'agencia' ? (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800 font-bold">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-purple-50 text-purple-700 border border-purple-200 font-bold">
                         Receptivo: B2B
                       </span>
                     ) : (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-950 text-cyan-300 border border-cyan-800 font-bold">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-cyan-50 text-cyan-700 border border-cyan-200 font-bold">
                         Receptivo: Directo
                       </span>
                     );
                   } else if (op.businessUnit === 'salidas') {
                     channelBadge = (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800 font-bold">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-emerald-50 text-emerald-700 border border-emerald-200 font-bold">
                         Salida Educativa
                       </span>
                     );
                   } else if (op.businessUnit === 'viajes') {
                     channelBadge = (
-                      <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800 font-bold">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-indigo-50 text-indigo-700 border border-indigo-200 font-bold">
                         Viaje Educativo
                       </span>
                     );
@@ -468,28 +464,28 @@ export const OperationsMaster: React.FC = () => {
 
                   const statusBadge =
                     op.status === 'confirmada'
-                      ? 'bg-indigo-950 text-indigo-300 border-indigo-800'
+                      ? 'bg-indigo-50 text-indigo-700 border-indigo-200'
                       : op.status === 'realizada'
-                      ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                      ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
                       : op.status === 'en_curso'
-                      ? 'bg-amber-950 text-amber-300 border-amber-800'
-                      : 'bg-rose-950 text-rose-300 border-rose-800';
+                      ? 'bg-amber-50 text-amber-700 border-amber-200'
+                      : 'bg-rose-50 text-rose-700 border-rose-200';
 
                   return (
                     <tr
                       key={op.id}
                       onClick={() => setSelectedOperationId(op.id)}
-                      className="hover:bg-[#222224]/50 transition-colors cursor-pointer group"
+                      className="hover:bg-[#F4F4F0]/60 transition-colors cursor-pointer group"
                     >
                       {/* Name & Code */}
                       <td className="py-3.5 px-3.5 font-sans">
-                        <div className="font-bold text-white group-hover:text-[#a5b4fc] transition-colors flex items-center gap-1.5">
+                        <div className="font-bold text-[#1A1A1A] group-hover:text-[#4F46E5] transition-colors flex items-center gap-1.5">
                           <span>{op.name}</span>
                         </div>
-                        <div className="text-[11px] text-zinc-400 font-mono mt-0.5 flex items-center gap-2">
-                          <span className="text-[#a5b4fc] font-bold">{op.code}</span>
+                        <div className="text-[11px] text-[#666666] font-mono mt-0.5 flex items-center gap-2">
+                          <span className="text-[#4F46E5] font-bold">{op.code}</span>
                           {op.currency === 'USD' && (
-                            <span className="px-1 rounded bg-cyan-950 text-cyan-300 text-[9px] border border-cyan-800">USD</span>
+                            <span className="px-1 rounded bg-cyan-50 text-cyan-700 text-[9px] border border-cyan-200 font-bold">USD</span>
                           )}
                         </div>
                       </td>
@@ -500,14 +496,14 @@ export const OperationsMaster: React.FC = () => {
                       </td>
 
                       {/* Client */}
-                      <td className="py-3.5 px-3 font-sans text-zinc-300 font-medium max-w-[160px] truncate">
+                      <td className="py-3.5 px-3 font-sans text-[#1A1A1A] font-medium max-w-[160px] truncate">
                         {op.clientOrSchool}
                       </td>
 
                       {/* Date & Pax */}
-                      <td className="py-3.5 px-3 text-zinc-400 text-[11px]">
-                        <div className="text-white font-mono">{op.date}</div>
-                        <div className="text-zinc-500 font-mono text-[10px]">{op.passengerCount} pax</div>
+                      <td className="py-3.5 px-3 text-[#666666] text-[11px]">
+                        <div className="text-[#1A1A1A] font-mono">{op.date}</div>
+                        <div className="text-[#888888] font-mono text-[10px]">{op.passengerCount} pax</div>
                       </td>
 
                       {/* Status */}
@@ -520,19 +516,19 @@ export const OperationsMaster: React.FC = () => {
                       {/* Financial columns */}
                       {currentRole !== 'operativo' && (
                         <>
-                          <td className="py-3.5 px-3 text-right text-[#34d399] font-semibold">
+                          <td className="py-3.5 px-3 text-right text-[#059669] font-semibold">
                             {formatCurrency(op.expectedRevenue, op.currency)}
                           </td>
-                          <td className="py-3.5 px-3 text-right text-[#34d399]">
+                          <td className="py-3.5 px-3 text-right text-[#059669]">
                             {formatCurrency(op.receivedRevenue, op.currency)}
                           </td>
-                          <td className="py-3.5 px-3 text-right text-[#fbbf24]">
+                          <td className="py-3.5 px-3 text-right text-[#D97706]">
                             {pendingRec > 0 ? formatCurrency(pendingRec, op.currency) : '-'}
                           </td>
-                          <td className="py-3.5 px-3 text-right text-[#fb7185]">
+                          <td className="py-3.5 px-3 text-right text-[#E11D48]">
                             {formatCurrency(op.expectedCost, op.currency)}
                           </td>
-                          <td className="py-3.5 px-3 text-right font-bold text-[#a5b4fc]">
+                          <td className="py-3.5 px-3 text-right font-bold text-[#4F46E5]">
                             {formatCurrency(expectedProfit, op.currency)}
                           </td>
                         </>
@@ -540,7 +536,7 @@ export const OperationsMaster: React.FC = () => {
 
                       {/* Action Chevron */}
                       <td className="py-3.5 px-3 text-center">
-                        <span className="p-1 rounded text-zinc-500 group-hover:text-white group-hover:bg-[#222224] transition-all inline-block">
+                        <span className="p-1 rounded text-[#888888] group-hover:text-[#1A1A1A] group-hover:bg-[#E5E5E1] transition-all inline-block">
                           <ChevronRight className="w-4 h-4" />
                         </span>
                       </td>

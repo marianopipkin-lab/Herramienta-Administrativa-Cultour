@@ -313,13 +313,13 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
         </div>
 
         {/* Tab Navigation */}
-        <div className="px-6 bg-[#18181b] border-b border-[#27272a] flex items-center gap-1 overflow-x-auto text-xs font-medium">
+        <div className="px-6 bg-[#F9F9F7] border-b border-[#E5E5E1] flex items-center gap-1 overflow-x-auto text-xs font-medium">
           <button
             onClick={() => setActiveTab('rentabilidad')}
-            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'rentabilidad'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-950/40'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-[#1A1A1A] text-[#1A1A1A] font-bold bg-[#FFFFFF]'
+                : 'border-transparent text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
@@ -328,58 +328,58 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
 
           <button
             onClick={() => setActiveTab('preparacion')}
-            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'preparacion'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-950/40'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-[#1A1A1A] text-[#1A1A1A] font-bold bg-[#FFFFFF]'
+                : 'border-transparent text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
-            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+            <ShieldCheck className="w-3.5 h-3.5 text-[#4F46E5]" />
             <span>Checklist Preparación File (18)</span>
           </button>
 
           <button
             onClick={() => setActiveTab('itinerario')}
-            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'itinerario'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-950/40'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-[#1A1A1A] text-[#1A1A1A] font-bold bg-[#FFFFFF]'
+                : 'border-transparent text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
-            <Calendar className="w-3.5 h-3.5 text-sky-400" />
+            <Calendar className="w-3.5 h-3.5 text-[#0284C7]" />
             <span>Itinerario Operativo ({operation.itinerary?.length || 0})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('pasajeros_checklist')}
-            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'pasajeros_checklist'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-950/40'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-[#1A1A1A] text-[#1A1A1A] font-bold bg-[#FFFFFF]'
+                : 'border-transparent text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
-            <Users className="w-3.5 h-3.5 text-emerald-400" />
+            <Users className="w-3.5 h-3.5 text-[#059669]" />
             <span>Checklist Pasajeros ({operation.students?.length || operation.passengers?.length || 0})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('proveedores_checklist')}
-            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'proveedores_checklist'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-950/40'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-[#1A1A1A] text-[#1A1A1A] font-bold bg-[#FFFFFF]'
+                : 'border-transparent text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
-            <Building2 className="w-3.5 h-3.5 text-amber-400" />
+            <Building2 className="w-3.5 h-3.5 text-[#D97706]" />
             <span>Checklist Proveedores ({operation.suppliers?.length || operation.supplierContracts?.length || 0})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('ingresos')}
-            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'ingresos'
-                ? 'border-indigo-500 text-emerald-400 font-bold bg-emerald-950/40'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-[#1A1A1A] text-[#059669] font-bold bg-[#FFFFFF]'
+                : 'border-transparent text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
             <DollarSign className="w-3.5 h-3.5" />
@@ -388,10 +388,10 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
 
           <button
             onClick={() => setActiveTab('costos')}
-            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'costos'
-                ? 'border-indigo-500 text-rose-400 font-bold bg-rose-950/40'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-[#1A1A1A] text-[#E11D48] font-bold bg-[#FFFFFF]'
+                : 'border-transparent text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
             <CreditCard className="w-3.5 h-3.5" />
@@ -400,10 +400,10 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
 
           <button
             onClick={() => setActiveTab('movimientos')}
-            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'movimientos'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-950/40'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-[#1A1A1A] text-[#1A1A1A] font-bold bg-[#FFFFFF]'
+                : 'border-transparent text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
             <Receipt className="w-3.5 h-3.5" />
@@ -412,10 +412,10 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
 
           <button
             onClick={() => setActiveTab('info')}
-            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap cursor-pointer ${
               activeTab === 'info'
-                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-950/40'
-                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+                ? 'border-[#1A1A1A] text-[#1A1A1A] font-bold bg-[#FFFFFF]'
+                : 'border-transparent text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
             <Compass className="w-3.5 h-3.5" />

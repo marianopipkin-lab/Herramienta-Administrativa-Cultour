@@ -228,13 +228,13 @@ export const CollectionsView: React.FC = () => {
   const getStatusBadge = (status: PaymentQuota['status']) => {
     switch (status) {
       case 'pagada':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 font-semibold">Pagada</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-emerald-50 text-emerald-700 border border-emerald-200 font-semibold">Pagada</span>;
       case 'parcial':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-indigo-500/20 text-indigo-400 border border-indigo-500/30 font-semibold">Parcial</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-indigo-50 text-indigo-700 border border-indigo-200 font-semibold">Parcial</span>;
       case 'pendiente':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold">Pendiente</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-amber-50 text-amber-700 border border-amber-200 font-semibold">Pendiente</span>;
       case 'vencida':
-        return <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-500/20 text-rose-300 border border-rose-500/30 font-semibold animate-pulse">Vencida</span>;
+        return <span className="px-2 py-0.5 rounded text-[10px] font-mono bg-rose-50 text-rose-700 border border-rose-200 font-semibold">Vencida</span>;
     }
   };
 
@@ -252,26 +252,23 @@ export const CollectionsView: React.FC = () => {
   };
 
   return (
-    <div className="space-y-6 animate-in fade-in duration-300">
+    <div className="space-y-8 animate-in fade-in duration-300 pb-16">
       
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-[#18181a] p-5 rounded-xl border border-white/10 shadow-sm">
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 pb-6 border-b border-[#E5E5E1]">
         <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#a5b4fc] bg-[#222224] px-2 py-0.5 rounded border border-white/10">
-              Control de Ingresos & Cuotas
-            </span>
-            <span className="text-xs text-zinc-400 font-mono">Trazabilidad de Pagadores</span>
+          <h1 className="font-serif text-3xl sm:text-4xl lg:text-5xl font-normal text-[#1A1A1A] leading-[1.15]">
+            Cobranzas & Planes de Pago<br />
+            <span className="italic font-normal">Control de Ingresos & Cuotas</span>
+          </h1>
+          <div className="mt-3 flex flex-wrap items-center gap-4 text-xs text-[#666666]">
+            <span className="text-[#4F46E5] font-medium font-mono">[ Trazabilidad de Pagadores ]</span>
+            <span className="text-[#D0D0CC]">•</span>
+            <span>Registro estructurado: Pagador → Operación → Cuota → Cuenta Destino Real</span>
           </div>
-          <h2 className="text-2xl font-syne font-extrabold text-white tracking-tight">
-            Cobranzas & Planes de Pago
-          </h2>
-          <p className="text-xs text-zinc-400 mt-0.5">
-            Registro estructurado: Pagador → Operación → Cuota → Cobro registrado en Cuenta Destino Real.
-          </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => {
               const defaultOp = operations[0];
@@ -288,7 +285,7 @@ export const CollectionsView: React.FC = () => {
               });
               setIsModalOpen(true);
             }}
-            className="px-3.5 py-2 bg-[#a5b4fc] hover:bg-[#c7d2fe] text-[#111113] rounded-lg font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm font-mono uppercase"
+            className="px-4 py-2 bg-[#1A1A1A] hover:bg-black text-white rounded-lg font-bold text-xs flex items-center gap-2 transition-all shadow-sm font-mono uppercase cursor-pointer"
           >
             <PlusCircle className="w-4 h-4" />
             <span>Registrar Cobro</span>
@@ -297,60 +294,60 @@ export const CollectionsView: React.FC = () => {
       </div>
 
       {/* KPI Cards Summary */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-        <div className="bg-[#18181a] border border-white/10 p-4 rounded-xl">
-          <div className="flex items-center justify-between text-zinc-400 mb-1">
-            <span className="text-[11px] font-mono uppercase font-bold text-zinc-400">Cobrado en ARS</span>
-            <ArrowDownLeft className="w-4 h-4 text-[#34d399]" />
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+        <div className="bg-[#FFFFFF] border border-[#E5E5E1] p-5 rounded-2xl shadow-xs">
+          <div className="flex items-center justify-between text-[#666666] mb-2">
+            <span className="text-[11px] font-mono uppercase font-bold text-[#666666]">Cobrado en ARS</span>
+            <ArrowDownLeft className="w-4 h-4 text-[#059669]" />
           </div>
-          <div className="text-xl font-syne font-extrabold text-[#34d399] font-mono">
+          <div className="text-2xl font-serif font-bold text-[#059669]">
             {formatCurrency(totals.collectedARS, 'ARS')}
           </div>
-          <p className="text-[11px] text-zinc-500 font-mono mt-1">Total recaudado en pesos</p>
+          <p className="text-[11px] text-[#888888] font-mono mt-1">Total recaudado en pesos</p>
         </div>
 
-        <div className="bg-[#18181a] border border-white/10 p-4 rounded-xl">
-          <div className="flex items-center justify-between text-zinc-400 mb-1">
-            <span className="text-[11px] font-mono uppercase font-bold text-zinc-400">Cobrado en USD</span>
-            <ArrowDownLeft className="w-4 h-4 text-cyan-400" />
+        <div className="bg-[#FFFFFF] border border-[#E5E5E1] p-5 rounded-2xl shadow-xs">
+          <div className="flex items-center justify-between text-[#666666] mb-2">
+            <span className="text-[11px] font-mono uppercase font-bold text-[#666666]">Cobrado en USD</span>
+            <ArrowDownLeft className="w-4 h-4 text-[#0284C7]" />
           </div>
-          <div className="text-xl font-syne font-extrabold text-cyan-400 font-mono">
+          <div className="text-2xl font-serif font-bold text-[#0284C7]">
             {formatCurrency(totals.collectedUSD, 'USD')}
           </div>
-          <p className="text-[11px] text-zinc-500 font-mono mt-1">PayPal, WeTravel y Bóveda USD</p>
+          <p className="text-[11px] text-[#888888] font-mono mt-1">PayPal, WeTravel y Bóveda USD</p>
         </div>
 
-        <div className="bg-[#18181a] border border-white/10 p-4 rounded-xl">
-          <div className="flex items-center justify-between text-zinc-400 mb-1">
-            <span className="text-[11px] font-mono uppercase font-bold text-zinc-400">Por Cobrar ARS</span>
-            <Clock className="w-4 h-4 text-[#fbbf24]" />
+        <div className="bg-[#FFFFFF] border border-[#E5E5E1] p-5 rounded-2xl shadow-xs">
+          <div className="flex items-center justify-between text-[#666666] mb-2">
+            <span className="text-[11px] font-mono uppercase font-bold text-[#666666]">Por Cobrar ARS</span>
+            <Clock className="w-4 h-4 text-[#D97706]" />
           </div>
-          <div className="text-xl font-syne font-extrabold text-[#fbbf24] font-mono">
+          <div className="text-2xl font-serif font-bold text-[#D97706]">
             {formatCurrency(totals.pendingARS, 'ARS')}
           </div>
-          <p className="text-[11px] text-zinc-500 font-mono mt-1">Cuotas pendientes en moneda local</p>
+          <p className="text-[11px] text-[#888888] font-mono mt-1">Cuotas pendientes en ARS</p>
         </div>
 
-        <div className="bg-[#18181a] border border-white/10 p-4 rounded-xl">
-          <div className="flex items-center justify-between text-zinc-400 mb-1">
-            <span className="text-[11px] font-mono uppercase font-bold text-zinc-400">Por Cobrar USD</span>
-            <Clock className="w-4 h-4 text-indigo-400" />
+        <div className="bg-[#FFFFFF] border border-[#E5E5E1] p-5 rounded-2xl shadow-xs">
+          <div className="flex items-center justify-between text-[#666666] mb-2">
+            <span className="text-[11px] font-mono uppercase font-bold text-[#666666]">Por Cobrar USD</span>
+            <Clock className="w-4 h-4 text-[#4F46E5]" />
           </div>
-          <div className="text-xl font-syne font-extrabold text-indigo-400 font-mono">
+          <div className="text-2xl font-serif font-bold text-[#4F46E5]">
             {formatCurrency(totals.pendingUSD, 'USD')}
           </div>
-          <p className="text-[11px] text-zinc-500 font-mono mt-1">Saldos pendientes receptivo int.</p>
+          <p className="text-[11px] text-[#888888] font-mono mt-1">Saldos pendientes receptivo</p>
         </div>
       </div>
 
       {/* Tabs & Filters */}
-      <div className="bg-[#18181a] p-3.5 rounded-xl border border-white/10 flex flex-col md:flex-row md:items-center justify-between gap-3">
+      <div className="bg-[#FFFFFF] p-4 rounded-xl border border-[#E5E5E1] shadow-xs flex flex-col md:flex-row md:items-center justify-between gap-4">
         {/* Sub-tab selection */}
-        <div className="flex items-center bg-[#222224] p-1 rounded-lg border border-white/10 text-xs">
+        <div className="flex items-center bg-[#F4F4F0] p-1 rounded-lg border border-[#E5E5E1] text-xs">
           <button
             onClick={() => setActiveTab('quotas')}
-            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-              activeTab === 'quotas' ? 'bg-[#a5b4fc] text-[#111113]' : 'text-zinc-400 hover:text-white'
+            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'quotas' ? 'bg-[#1A1A1A] text-white shadow-xs' : 'text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
             <Calendar className="w-3.5 h-3.5" />
@@ -358,8 +355,8 @@ export const CollectionsView: React.FC = () => {
           </button>
           <button
             onClick={() => setActiveTab('records')}
-            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 ${
-              activeTab === 'records' ? 'bg-[#a5b4fc] text-[#111113]' : 'text-zinc-400 hover:text-white'
+            className={`px-3 py-1.5 rounded text-xs font-semibold transition-colors flex items-center gap-1.5 cursor-pointer ${
+              activeTab === 'records' ? 'bg-[#1A1A1A] text-white shadow-xs' : 'text-[#666666] hover:text-[#1A1A1A]'
             }`}
           >
             <Receipt className="w-3.5 h-3.5" />
@@ -368,16 +365,16 @@ export const CollectionsView: React.FC = () => {
         </div>
 
         {/* Filters */}
-        <div className="flex flex-wrap items-center gap-2">
+        <div className="flex flex-wrap items-center gap-3">
           {/* Search */}
           <div className="relative">
-            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+            <Search className="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-[#888888]" />
             <input
               type="text"
               placeholder="Buscar cliente, file..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="bg-[#222224] border border-white/10 rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-[#a5b4fc]"
+              className="bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg pl-8 pr-3 py-2 text-xs text-[#1A1A1A] placeholder-[#888888] focus:outline-none focus:border-[#4F46E5] transition-colors"
             />
           </div>
 
@@ -385,7 +382,7 @@ export const CollectionsView: React.FC = () => {
           <select
             value={currencyFilter}
             onChange={(e) => setCurrencyFilter(e.target.value as any)}
-            className="bg-[#222224] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 focus:outline-none"
+            className="bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
           >
             <option value="all">Todas las divisas</option>
             <option value="ARS">ARS ($)</option>
@@ -397,7 +394,7 @@ export const CollectionsView: React.FC = () => {
             <select
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value as any)}
-              className="bg-[#222224] border border-white/10 rounded-lg px-2.5 py-1.5 text-xs text-zinc-300 focus:outline-none"
+              className="bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
             >
               <option value="all">Todos los estados</option>
               <option value="pendiente">Pendientes</option>
@@ -412,19 +409,19 @@ export const CollectionsView: React.FC = () => {
       {/* Main Table View */}
       {activeTab === 'quotas' ? (
         /* Quotas Table */
-        <div className="bg-[#18181a] rounded-xl border border-white/10 overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-white/10 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white uppercase font-syne tracking-wide flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#a5b4fc]" />
+        <div className="bg-[#FFFFFF] rounded-xl border border-[#E5E5E1] overflow-hidden shadow-xs">
+          <div className="p-4 border-b border-[#E5E5E1] bg-[#F9F9F7] flex items-center justify-between">
+            <h3 className="text-xs font-bold text-[#1A1A1A] uppercase font-mono tracking-wide flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-[#4F46E5]" />
               <span>Cronograma de Cuotas & Compromisos de Pago</span>
             </h3>
-            <span className="text-xs text-zinc-400 font-mono">({filteredQuotas.length} cuotas listadas)</span>
+            <span className="text-xs text-[#666666] font-mono">({filteredQuotas.length} cuotas listadas)</span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-white/10 bg-[#141416] text-zinc-400 font-mono text-[11px] uppercase">
+                <tr className="border-b border-[#E5E5E1] bg-[#FFFFFF] text-[#666666] font-mono text-[11px] uppercase">
                   <th className="py-3 px-4 font-semibold">Vencimiento</th>
                   <th className="py-3 px-4 font-semibold">Operación / File</th>
                   <th className="py-3 px-4 font-semibold">Pagador / Cliente</th>
@@ -436,47 +433,47 @@ export const CollectionsView: React.FC = () => {
                   <th className="py-3 px-4 font-semibold text-right">Acción</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-[#E5E5E1]">
                 {filteredQuotas.length === 0 ? (
                   <tr>
-                    <td colSpan={9} className="py-8 text-center text-zinc-500 font-mono text-xs">
+                    <td colSpan={9} className="py-8 text-center text-[#888888] font-mono text-xs">
                       No hay cuotas que coincidan con los filtros seleccionados.
                     </td>
                   </tr>
                 ) : (
                   filteredQuotas.map(q => (
-                    <tr key={q.id} className="hover:bg-[#222224]/50 transition-colors">
+                    <tr key={q.id} className="hover:bg-[#F4F4F0]/60 transition-colors">
                       <td className="py-3 px-4 font-mono">
-                        <div className="font-bold text-white">{q.dueDate}</div>
+                        <div className="font-bold text-[#1A1A1A]">{q.dueDate}</div>
                       </td>
 
                       <td className="py-3 px-4">
                         <button
                           onClick={() => setSelectedOperationId(q.operationId)}
-                          className="font-mono text-[#a5b4fc] hover:underline font-bold text-left block"
+                          className="font-mono text-[#4F46E5] hover:underline font-bold text-left block cursor-pointer"
                         >
                           {q.operationCode}
                         </button>
-                        <span className="text-[11px] text-zinc-400 truncate block max-w-xs">{q.operationName}</span>
+                        <span className="text-[11px] text-[#666666] truncate block max-w-xs">{q.operationName}</span>
                       </td>
 
                       <td className="py-3 px-4">
-                        <div className="font-semibold text-white">{q.clientName}</div>
+                        <div className="font-semibold text-[#1A1A1A]">{q.clientName}</div>
                       </td>
 
-                      <td className="py-3 px-4 font-mono text-[11px] text-zinc-300 uppercase">
+                      <td className="py-3 px-4 font-mono text-[11px] text-[#666666] uppercase">
                         {q.quotaType.replace('_', ' ')}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono font-bold text-white">
+                      <td className="py-3 px-4 text-right font-mono font-bold text-[#1A1A1A]">
                         {formatCurrency(q.amount, q.currency)}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono text-[#34d399] font-bold">
+                      <td className="py-3 px-4 text-right font-mono text-[#059669] font-bold">
                         {formatCurrency(q.paidAmount, q.currency)}
                       </td>
 
-                      <td className="py-3 px-4 text-right font-mono text-[#fbbf24] font-bold">
+                      <td className="py-3 px-4 text-right font-mono text-[#D97706] font-bold">
                         {formatCurrency(q.balance, q.currency)}
                       </td>
 
@@ -488,12 +485,12 @@ export const CollectionsView: React.FC = () => {
                         {q.balance > 0 ? (
                           <button
                             onClick={() => handleOpenRegisterForQuota(q)}
-                            className="px-2.5 py-1 rounded bg-[#a5b4fc] hover:bg-[#c7d2fe] text-[#111113] font-extrabold text-[11px] font-mono transition-colors uppercase"
+                            className="px-2.5 py-1 rounded bg-[#1A1A1A] hover:bg-black text-white font-bold text-[11px] font-mono transition-colors uppercase cursor-pointer"
                           >
                             Cobrar
                           </button>
                         ) : (
-                          <span className="text-[11px] text-[#34d399] font-mono font-bold flex items-center justify-end gap-1">
+                          <span className="text-[11px] text-[#059669] font-mono font-bold flex items-center justify-end gap-1">
                             <CheckCircle2 className="w-3.5 h-3.5" />
                             Saldado
                           </span>
@@ -508,19 +505,19 @@ export const CollectionsView: React.FC = () => {
         </div>
       ) : (
         /* Receipts & Collections Records Table */
-        <div className="bg-[#18181a] rounded-xl border border-white/10 overflow-hidden shadow-sm">
-          <div className="p-4 border-b border-white/10 flex items-center justify-between">
-            <h3 className="text-sm font-bold text-white uppercase font-syne tracking-wide flex items-center gap-2">
-              <Receipt className="w-4 h-4 text-[#34d399]" />
+        <div className="bg-[#FFFFFF] rounded-xl border border-[#E5E5E1] overflow-hidden shadow-xs">
+          <div className="p-4 border-b border-[#E5E5E1] bg-[#F9F9F7] flex items-center justify-between">
+            <h3 className="text-xs font-bold text-[#1A1A1A] uppercase font-mono tracking-wide flex items-center gap-2">
+              <Receipt className="w-4 h-4 text-[#059669]" />
               <span>Historial de Cobros Recibidos</span>
             </h3>
-            <span className="text-xs text-zinc-400 font-mono">({filteredCollections.length} cobros registrados)</span>
+            <span className="text-xs text-[#666666] font-mono">({filteredCollections.length} cobros registrados)</span>
           </div>
 
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs border-collapse">
               <thead>
-                <tr className="border-b border-white/10 bg-[#141416] text-zinc-400 font-mono text-[11px] uppercase">
+                <tr className="border-b border-[#E5E5E1] bg-[#FFFFFF] text-[#666666] font-mono text-[11px] uppercase">
                   <th className="py-3 px-4 font-semibold">Fecha</th>
                   <th className="py-3 px-4 font-semibold">Operación</th>
                   <th className="py-3 px-4 font-semibold">Pagador / Cliente</th>
@@ -531,10 +528,10 @@ export const CollectionsView: React.FC = () => {
                   <th className="py-3 px-4 font-semibold">Comprobante / Ref</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-white/5">
+              <tbody className="divide-y divide-[#E5E5E1]">
                 {filteredCollections.length === 0 ? (
                   <tr>
-                    <td colSpan={8} className="py-8 text-center text-zinc-500 font-mono text-xs">
+                    <td colSpan={8} className="py-8 text-center text-[#888888] font-mono text-xs">
                       No hay cobros registrados.
                     </td>
                   </tr>
@@ -543,46 +540,46 @@ export const CollectionsView: React.FC = () => {
                     const acc = accounts.find(a => a.id === col.destinationAccountId);
 
                     return (
-                      <tr key={col.id} className="hover:bg-[#222224]/50 transition-colors">
-                        <td className="py-3 px-4 font-mono font-bold text-white">
+                      <tr key={col.id} className="hover:bg-[#F4F4F0]/60 transition-colors">
+                        <td className="py-3 px-4 font-mono font-bold text-[#1A1A1A]">
                           {col.date}
                         </td>
 
                         <td className="py-3 px-4 font-mono">
                           <button
                             onClick={() => setSelectedOperationId(col.operationId)}
-                            className="text-[#a5b4fc] hover:underline font-bold block"
+                            className="text-[#4F46E5] hover:underline font-bold block cursor-pointer"
                           >
                             {col.operationCode || 'File'}
                           </button>
                         </td>
 
                         <td className="py-3 px-4">
-                          <div className="font-semibold text-white">{col.clientName}</div>
+                          <div className="font-semibold text-[#1A1A1A]">{col.clientName}</div>
                         </td>
 
-                        <td className="py-3 px-4 text-zinc-300">
+                        <td className="py-3 px-4 text-[#666666]">
                           {col.concept}
                         </td>
 
                         <td className="py-3 px-4">
-                          <span className="px-2 py-0.5 rounded bg-[#222224] text-zinc-300 font-mono text-[10px] border border-white/5">
+                          <span className="px-2 py-0.5 rounded bg-[#F4F4F0] text-[#1A1A1A] font-mono text-[10px] border border-[#E5E5E1]">
                             {getPaymentMethodLabel(col.paymentMethod)}
                           </span>
                         </td>
 
                         <td className="py-3 px-4">
-                          <div className="font-medium text-white flex items-center gap-1.5">
-                            <Wallet className="w-3.5 h-3.5 text-[#34d399]" />
+                          <div className="font-medium text-[#1A1A1A] flex items-center gap-1.5">
+                            <Wallet className="w-3.5 h-3.5 text-[#059669]" />
                             <span>{acc ? acc.name : col.destinationAccountId}</span>
                           </div>
                         </td>
 
-                        <td className="py-3 px-4 text-right font-mono font-bold text-[#34d399]">
+                        <td className="py-3 px-4 text-right font-mono font-bold text-[#059669]">
                           +{formatCurrency(col.amount, col.currency)}
                         </td>
 
-                        <td className="py-3 px-4 font-mono text-[11px] text-zinc-400">
+                        <td className="py-3 px-4 font-mono text-[11px] text-[#666666]">
                           {col.voucherOrReference || '-'}
                         </td>
                       </tr>
@@ -597,13 +594,13 @@ export const CollectionsView: React.FC = () => {
 
       {/* Modal: Registrar Cobro */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/75 backdrop-blur-sm animate-in fade-in">
-          <div className="bg-[#18181a] border border-white/15 rounded-xl max-w-lg w-full p-6 shadow-2xl space-y-4">
-            <div className="flex items-center justify-between border-b border-white/10 pb-3">
-              <h3 className="text-base font-bold text-white font-syne">Registrar Nuevo Cobro</h3>
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs animate-in fade-in">
+          <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div className="flex items-center justify-between border-b border-[#E5E5E1] pb-3">
+              <h3 className="text-base font-bold text-[#1A1A1A] font-serif">Registrar Nuevo Cobro</h3>
               <button
                 onClick={() => setIsModalOpen(false)}
-                className="text-zinc-400 hover:text-white font-mono text-sm"
+                className="text-[#888888] hover:text-[#1A1A1A] font-mono text-sm cursor-pointer"
               >
                 ✕
               </button>
@@ -611,7 +608,7 @@ export const CollectionsView: React.FC = () => {
 
             <form onSubmit={handleSubmitCollection} className="space-y-4">
               <div>
-                <label className="block text-[11px] font-mono uppercase text-zinc-400 mb-1">
+                <label className="block text-[11px] font-mono uppercase text-[#666666] mb-1">
                   Operación / File Relacionado
                 </label>
                 <select
@@ -625,7 +622,7 @@ export const CollectionsView: React.FC = () => {
                       currency: selected ? selected.currency : formData.currency
                     });
                   }}
-                  className="w-full bg-[#222224] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#a5b4fc]"
+                  className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
                   required
                 >
                   <option value="">Seleccione una operación...</option>
@@ -639,28 +636,28 @@ export const CollectionsView: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-mono uppercase text-zinc-400 mb-1">
+                  <label className="block text-[11px] font-mono uppercase text-[#666666] mb-1">
                     Nombre del Pagador / Cliente
                   </label>
                   <input
                     type="text"
                     value={formData.clientName}
                     onChange={(e) => setFormData({ ...formData, clientName: e.target.value })}
-                    className="w-full bg-[#222224] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#a5b4fc]"
+                    className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
                     placeholder="Ej: John Miller / Mariano Almada"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-mono uppercase text-zinc-400 mb-1">
+                  <label className="block text-[11px] font-mono uppercase text-[#666666] mb-1">
                     Concepto de Cobro
                   </label>
                   <input
                     type="text"
                     value={formData.concept}
                     onChange={(e) => setFormData({ ...formData, concept: e.target.value })}
-                    className="w-full bg-[#222224] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#a5b4fc]"
+                    className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
                     placeholder="Ej: Seña 30%, Cuota 1, Saldo"
                     required
                   />
@@ -669,7 +666,7 @@ export const CollectionsView: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-mono uppercase text-zinc-400 mb-1">
+                  <label className="block text-[11px] font-mono uppercase text-[#666666] mb-1">
                     Monto a Cobrar
                   </label>
                   <input
@@ -678,20 +675,20 @@ export const CollectionsView: React.FC = () => {
                     step="any"
                     value={formData.amount || ''}
                     onChange={(e) => setFormData({ ...formData, amount: parseFloat(e.target.value) || 0 })}
-                    className="w-full bg-[#222224] border border-white/10 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-[#a5b4fc]"
+                    className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] font-mono focus:outline-none focus:border-[#4F46E5]"
                     placeholder="0.00"
                     required
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-mono uppercase text-zinc-400 mb-1">
+                  <label className="block text-[11px] font-mono uppercase text-[#666666] mb-1">
                     Moneda Original
                   </label>
                   <select
                     value={formData.currency}
                     onChange={(e) => setFormData({ ...formData, currency: e.target.value as Currency })}
-                    className="w-full bg-[#222224] border border-white/10 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none"
+                    className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] font-mono focus:outline-none"
                   >
                     <option value="ARS">ARS ($ Pesos)</option>
                     <option value="USD">USD (US$ Dólares)</option>
@@ -701,13 +698,13 @@ export const CollectionsView: React.FC = () => {
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-[11px] font-mono uppercase text-zinc-400 mb-1">
+                  <label className="block text-[11px] font-mono uppercase text-[#666666] mb-1">
                     Medio de Cobro
                   </label>
                   <select
                     value={formData.paymentMethod}
                     onChange={(e) => setFormData({ ...formData, paymentMethod: e.target.value as PaymentMethod })}
-                    className="w-full bg-[#222224] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none"
+                    className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none"
                   >
                     <option value="mercado_pago">Mercado Pago</option>
                     <option value="paypal">PayPal (USD)</option>
@@ -719,13 +716,13 @@ export const CollectionsView: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-[11px] font-mono uppercase text-[#34d399] mb-1">
+                  <label className="block text-[11px] font-mono uppercase text-[#059669] mb-1">
                     Cuenta Destino Real
                   </label>
                   <select
                     value={formData.destinationAccountId}
                     onChange={(e) => setFormData({ ...formData, destinationAccountId: e.target.value })}
-                    className="w-full bg-[#222224] border border-[#34d399]/30 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#34d399]"
+                    className="w-full bg-[#F9F9F7] border border-[#059669]/40 rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#059669]"
                     required
                   >
                     {accounts.map(acc => (
@@ -738,42 +735,42 @@ export const CollectionsView: React.FC = () => {
               </div>
 
               <div>
-                <label className="block text-[11px] font-mono uppercase text-zinc-400 mb-1">
+                <label className="block text-[11px] font-mono uppercase text-[#666666] mb-1">
                   N° de Comprobante / Referencia
                 </label>
                 <input
                   type="text"
                   value={formData.voucherOrReference}
                   onChange={(e) => setFormData({ ...formData, voucherOrReference: e.target.value })}
-                  className="w-full bg-[#222224] border border-white/10 rounded-lg px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-[#a5b4fc]"
+                  className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] font-mono focus:outline-none focus:border-[#4F46E5]"
                   placeholder="Ej: MP#928412984, Transf Santander #48291"
                 />
               </div>
 
               <div>
-                <label className="block text-[11px] font-mono uppercase text-zinc-400 mb-1">
+                <label className="block text-[11px] font-mono uppercase text-[#666666] mb-1">
                   Observaciones
                 </label>
                 <textarea
                   value={formData.notes}
                   onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
                   rows={2}
-                  className="w-full bg-[#222224] border border-white/10 rounded-lg px-3 py-2 text-xs text-white focus:outline-none focus:border-[#a5b4fc]"
+                  className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg px-3 py-2 text-xs text-[#1A1A1A] focus:outline-none focus:border-[#4F46E5]"
                   placeholder="Detalles sobre el cobro o cuota saldada..."
                 />
               </div>
 
-              <div className="flex items-center justify-end gap-3 pt-3 border-t border-white/10">
+              <div className="flex items-center justify-end gap-3 pt-3 border-t border-[#E5E5E1]">
                 <button
                   type="button"
                   onClick={() => setIsModalOpen(false)}
-                  className="px-4 py-2 rounded-lg bg-[#222224] hover:bg-[#28282b] text-zinc-300 text-xs font-mono"
+                  className="px-4 py-2 rounded-lg bg-[#F4F4F0] hover:bg-[#E5E5E1] text-[#1A1A1A] text-xs font-mono cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-[#a5b4fc] hover:bg-[#c7d2fe] text-[#111113] font-bold text-xs font-mono uppercase shadow-sm"
+                  className="px-4 py-2 rounded-lg bg-[#1A1A1A] hover:bg-black text-white font-bold text-xs font-mono uppercase shadow-sm cursor-pointer"
                 >
                   Confirmar Cobro
                 </button>

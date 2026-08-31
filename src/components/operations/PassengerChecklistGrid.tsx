@@ -295,13 +295,13 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
   return (
     <div className="space-y-6">
       {/* Header Toolbar */}
-      <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+      <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl p-4 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-xs">
         <div>
-          <h3 className="text-base font-bold text-white flex items-center gap-2">
-            <Users className="w-5 h-5 text-indigo-400" />
+          <h3 className="text-base font-bold text-[#1A1A1A] flex items-center gap-2 font-serif">
+            <Users className="w-5 h-5 text-[#4F46E5]" />
             Checklist Individual de Alumnos & Pasajeros
           </h3>
-          <p className="text-xs text-[#a1a1aa] mt-0.5">
+          <p className="text-xs text-[#666666] mt-0.5">
             Control de documentación, autorizaciones notariales, ficha médica y grilla financiera de cuotas con trazabilidad contable.
           </p>
         </div>
@@ -309,22 +309,22 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
         {/* Search & Filter */}
         <div className="flex flex-wrap items-center gap-2.5 w-full md:w-auto">
           <div className="relative flex-1 md:w-60">
-            <Search className="w-3.5 h-3.5 text-zinc-500 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-3.5 h-3.5 text-[#888888] absolute left-3 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Buscar por alumno, DNI o tutor..."
               value={searchTerm}
               onChange={e => setSearchTerm(e.target.value)}
-              className="w-full bg-[#111113] border border-[#27272a] rounded-lg pl-8 pr-3 py-1.5 text-xs text-white placeholder-zinc-500 focus:border-indigo-500 focus:outline-none"
+              className="w-full bg-[#F9F9F7] border border-[#E5E5E1] rounded-lg pl-8 pr-3 py-1.5 text-xs text-[#1A1A1A] placeholder-[#888888] focus:border-[#4F46E5] focus:outline-none"
             />
           </div>
 
-          <div className="flex items-center gap-1 bg-[#111113] p-1 rounded-lg border border-[#27272a]">
+          <div className="flex items-center gap-1 bg-[#F9F9F7] p-1 rounded-lg border border-[#E5E5E1]">
             <button
               type="button"
               onClick={() => setFilterStatus('all')}
-              className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
-                filterStatus === 'all' ? 'bg-indigo-600 text-white' : 'text-zinc-400 hover:text-white'
+              className={`px-2.5 py-1 text-xs rounded font-medium transition-colors cursor-pointer ${
+                filterStatus === 'all' ? 'bg-[#1A1A1A] text-white shadow-xs' : 'text-[#666666] hover:text-[#1A1A1A]'
               }`}
             >
               Todos ({passengersList.length})
@@ -332,8 +332,8 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
             <button
               type="button"
               onClick={() => setFilterStatus('pending')}
-              className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
-                filterStatus === 'pending' ? 'bg-amber-900/60 text-amber-200 border border-amber-700/60' : 'text-zinc-400 hover:text-amber-300'
+              className={`px-2.5 py-1 text-xs rounded font-medium transition-colors cursor-pointer ${
+                filterStatus === 'pending' ? 'bg-amber-100 text-amber-900 border border-amber-300 font-bold' : 'text-[#666666] hover:text-amber-800'
               }`}
             >
               Doc. Pendiente
@@ -341,8 +341,8 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
             <button
               type="button"
               onClick={() => setFilterStatus('debt')}
-              className={`px-2.5 py-1 text-xs rounded font-medium transition-colors ${
-                filterStatus === 'debt' ? 'bg-rose-900/60 text-rose-200 border border-rose-700/60' : 'text-zinc-400 hover:text-rose-300'
+              className={`px-2.5 py-1 text-xs rounded font-medium transition-colors cursor-pointer ${
+                filterStatus === 'debt' ? 'bg-rose-100 text-rose-900 border border-rose-300 font-bold' : 'text-[#666666] hover:text-rose-800'
               }`}
             >
               Con Saldo
@@ -353,18 +353,18 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
 
       {/* Passengers Table */}
       {passengersList.length === 0 ? (
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl p-10 text-center space-y-3">
-          <Users className="w-10 h-10 text-zinc-600 mx-auto" />
-          <h4 className="text-base font-semibold text-white">No hay alumnos o pasajeros cargados en este File</h4>
-          <p className="text-xs text-[#a1a1aa] max-w-md mx-auto">
+        <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl p-10 text-center space-y-3 shadow-xs">
+          <Users className="w-10 h-10 text-[#888888] mx-auto" />
+          <h4 className="text-base font-semibold text-[#1A1A1A] font-serif">No hay alumnos o pasajeros cargados en este File</h4>
+          <p className="text-xs text-[#666666] max-w-md mx-auto">
             Utilice la función de importación masiva de alumnos o agregue pasajeros en la sección correspondiente.
           </p>
         </div>
       ) : (
-        <div className="bg-[#18181b] border border-[#27272a] rounded-xl overflow-hidden shadow-lg">
+        <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl overflow-hidden shadow-xs">
           <div className="overflow-x-auto">
-            <table className="w-full text-left text-xs text-[#a1a1aa]">
-              <thead className="bg-[#202024] text-zinc-300 uppercase tracking-wider font-semibold border-b border-[#27272a]">
+            <table className="w-full text-left text-xs text-[#666666]">
+              <thead className="bg-[#F9F9F7] text-[#666666] uppercase tracking-wider font-semibold border-b border-[#E5E5E1]">
                 <tr>
                   <th className="py-3 px-4">Alumno / Pasajero</th>
                   <th className="py-3 px-4">Tutor & Contacto</th>
@@ -378,18 +378,18 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
                   <th className="py-3 px-3 text-center w-24">Cobranza</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-[#27272a]">
+              <tbody className="divide-y divide-[#E5E5E1]">
                 {filteredPassengers.map(p => {
                   return (
-                    <tr key={p.id} className="hover:bg-[#202024]/50 transition-colors">
+                    <tr key={p.id} className="hover:bg-[#F9F9F7]/60 transition-colors">
                       {/* Alumno */}
                       <td className="py-3 px-4">
-                        <div className="font-semibold text-white">{p.name}</div>
+                        <div className="font-semibold text-[#1A1A1A]">{p.name}</div>
                         {p.documentId && (
-                          <span className="text-[11px] text-zinc-400 font-mono">DNI: {p.documentId}</span>
+                          <span className="text-[11px] text-[#666666] font-mono">DNI: {p.documentId}</span>
                         )}
                         {p.checklist.dietaryRestrictions && (
-                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800 font-medium block mt-0.5 w-max">
+                          <span className="text-[10px] px-1.5 py-0.5 rounded bg-amber-50 text-amber-700 border border-amber-200 font-medium block mt-0.5 w-max">
                             {p.checklist.dietaryRestrictions}
                           </span>
                         )}
@@ -399,13 +399,13 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
                       <td className="py-3 px-4">
                         {p.parentName ? (
                           <>
-                            <div className="text-zinc-200">{p.parentName}</div>
+                            <div className="text-[#1A1A1A]">{p.parentName}</div>
                             {p.parentPhone && (
-                              <div className="text-[11px] text-indigo-300 font-mono">{p.parentPhone}</div>
+                              <div className="text-[11px] text-[#4F46E5] font-mono">{p.parentPhone}</div>
                             )}
                           </>
                         ) : (
-                          <span className="text-zinc-500 italic">No informado</span>
+                          <span className="text-[#888888] italic">No informado</span>
                         )}
                       </td>
 
@@ -414,10 +414,10 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
                         <button
                           type="button"
                           onClick={() => handleToggleOperativeCheck(p.id, 'docComplete')}
-                          className={`p-1.5 rounded-lg border transition-all ${
+                          className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                             p.checklist.docComplete
-                              ? 'bg-emerald-950/80 border-emerald-700 text-emerald-400 hover:bg-emerald-900'
-                              : 'bg-[#111113] border-zinc-700 text-zinc-600 hover:text-zinc-400 hover:border-zinc-500'
+                              ? 'bg-emerald-50 border-emerald-300 text-[#059669] hover:bg-emerald-100'
+                              : 'bg-[#F9F9F7] border-[#E5E5E1] text-[#888888] hover:text-[#1A1A1A] hover:border-[#CCCCCC]'
                           }`}
                           title={p.checklist.docComplete ? 'Documento presentado (Click para desmarcar)' : 'Marcar Documento Presentado'}
                         >
@@ -430,10 +430,10 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
                         <button
                           type="button"
                           onClick={() => handleToggleOperativeCheck(p.id, 'authSigned')}
-                          className={`p-1.5 rounded-lg border transition-all ${
+                          className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                             p.checklist.authSigned
-                              ? 'bg-emerald-950/80 border-emerald-700 text-emerald-400 hover:bg-emerald-900'
-                              : 'bg-[#111113] border-zinc-700 text-zinc-600 hover:text-zinc-400 hover:border-zinc-500'
+                              ? 'bg-emerald-50 border-emerald-300 text-[#059669] hover:bg-emerald-100'
+                              : 'bg-[#F9F9F7] border-[#E5E5E1] text-[#888888] hover:text-[#1A1A1A] hover:border-[#CCCCCC]'
                           }`}
                           title={p.checklist.authSigned ? 'Autorización firmada (Click para desmarcar)' : 'Marcar Autorización Firmada'}
                         >
@@ -446,10 +446,10 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
                         <button
                           type="button"
                           onClick={() => handleToggleOperativeCheck(p.id, 'medicalForm')}
-                          className={`p-1.5 rounded-lg border transition-all ${
+                          className={`p-1.5 rounded-lg border transition-all cursor-pointer ${
                             p.checklist.medicalForm
-                              ? 'bg-emerald-950/80 border-emerald-700 text-emerald-400 hover:bg-emerald-900'
-                              : 'bg-[#111113] border-zinc-700 text-zinc-600 hover:text-zinc-400 hover:border-zinc-500'
+                              ? 'bg-emerald-50 border-emerald-300 text-[#059669] hover:bg-emerald-100'
+                              : 'bg-[#F9F9F7] border-[#E5E5E1] text-[#888888] hover:text-[#1A1A1A] hover:border-[#CCCCCC]'
                           }`}
                           title={p.checklist.medicalForm ? 'Ficha médica completa (Click para desmarcar)' : 'Marcar Ficha Médica Completa'}
                         >
@@ -458,23 +458,23 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
                       </td>
 
                       {/* Precio Total */}
-                      <td className="py-3 px-3 text-right font-mono font-medium text-white">
+                      <td className="py-3 px-3 text-right font-mono font-medium text-[#1A1A1A]">
                         {formatCurrency(p.totalPrice, operation.currency)}
                       </td>
 
                       {/* Pagado */}
-                      <td className="py-3 px-3 text-right font-mono text-emerald-400 font-medium">
+                      <td className="py-3 px-3 text-right font-mono text-[#059669] font-medium">
                         {formatCurrency(p.paidAmount, operation.currency)}
                       </td>
 
                       {/* Saldo */}
                       <td className="py-3 px-3 text-right font-mono">
                         {p.balance > 0 ? (
-                          <span className="text-amber-400 font-bold">
+                          <span className="text-[#D97706] font-bold">
                             {formatCurrency(p.balance, operation.currency)}
                           </span>
                         ) : (
-                          <span className="text-emerald-400 font-medium flex items-center justify-end gap-1">
+                          <span className="text-[#059669] font-medium flex items-center justify-end gap-1">
                             <CheckCircle2 className="w-3.5 h-3.5" /> Al día
                           </span>
                         )}
@@ -485,10 +485,10 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
                         <span
                           className={`inline-flex items-center gap-1 text-[11px] font-bold px-2 py-0.5 rounded-full border ${
                             p.status === 'al_dia'
-                              ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-300'
                               : p.status === 'pago_parcial'
-                              ? 'bg-amber-950 text-amber-300 border-amber-800'
-                              : 'bg-rose-950 text-rose-300 border-rose-800'
+                              ? 'bg-amber-50 text-amber-700 border-amber-300'
+                              : 'bg-rose-50 text-rose-700 border-rose-300'
                           }`}
                         >
                           {p.status === 'al_dia' && <CheckCircle2 className="w-3 h-3" />}
@@ -503,7 +503,7 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
                         <button
                           type="button"
                           onClick={() => handleOpenCollectionModal(p)}
-                          className="px-2.5 py-1 rounded bg-indigo-950 hover:bg-indigo-900 border border-indigo-800 text-indigo-300 text-xs font-semibold flex items-center gap-1 mx-auto transition-colors"
+                          className="px-2.5 py-1 rounded bg-[#F4F4F0] hover:bg-[#1A1A1A] hover:text-white border border-[#E5E5E1] text-[#1A1A1A] text-xs font-semibold flex items-center gap-1 mx-auto transition-colors cursor-pointer"
                           title="Registrar Cobranza Contable"
                         >
                           <Receipt className="w-3.5 h-3.5" />
@@ -521,44 +521,44 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
 
       {/* FORMAL COLLECTION MODAL (Rule 2: Derivative UI, Traceable action) */}
       {collectionModalData && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
-          <div className="bg-[#18181b] border border-[#27272a] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95">
-            <div className="px-6 py-4 bg-[#202024] border-b border-[#27272a] flex items-center justify-between">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs">
+          <div className="bg-[#FFFFFF] border border-[#E5E5E1] rounded-2xl w-full max-w-lg overflow-hidden shadow-2xl animate-in fade-in zoom-in-95">
+            <div className="px-6 py-4 bg-[#F9F9F7] border-b border-[#E5E5E1] flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Receipt className="w-5 h-5 text-indigo-400" />
-                <h3 className="text-base font-bold text-white">Registrar Cobranza de Alumno / Pasajero</h3>
+                <Receipt className="w-5 h-5 text-[#4F46E5]" />
+                <h3 className="text-base font-bold text-[#1A1A1A] font-serif">Registrar Cobranza de Alumno / Pasajero</h3>
               </div>
               <button
                 type="button"
                 onClick={() => setCollectionModalData(null)}
-                className="p-1.5 text-zinc-400 hover:text-white rounded-lg"
+                className="p-1.5 text-[#666666] hover:text-[#1A1A1A] rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
             </div>
 
             <form onSubmit={handleConfirmCollection} className="p-6 space-y-4">
-              <div className="bg-[#111113] p-3.5 rounded-xl border border-[#27272a] space-y-1">
+              <div className="bg-[#F9F9F7] p-3.5 rounded-xl border border-[#E5E5E1] space-y-1">
                 <div className="flex justify-between text-xs">
-                  <span className="text-[#a1a1aa]">Alumno / Pasajero:</span>
-                  <span className="font-semibold text-white">
+                  <span className="text-[#666666]">Alumno / Pasajero:</span>
+                  <span className="font-semibold text-[#1A1A1A]">
                     {collectionModalData.passenger.name || (collectionModalData.passenger as any).studentName}
                   </span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-[#a1a1aa]">Operación:</span>
-                  <span className="font-mono text-indigo-300">{operation.code} - {operation.name}</span>
+                  <span className="text-[#666666]">Operación:</span>
+                  <span className="font-mono text-[#4F46E5]">{operation.code} - {operation.name}</span>
                 </div>
                 <div className="flex justify-between text-xs">
-                  <span className="text-[#a1a1aa]">Saldo Pendiente:</span>
-                  <span className="font-mono font-bold text-amber-400">
+                  <span className="text-[#666666]">Saldo Pendiente:</span>
+                  <span className="font-mono font-bold text-[#D97706]">
                     {formatCurrency(collectionModalData.defaultAmount, operation.currency)}
                   </span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#a1a1aa] mb-1">
+                <label className="block text-xs font-semibold text-[#666666] mb-1">
                   Monto a Cobrar ({operation.currency}) *
                 </label>
                 <input
@@ -567,17 +567,17 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
                   required
                   value={collectionForm.amount}
                   onChange={e => setCollectionForm({ ...collectionForm, amount: Number(e.target.value) })}
-                  className="w-full bg-[#111113] border border-[#27272a] rounded-xl px-4 py-2.5 text-sm text-white font-mono font-bold focus:border-indigo-500 focus:outline-none"
+                  className="w-full bg-[#FFFFFF] border border-[#E5E5E1] rounded-xl px-4 py-2.5 text-sm text-[#1A1A1A] font-mono font-bold focus:border-[#4F46E5] focus:outline-none"
                 />
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-xs font-semibold text-[#a1a1aa] mb-1">Medio de Pago *</label>
+                  <label className="block text-xs font-semibold text-[#666666] mb-1">Medio de Pago *</label>
                   <select
                     value={collectionForm.paymentMethod}
                     onChange={e => setCollectionForm({ ...collectionForm, paymentMethod: e.target.value as any })}
-                    className="w-full bg-[#111113] border border-[#27272a] rounded-xl px-3 py-2.5 text-xs text-white"
+                    className="w-full bg-[#FFFFFF] border border-[#E5E5E1] rounded-xl px-3 py-2.5 text-xs text-[#1A1A1A]"
                   >
                     <option value="mercado_pago">Mercado Pago / Link / QR</option>
                     <option value="transferencia">Transferencia Bancaria</option>
@@ -589,11 +589,11 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-[#a1a1aa] mb-1">Cuenta Destino (Acreditación) *</label>
+                  <label className="block text-xs font-semibold text-[#666666] mb-1">Cuenta Destino (Acreditación) *</label>
                   <select
                     value={collectionForm.destinationAccountId}
                     onChange={e => setCollectionForm({ ...collectionForm, destinationAccountId: e.target.value })}
-                    className="w-full bg-[#111113] border border-[#27272a] rounded-xl px-3 py-2.5 text-xs text-white"
+                    className="w-full bg-[#FFFFFF] border border-[#E5E5E1] rounded-xl px-3 py-2.5 text-xs text-[#1A1A1A]"
                   >
                     {accounts.map(acc => (
                       <option key={acc.id} value={acc.id}>
@@ -605,37 +605,37 @@ export const PassengerChecklistGrid: React.FC<Props> = ({ operation }) => {
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#a1a1aa] mb-1">N° Comprobante / Transacción</label>
+                <label className="block text-xs font-semibold text-[#666666] mb-1">N° Comprobante / Transacción</label>
                 <input
                   type="text"
                   placeholder="Ej. MP-OP-8849201"
                   value={collectionForm.reference}
                   onChange={e => setCollectionForm({ ...collectionForm, reference: e.target.value })}
-                  className="w-full bg-[#111113] border border-[#27272a] rounded-xl px-4 py-2 text-xs text-white"
+                  className="w-full bg-[#FFFFFF] border border-[#E5E5E1] rounded-xl px-4 py-2 text-xs text-[#1A1A1A]"
                 />
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-[#a1a1aa] mb-1">Concepto</label>
+                <label className="block text-xs font-semibold text-[#666666] mb-1">Concepto</label>
                 <input
                   type="text"
                   value={collectionForm.concept}
                   onChange={e => setCollectionForm({ ...collectionForm, concept: e.target.value })}
-                  className="w-full bg-[#111113] border border-[#27272a] rounded-xl px-4 py-2 text-xs text-white"
+                  className="w-full bg-[#FFFFFF] border border-[#E5E5E1] rounded-xl px-4 py-2 text-xs text-[#1A1A1A]"
                 />
               </div>
 
-              <div className="flex justify-end gap-3 pt-4 border-t border-[#27272a]">
+              <div className="flex justify-end gap-3 pt-4 border-t border-[#E5E5E1]">
                 <button
                   type="button"
                   onClick={() => setCollectionModalData(null)}
-                  className="px-4 py-2.5 rounded-xl bg-[#202024] hover:bg-[#27272a] text-zinc-300 text-xs font-semibold"
+                  className="px-4 py-2.5 rounded-xl bg-[#FFFFFF] hover:bg-[#F4F4F0] border border-[#E5E5E1] text-[#1A1A1A] text-xs font-semibold cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-bold shadow-lg shadow-indigo-950"
+                  className="px-5 py-2.5 rounded-xl bg-[#1A1A1A] hover:bg-black text-white text-xs font-bold shadow-xs cursor-pointer"
                 >
                   Confirmar y Acreditar en Cuenta
                 </button>
