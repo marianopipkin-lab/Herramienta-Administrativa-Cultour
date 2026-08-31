@@ -108,29 +108,31 @@ export const Navbar: React.FC = () => {
             </span>
           </div>
 
-          {/* Live Cash Snapshot Ribbon in clean light style */}
-          <div className="hidden xl:flex items-center gap-4 bg-[#FFFFFF] border border-[#E5E5E1] rounded-lg px-3.5 py-1.5 shadow-sm">
-            <div className="border-r border-[#E5E5E1] pr-3.5">
-              <span className="text-[9px] uppercase font-bold text-[#666666] tracking-wider block font-mono">Caja Real</span>
-              <div className="flex items-center gap-1.5 text-xs font-mono">
-                <span className="font-semibold text-[#1A1A1A]">{formatCurrency(kpis.currentCashARS, 'ARS')}</span>
-                <span className="text-[#888888]">|</span>
-                <span className="font-semibold text-[#06B6D4]">{formatCurrency(kpis.currentCashUSD, 'USD')}</span>
+          {/* Live Cash Snapshot Ribbon in clean light style (visible only for 'socio' role) */}
+          {currentRole === 'socio' && (
+            <div className="hidden xl:flex items-center gap-4 bg-[#FFFFFF] border border-[#E5E5E1] rounded-lg px-3.5 py-1.5 shadow-sm">
+              <div className="border-r border-[#E5E5E1] pr-3.5">
+                <span className="text-[9px] uppercase font-bold text-[#666666] tracking-wider block font-mono">Caja Real</span>
+                <div className="flex items-center gap-1.5 text-xs font-mono">
+                  <span className="font-semibold text-[#1A1A1A]">{formatCurrency(kpis.currentCashARS, 'ARS')}</span>
+                  <span className="text-[#888888]">|</span>
+                  <span className="font-semibold text-[#06B6D4]">{formatCurrency(kpis.currentCashUSD, 'USD')}</span>
+                </div>
+              </div>
+              <div className="border-r border-[#E5E5E1] pr-3.5">
+                <span className="text-[9px] uppercase font-bold text-[#F59E0B] tracking-wider block font-mono">Comprometido</span>
+                <div className="flex items-center gap-1.5 text-xs font-mono">
+                  <span className="font-medium text-[#F59E0B]">-{formatCurrency(kpis.committedCashARS, 'ARS')}</span>
+                </div>
+              </div>
+              <div>
+                <span className="text-[9px] uppercase font-bold text-[#10B981] tracking-wider block font-mono">Caja Libre</span>
+                <div className="flex items-center gap-1.5 text-xs font-mono">
+                  <span className="font-semibold text-[#10B981]">{formatCurrency(kpis.freeCashUSD, 'USD')}</span>
+                </div>
               </div>
             </div>
-            <div className="border-r border-[#E5E5E1] pr-3.5">
-              <span className="text-[9px] uppercase font-bold text-[#F59E0B] tracking-wider block font-mono">Comprometido</span>
-              <div className="flex items-center gap-1.5 text-xs font-mono">
-                <span className="font-medium text-[#F59E0B]">-{formatCurrency(kpis.committedCashARS, 'ARS')}</span>
-              </div>
-            </div>
-            <div>
-              <span className="text-[9px] uppercase font-bold text-[#10B981] tracking-wider block font-mono">Caja Libre</span>
-              <div className="flex items-center gap-1.5 text-xs font-mono">
-                <span className="font-semibold text-[#10B981]">{formatCurrency(kpis.freeCashUSD, 'USD')}</span>
-              </div>
-            </div>
-          </div>
+          )}
         </div>
 
         {/* Right Actions */}
