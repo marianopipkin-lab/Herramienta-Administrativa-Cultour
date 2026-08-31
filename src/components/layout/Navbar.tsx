@@ -24,6 +24,7 @@ export const Navbar: React.FC = () => {
   const {
     kpis,
     cutoffConfig,
+    exchangeRate,
     setIsNewOpModalOpen,
     setIsImportModalOpen,
     setActiveTab,
@@ -92,52 +93,42 @@ export const Navbar: React.FC = () => {
   const pendingStudents = kpis.pendingStudentsDebtCount;
 
   return (
-    <header className="bg-[#18181a] border-b border-white/10 text-[#f2f2f2] sticky top-0 z-30 shadow-md">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
+    <header className="bg-[#F9F9F7] border-b border-[#E5E5E1] text-[#1A1A1A] sticky top-0 z-30">
+      <div className="max-w-[1400px] mx-auto px-6 h-18 flex items-center justify-between gap-4">
         
-        {/* Brand & Cutoff Badge */}
-        <div className="flex items-center gap-3">
-          <div className="w-8 h-8 rounded bg-[#a5b4fc] flex items-center justify-center text-[#111113] shadow-sm">
-            <Wallet className="w-4 h-4 text-[#111113]" />
+        {/* Left Meta & Reference */}
+        <div className="flex items-center gap-6">
+          <div className="flex items-center gap-4 text-xs text-[#666666]">
+            <span>
+              Ref MEP: <strong className="text-[#1A1A1A] font-mono">${exchangeRate?.usdToArsRate ? exchangeRate.usdToArsRate.toLocaleString('es-AR') : '1.320'}</strong>
+            </span>
+            <span className="text-[#D0D0CC]">•</span>
+            <span>
+              Corte: <strong className="text-[#1A1A1A] font-mono">{cutoffConfig.cutoffDate}</strong>
+            </span>
           </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <span className="font-syne font-extrabold text-sm tracking-tight text-white uppercase">SISTEMA GESTIÓN</span>
-              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#222224] text-[#a5b4fc] border border-white/10 font-bold uppercase">
-                CONTROL SGOF
-              </span>
-            </div>
-            <p className="text-[11px] text-zinc-400 flex items-center gap-1.5 font-mono">
-              <span className="text-zinc-500">Corte inicial:</span>
-              <span className="text-[#34d399] font-bold">{cutoffConfig.cutoffDate}</span>
-            </p>
-          </div>
-        </div>
 
-        {/* Live Cash Snapshot Ribbon */}
-        <div className="hidden lg:flex items-center gap-4 bg-[#222224] border border-white/10 rounded-lg px-4 py-1.5 shadow-inner">
-          <div className="border-r border-white/10 pr-4">
-            <span className="text-[9px] uppercase font-bold text-zinc-400 tracking-wider block font-mono">Caja Real (ARS / USD)</span>
-            <div className="flex items-center gap-1.5 text-xs font-mono">
-              <span className="font-bold text-white">{formatCurrency(kpis.currentCashARS, 'ARS')}</span>
-              <span className="text-zinc-400 font-normal">|</span>
-              <span className="font-bold text-cyan-400">{formatCurrency(kpis.currentCashUSD, 'USD')}</span>
+          {/* Live Cash Snapshot Ribbon in clean light style */}
+          <div className="hidden xl:flex items-center gap-4 bg-[#FFFFFF] border border-[#E5E5E1] rounded-lg px-3.5 py-1.5 shadow-sm">
+            <div className="border-r border-[#E5E5E1] pr-3.5">
+              <span className="text-[9px] uppercase font-bold text-[#666666] tracking-wider block font-mono">Caja Real</span>
+              <div className="flex items-center gap-1.5 text-xs font-mono">
+                <span className="font-semibold text-[#1A1A1A]">{formatCurrency(kpis.currentCashARS, 'ARS')}</span>
+                <span className="text-[#888888]">|</span>
+                <span className="font-semibold text-[#06B6D4]">{formatCurrency(kpis.currentCashUSD, 'USD')}</span>
+              </div>
             </div>
-          </div>
-          <div className="border-r border-white/10 pr-4">
-            <span className="text-[9px] uppercase font-bold text-[#fbbf24] tracking-wider block font-mono">Comprometido</span>
-            <div className="flex items-center gap-1.5 text-xs font-mono">
-              <span className="font-semibold text-[#fbbf24]">-{formatCurrency(kpis.committedCashARS, 'ARS')}</span>
-              <span className="text-zinc-500 font-normal">|</span>
-              <span className="font-semibold text-[#fbbf24]">-{formatCurrency(kpis.committedCashUSD, 'USD')}</span>
+            <div className="border-r border-[#E5E5E1] pr-3.5">
+              <span className="text-[9px] uppercase font-bold text-[#F59E0B] tracking-wider block font-mono">Comprometido</span>
+              <div className="flex items-center gap-1.5 text-xs font-mono">
+                <span className="font-medium text-[#F59E0B]">-{formatCurrency(kpis.committedCashARS, 'ARS')}</span>
+              </div>
             </div>
-          </div>
-          <div>
-            <span className="text-[9px] uppercase font-bold text-[#34d399] tracking-wider block font-mono">Caja Libre Real</span>
-            <div className="flex items-center gap-1.5 text-xs font-mono">
-              <span className="font-bold text-[#34d399]">{formatCurrency(kpis.freeCashARS, 'ARS')}</span>
-              <span className="text-zinc-500 font-normal">|</span>
-              <span className="font-bold text-[#34d399]">{formatCurrency(kpis.freeCashUSD, 'USD')}</span>
+            <div>
+              <span className="text-[9px] uppercase font-bold text-[#10B981] tracking-wider block font-mono">Caja Libre</span>
+              <div className="flex items-center gap-1.5 text-xs font-mono">
+                <span className="font-semibold text-[#10B981]">{formatCurrency(kpis.freeCashUSD, 'USD')}</span>
+              </div>
             </div>
           </div>
         </div>
@@ -148,12 +139,12 @@ export const Navbar: React.FC = () => {
           {/* Supabase Status Pill */}
           <button
             onClick={() => setShowDataManagementModal(true)}
-            className={`px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold border flex items-center gap-1.5 transition-all ${
+            className={`px-2.5 py-1 rounded-full text-[11px] font-mono font-medium border flex items-center gap-1.5 transition-all ${
               supabaseStatus === 'connected'
-                ? 'bg-emerald-950/60 border-emerald-700/80 text-emerald-300 hover:bg-emerald-900/80'
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800 hover:bg-emerald-100'
                 : supabaseStatus === 'connecting'
-                ? 'bg-indigo-950/60 border-indigo-700/80 text-indigo-300 hover:bg-indigo-900/80'
-                : 'bg-amber-950/60 border-amber-700/80 text-amber-300 hover:bg-amber-900/80'
+                ? 'bg-indigo-50 border-indigo-200 text-indigo-800 hover:bg-indigo-100'
+                : 'bg-amber-50 border-amber-200 text-amber-800 hover:bg-amber-100'
             }`}
             title="Base de datos Supabase: Click para abrir panel de sincronización"
           >
@@ -172,10 +163,10 @@ export const Navbar: React.FC = () => {
             <button
               onClick={() => syncFromSupabase()}
               disabled={isLoadingData}
-              className="p-1.5 rounded-lg bg-[#222224] hover:bg-[#28282b] text-zinc-400 hover:text-zinc-200 border border-white/10 transition-colors"
+              className="p-1.5 rounded-lg bg-[#FFFFFF] hover:bg-[#F4F4F0] text-[#666666] hover:text-[#1A1A1A] border border-[#E5E5E1] transition-colors"
               title="Recargar datos desde Supabase"
             >
-              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingData ? 'animate-spin text-indigo-400' : ''}`} />
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingData ? 'animate-spin text-[#4F46E5]' : ''}`} />
             </button>
           )}
 
@@ -183,35 +174,35 @@ export const Navbar: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setShowAlertsMenu(!showAlertsMenu)}
-              className="p-2 rounded bg-[#222224] hover:bg-[#28282b] text-zinc-300 hover:text-white border border-white/10 transition-colors relative"
+              className="p-2 rounded-md bg-[#FFFFFF] hover:bg-[#F4F4F0] text-[#666666] hover:text-[#1A1A1A] border border-[#E5E5E1] transition-colors relative"
               title="Alertas y Notificaciones"
             >
               <Bell className="w-4 h-4" />
               {(unreconciledCount > 0 || pendingStudents > 0) && (
-                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#fb7185] text-[10px] font-bold text-[#111113] rounded-full flex items-center justify-center animate-pulse font-mono">
+                <span className="absolute -top-1 -right-1 w-4 h-4 bg-[#EF4444] text-[10px] font-bold text-white rounded-full flex items-center justify-center font-mono">
                   {unreconciledCount + pendingStudents}
                 </span>
               )}
             </button>
 
             {showAlertsMenu && (
-              <div className="absolute right-0 mt-2 w-80 bg-[#18181a] border border-white/15 rounded-lg shadow-2xl p-3 z-50 animate-in fade-in zoom-in-95">
-                <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2">
-                  <h4 className="text-xs font-bold uppercase tracking-wider text-zinc-300 font-mono">Alertas Activas</h4>
-                  <span className="text-[10px] text-zinc-500 font-mono">{unreconciledCount + pendingStudents} items</span>
+              <div className="absolute right-0 mt-2 w-80 bg-[#FFFFFF] border border-[#E5E5E1] rounded-lg shadow-xl p-3 z-50 animate-in fade-in zoom-in-95">
+                <div className="flex items-center justify-between border-b border-[#E5E5E1] pb-2 mb-2">
+                  <h4 className="text-xs font-semibold uppercase tracking-wider text-[#1A1A1A] font-mono">Alertas Activas</h4>
+                  <span className="text-[10px] text-[#666666] font-mono">{unreconciledCount + pendingStudents} items</span>
                 </div>
                 <div className="space-y-2 max-h-72 overflow-y-auto">
                   {unreconciledCount > 0 && (
                     <div 
                       onClick={() => { setActiveTab('reconciliation'); setShowAlertsMenu(false); }}
-                      className="p-2.5 rounded bg-[#fbbf24]/10 border border-[#fbbf24]/30 hover:bg-[#fbbf24]/20 cursor-pointer transition-colors"
+                      className="p-2.5 rounded bg-amber-50 border border-amber-200 hover:bg-amber-100 cursor-pointer transition-colors"
                     >
-                      <div className="flex items-center gap-2 text-[#fbbf24] text-xs font-bold">
-                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-[#fbbf24]" />
+                      <div className="flex items-center gap-2 text-amber-900 text-xs font-semibold">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-amber-600" />
                         <span>{unreconciledCount} Movimientos sin conciliar</span>
                       </div>
-                      <p className="text-[11px] text-zinc-400 mt-1 font-mono">
-                        Total {formatCurrency(kpis.unreconciledAmount)} pendientes de clasificar en Mercado Pago / Bancos.
+                      <p className="text-[11px] text-amber-800 mt-1 font-mono">
+                        Total {formatCurrency(kpis.unreconciledAmount)} pendientes de clasificar.
                       </p>
                     </div>
                   )}
@@ -219,21 +210,21 @@ export const Navbar: React.FC = () => {
                   {pendingStudents > 0 && (
                     <div 
                       onClick={() => { setActiveTab('students'); setShowAlertsMenu(false); }}
-                      className="p-2.5 rounded bg-[#fb7185]/10 border border-[#fb7185]/30 hover:bg-[#fb7185]/20 cursor-pointer transition-colors"
+                      className="p-2.5 rounded bg-rose-50 border border-rose-200 hover:bg-rose-100 cursor-pointer transition-colors"
                     >
-                      <div className="flex items-center gap-2 text-[#fb7185] text-xs font-bold">
-                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-[#fb7185]" />
+                      <div className="flex items-center gap-2 text-rose-900 text-xs font-semibold">
+                        <AlertTriangle className="w-3.5 h-3.5 shrink-0 text-rose-600" />
                         <span>{pendingStudents} Estudiantes con saldo adeudado</span>
                       </div>
-                      <p className="text-[11px] text-zinc-400 mt-1 font-mono">
-                        Total {formatCurrency(kpis.pendingStudentsDebtAmount)} de cuotas impagas en Viajes Educativos.
+                      <p className="text-[11px] text-rose-800 mt-1 font-mono">
+                        Total {formatCurrency(kpis.pendingStudentsDebtAmount)} de cuotas impagas.
                       </p>
                     </div>
                   )}
 
                   {unreconciledCount === 0 && pendingStudents === 0 && (
-                    <div className="text-center py-4 text-zinc-400 text-xs flex flex-col items-center gap-1">
-                      <CheckCircle2 className="w-6 h-6 text-[#34d399]" />
+                    <div className="text-center py-4 text-[#666666] text-xs flex flex-col items-center gap-1">
+                      <CheckCircle2 className="w-6 h-6 text-[#10B981]" />
                       <span>Todo al día sin alertas críticas</span>
                     </div>
                   )}
@@ -246,43 +237,43 @@ export const Navbar: React.FC = () => {
           <div className="relative">
             <button
               onClick={() => setShowBackupMenu(!showBackupMenu)}
-              className="px-2.5 py-1.5 rounded bg-[#222224] hover:bg-[#28282b] text-zinc-200 border border-white/10 transition-colors text-xs font-medium flex items-center gap-1.5 font-mono"
+              className="px-2.5 py-1.5 rounded-md bg-[#FFFFFF] hover:bg-[#F4F4F0] text-[#1A1A1A] border border-[#E5E5E1] transition-colors text-xs font-medium flex items-center gap-1.5 font-mono"
               title="Herramientas de Base de Datos y Copias"
             >
-              <Database className="w-3.5 h-3.5 text-zinc-400" />
+              <Database className="w-3.5 h-3.5 text-[#666666]" />
               <span className="hidden sm:inline">Datos</span>
             </button>
 
             {showBackupMenu && (
-              <div className="absolute right-0 mt-2 w-64 bg-[#18181a] border border-white/15 rounded-lg shadow-2xl p-2 z-50 space-y-1 text-xs">
+              <div className="absolute right-0 mt-2 w-64 bg-[#FFFFFF] border border-[#E5E5E1] rounded-lg shadow-xl p-2 z-50 space-y-1 text-xs">
                 <button
                   onClick={() => { setShowDataManagementModal(true); setShowBackupMenu(false); }}
-                  className="w-full text-left px-3 py-2 rounded bg-[#a5b4fc]/15 hover:bg-[#a5b4fc]/25 text-[#a5b4fc] font-bold flex items-center gap-2"
+                  className="w-full text-left px-3 py-2 rounded bg-indigo-50 hover:bg-indigo-100 text-[#4F46E5] font-semibold flex items-center gap-2"
                 >
-                  <Database className="w-4 h-4 text-[#a5b4fc]" />
+                  <Database className="w-4 h-4 text-[#4F46E5]" />
                   <span>Sincronizar Supabase / Limpiar</span>
                 </button>
-                <div className="border-t border-white/10 my-1"></div>
+                <div className="border-t border-[#E5E5E1] my-1"></div>
                 <button
                   onClick={() => { handleDownloadTemplate(); setShowBackupMenu(false); }}
-                  className="w-full text-left px-3 py-2 rounded hover:bg-[#222224] text-zinc-300 flex items-center gap-2"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-[#F4F4F0] text-[#1A1A1A] flex items-center gap-2"
                 >
-                  <FileSpreadsheet className="w-4 h-4 text-[#34d399]" />
+                  <FileSpreadsheet className="w-4 h-4 text-[#10B981]" />
                   <span>Descargar Plantilla Excel</span>
                 </button>
                 <button
                   onClick={() => { handleExportJSON(); setShowBackupMenu(false); }}
-                  className="w-full text-left px-3 py-2 rounded hover:bg-[#222224] text-zinc-300 flex items-center gap-2"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-[#F4F4F0] text-[#1A1A1A] flex items-center gap-2"
                 >
-                  <Download className="w-4 h-4 text-[#a5b4fc]" />
+                  <Download className="w-4 h-4 text-[#4F46E5]" />
                   <span>Exportar Backup (JSON)</span>
                 </button>
-                <label className="w-full text-left px-3 py-2 rounded hover:bg-[#222224] text-zinc-300 flex items-center gap-2 cursor-pointer">
-                  <Upload className="w-4 h-4 text-purple-400" />
+                <label className="w-full text-left px-3 py-2 rounded hover:bg-[#F4F4F0] text-[#1A1A1A] flex items-center gap-2 cursor-pointer">
+                  <Upload className="w-4 h-4 text-purple-600" />
                   <span>Restaurar Backup (JSON)</span>
                   <input type="file" accept=".json" onChange={handleImportJSON} className="hidden" />
                 </label>
-                <div className="border-t border-white/10 my-1"></div>
+                <div className="border-t border-[#E5E5E1] my-1"></div>
                 <button
                   onClick={() => {
                     if (confirm('¿Restaurar los datos de demostración iniciales? Se sobreescribirán los cambios no exportados.')) {
@@ -290,9 +281,9 @@ export const Navbar: React.FC = () => {
                       setShowBackupMenu(false);
                     }
                   }}
-                  className="w-full text-left px-3 py-2 rounded hover:bg-[#fb7185]/20 text-[#fb7185] flex items-center gap-2"
+                  className="w-full text-left px-3 py-2 rounded hover:bg-rose-50 text-rose-600 flex items-center gap-2"
                 >
-                  <RotateCcw className="w-4 h-4 text-[#fb7185]" />
+                  <RotateCcw className="w-4 h-4 text-rose-500" />
                   <span>Restablecer Demo Inicial</span>
                 </button>
               </div>
@@ -300,75 +291,36 @@ export const Navbar: React.FC = () => {
           </div>
 
           {/* Role Switcher */}
-          <div className="flex items-center bg-[#222224] border border-white/10 rounded-lg p-0.5 text-xs">
-            <span className="text-[9px] font-mono uppercase text-zinc-500 px-2 font-bold hidden xl:inline">Rol:</span>
+          <div className="flex items-center bg-[#FFFFFF] border border-[#E5E5E1] rounded-md p-0.5 text-xs">
+            <span className="text-[9px] font-mono uppercase text-[#666666] px-2 font-bold hidden xl:inline">Rol:</span>
             <select
               value={currentRole}
               onChange={(e) => setCurrentRole(e.target.value as any)}
-              className="bg-transparent text-xs font-mono font-bold text-[#a5b4fc] focus:outline-none cursor-pointer pr-2 py-1"
+              className="bg-transparent text-xs font-mono font-medium text-[#1A1A1A] focus:outline-none cursor-pointer pr-2 py-1"
               title="Cambiar Rol de Usuario"
             >
-              <option value="socio" className="bg-[#18181a] text-white">Socio (Full)</option>
-              <option value="administrativo" className="bg-[#18181a] text-white">Administrativo</option>
-              <option value="operativo" className="bg-[#18181a] text-white">Operativo</option>
+              <option value="socio">Socio (Full)</option>
+              <option value="administrativo">Administrativo</option>
+              <option value="operativo">Operativo</option>
             </select>
           </div>
 
-          {/* User Profile & Logout */}
-          <div className="relative">
-            <button
-              onClick={() => setShowUserMenu(!showUserMenu)}
-              className="p-1.5 rounded-lg bg-[#222224] hover:bg-[#28282b] text-zinc-300 hover:text-white border border-white/10 flex items-center gap-2"
-              title="Cuenta de Usuario"
-            >
-              <div className="w-6 h-6 rounded-md bg-indigo-600/30 text-indigo-400 border border-indigo-500/40 flex items-center justify-center font-bold text-[11px] font-mono uppercase">
-                {userProfile?.fullName ? userProfile.fullName[0] : 'U'}
-              </div>
-              <span className="text-xs font-mono text-zinc-300 hidden md:inline max-w-[100px] truncate">
-                {userProfile?.fullName || 'Usuario'}
-              </span>
-            </button>
-
-            {showUserMenu && (
-              <div className="absolute right-0 mt-2 w-56 bg-[#18181a] border border-white/15 rounded-lg shadow-2xl p-3 z-50 text-xs space-y-2">
-                <div className="border-b border-white/10 pb-2">
-                  <p className="font-bold text-white truncate">{userProfile?.fullName || 'Usuario'}</p>
-                  <p className="text-[11px] text-zinc-400 font-mono truncate">{userProfile?.email || 'mariano@cultour.com'}</p>
-                  <span className="inline-block mt-1 text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800 uppercase font-bold">
-                    Rol: {currentRole}
-                  </span>
-                </div>
-
-                <button
-                  onClick={() => {
-                    logout();
-                    setShowUserMenu(false);
-                  }}
-                  className="w-full text-left px-2.5 py-1.5 rounded hover:bg-rose-950/60 text-rose-300 hover:text-rose-200 flex items-center gap-2 font-medium transition-colors"
-                >
-                  <LogOut className="w-3.5 h-3.5" />
-                  <span>Cerrar Sesión</span>
-                </button>
-              </div>
-            )}
-          </div>
-
-          {/* Import Excel */}
+          {/* Import button */}
           <button
             onClick={() => setIsImportModalOpen(true)}
-            className="px-3 py-1.5 rounded bg-[#222224] hover:bg-[#28282b] text-zinc-200 border border-white/10 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm font-mono uppercase tracking-wider"
+            className="px-3.5 py-1.5 rounded-md bg-transparent hover:bg-[#FFFFFF] text-[#1A1A1A] border border-[#E5E5E1] font-medium text-xs flex items-center gap-1.5 transition-all shadow-sm"
           >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-zinc-400" />
-            <span className="hidden md:inline">Importar</span>
+            <FileSpreadsheet className="w-3.5 h-3.5 text-[#666666]" />
+            <span className="hidden md:inline">Importar Datos</span>
           </button>
 
-          {/* + Nueva Operación button */}
+          {/* + Nueva Operación button (Solid Dark #1A1A1A) */}
           <button
             onClick={() => setIsNewOpModalOpen(true)}
-            className="px-3.5 py-1.5 rounded bg-[#a5b4fc] hover:bg-[#c7d2fe] text-[#111113] font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-sm uppercase tracking-wider font-mono"
+            className="px-4 py-1.5 rounded-md bg-[#1A1A1A] hover:bg-black text-white font-medium text-xs flex items-center gap-1.5 transition-all shadow-sm"
           >
-            <PlusCircle className="w-4 h-4 text-[#111113]" />
-            <span>Nueva Operación</span>
+            <PlusCircle className="w-3.5 h-3.5 text-white" />
+            <span>+ Nueva Operación</span>
           </button>
 
         </div>

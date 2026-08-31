@@ -41,9 +41,9 @@ const MainContent: React.FC = () => {
 
   if (isLoadingAuth) {
     return (
-      <div className="min-h-screen bg-[#0d0d0f] flex flex-col items-center justify-center text-white">
-        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
-        <p className="text-xs text-zinc-400 font-mono">Iniciando Sistema Cultour...</p>
+      <div className="min-h-screen bg-[#F9F9F7] flex flex-col items-center justify-center text-[#1A1A1A]">
+        <Loader2 className="w-8 h-8 text-[#4F46E5] animate-spin mb-4" />
+        <p className="text-xs text-[#666666] font-mono">Iniciando SGOF Cultour...</p>
       </div>
     );
   }
@@ -65,7 +65,7 @@ const MainContent: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-[#111113] text-[#f2f2f2] flex flex-col font-sans antialiased selection:bg-[#a5b4fc] selection:text-[#111113]">
+    <div className="min-h-screen bg-[#F9F9F7] text-[#1A1A1A] flex flex-col font-sans antialiased selection:bg-[#1A1A1A] selection:text-[#FFFFFF]">
       {/* Top Navbar */}
       <Navbar />
 
@@ -75,8 +75,8 @@ const MainContent: React.FC = () => {
         <Sidebar />
 
         {/* Dynamic Main Workspace */}
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#111113] bg-grid-dots">
-          <div className="max-w-7xl mx-auto">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 bg-[#F9F9F7]">
+          <div className="max-w-[1400px] mx-auto">
             {activeTab === 'dashboard_operativo' && <OperationalDashboard />}
             {activeTab === 'dashboard' && <GeneralDashboard />}
             {activeTab === 'operations' && <OperationsMaster />}

@@ -13,13 +13,12 @@ import {
   History,
   Landmark,
   Layers,
-  ChevronRight,
   FileSpreadsheet
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 
 export const Sidebar: React.FC = () => {
-  const { activeTab, setActiveTab, kpis, currentRole } = useApp();
+  const { activeTab, setActiveTab, kpis, currentRole, userProfile } = useApp();
 
   const allNavItems = [
     {
@@ -33,7 +32,7 @@ export const Sidebar: React.FC = () => {
       id: 'operations',
       label: 'Operaciones / Files',
       icon: Layers,
-      badge: kpis.activeOperationsCount,
+      badge: kpis.activeOperationsCount > 0 ? kpis.activeOperationsCount : undefined,
       roles: ['socio', 'administrativo', 'operativo']
     },
     {
@@ -55,7 +54,7 @@ export const Sidebar: React.FC = () => {
       label: 'Cobranzas & Cuotas',
       icon: Receipt,
       badge: kpis.pendingStudentsDebtCount > 0 ? `${kpis.pendingStudentsDebtCount} pend.` : undefined,
-      badgeColor: 'bg-rose-950 text-rose-300 border-rose-800',
+      badgeColor: 'bg-rose-50 text-rose-700 border-rose-200',
       roles: ['socio', 'administrativo']
     },
     {
@@ -84,7 +83,7 @@ export const Sidebar: React.FC = () => {
       label: 'Conciliación Bancaria/MP',
       icon: Scale,
       badge: kpis.unreconciledMovementsCount > 0 ? `${kpis.unreconciledMovementsCount} pend.` : undefined,
-      badgeColor: 'bg-amber-950 text-amber-300 border-amber-800',
+      badgeColor: 'bg-amber-50 text-amber-700 border-amber-200',
       roles: ['socio', 'administrativo']
     },
     {
@@ -127,7 +126,7 @@ export const Sidebar: React.FC = () => {
       label: 'Plantillas & Importación',
       icon: FileSpreadsheet,
       badge: '12',
-      badgeColor: 'bg-indigo-950 text-indigo-300 border-indigo-800',
+      badgeColor: 'bg-indigo-50 text-indigo-700 border-indigo-200',
       roles: ['socio', 'administrativo', 'operativo']
     },
     {
@@ -135,7 +134,7 @@ export const Sidebar: React.FC = () => {
       label: 'Google Sheets & Drive',
       icon: FileSpreadsheet,
       badge: 'Sync',
-      badgeColor: 'bg-emerald-950 text-emerald-300 border-emerald-800',
+      badgeColor: 'bg-emerald-50 text-emerald-700 border-emerald-200',
       roles: ['socio', 'administrativo']
     }
   ];
@@ -143,59 +142,19 @@ export const Sidebar: React.FC = () => {
   const navItems = allNavItems.filter(item => item.roles.includes(currentRole));
 
   return (
-    <aside className="w-64 bg-[#18181a] border-r border-white/10 flex flex-col shrink-0 min-h-[calc(100vh-4rem)]">
+    <aside className="w-[260px] bg-[#FFFFFF] border-r border-[#E5E5E1] flex flex-col shrink-0 min-h-[calc(100vh-4.5rem)]">
       
       {/* Brand Header */}
-      <div className="p-5 border-b border-white/10">
-        <div className="text-[10px] font-mono font-bold tracking-widest uppercase text-[#a5b4fc] mb-1">
-          [0.1] v2026.08
-        </div>
-        <h1 className="font-syne font-extrabold text-2xl tracking-tight leading-tight text-white">
-          SGOF<br />SYSTEM
-        </h1>
-      </div>
-
-      {/* Business Unit Quick Tag */}
-      <div className="p-3 border-b border-white/10 bg-[#141416]">
-        <div className="bg-[#222224] rounded-lg p-2.5 border border-white/10">
-          <div className="text-[9px] font-mono font-bold uppercase tracking-wider text-zinc-400 mb-2 flex items-center justify-between">
-            <div className="flex items-center gap-1.5">
-              <Layers className="w-3 h-3 text-[#a5b4fc]" />
-              <span>Unidades de Negocio</span>
-            </div>
-            <span className="text-[9px] text-zinc-500 font-mono">3 activas</span>
-          </div>
-          <div className="space-y-1 text-xs">
-            <div className="flex items-center justify-between text-zinc-300">
-              <span className="flex items-center gap-2 text-[11px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-cyan-400"></span>
-                <span>Turismo Receptivo</span>
-              </span>
-              <span className="font-mono text-[10px] text-cyan-400 font-bold">TR</span>
-            </div>
-            <div className="flex items-center justify-between text-zinc-300">
-              <span className="flex items-center gap-2 text-[11px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
-                <span>Salidas Educativas</span>
-              </span>
-              <span className="font-mono text-[10px] text-emerald-400 font-bold">SE</span>
-            </div>
-            <div className="flex items-center justify-between text-zinc-300">
-              <span className="flex items-center gap-2 text-[11px]">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#a5b4fc]"></span>
-                <span>Viajes Educativos</span>
-              </span>
-              <span className="font-mono text-[10px] text-[#a5b4fc] font-bold">VE</span>
-            </div>
-          </div>
+      <div className="p-6 border-b border-[#E5E5E1]">
+        <span className="label-mono block mb-1">System v2026</span>
+        <div className="font-serif text-2xl font-medium tracking-tight text-[#1A1A1A]">
+          SGOF Cultour
         </div>
       </div>
 
       {/* Main Nav Items */}
-      <nav className="flex-1 px-3 py-3 space-y-1 overflow-y-auto">
-        <div className="text-[9px] font-mono font-bold uppercase tracking-widest text-zinc-500 mb-2 px-2">
-          Navegación Principal
-        </div>
+      <nav className="flex-1 px-4 py-4 space-y-1 overflow-y-auto">
+        <span className="label-mono block px-3 mb-2">Navegación</span>
         {navItems.map((item) => {
           const Icon = item.icon;
           const isActive = activeTab === item.id;
@@ -204,21 +163,21 @@ export const Sidebar: React.FC = () => {
             <button
               key={item.id}
               onClick={() => setActiveTab(item.id)}
-              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs font-medium transition-all group ${
+              className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs transition-all group ${
                 isActive
-                  ? 'bg-[#222224] text-[#a5b4fc] border-l-2 border-[#a5b4fc] shadow-sm font-semibold'
-                  : 'text-zinc-400 hover:text-zinc-100 hover:bg-[#222224]/50 border-l-2 border-transparent'
+                  ? 'bg-[#E5E5E1] text-[#1A1A1A] font-medium'
+                  : 'text-[#666666] hover:text-[#1A1A1A] hover:bg-[#F9F9F7]'
               }`}
             >
               <div className="flex items-center gap-2.5 min-w-0">
-                <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-[#a5b4fc]' : 'text-zinc-500 group-hover:text-zinc-300'}`} />
+                <Icon className={`w-4 h-4 shrink-0 transition-colors ${isActive ? 'text-[#1A1A1A]' : 'text-[#888888] group-hover:text-[#1A1A1A]'}`} />
                 <span className="truncate">{item.label}</span>
               </div>
 
               {item.badge !== undefined && (
                 <span
-                  className={`font-mono text-[10px] px-1.5 py-0.5 rounded border font-semibold ${
-                    item.badgeColor || (isActive ? 'bg-[#a5b4fc]/20 text-[#a5b4fc] border-[#a5b4fc]/30' : 'bg-[#222224] text-zinc-400 border-white/10')
+                  className={`font-mono text-[10px] px-1.5 py-0.5 rounded border font-medium ${
+                    item.badgeColor || (isActive ? 'bg-[#FFFFFF] text-[#1A1A1A] border-[#D0D0CC]' : 'bg-[#F9F9F7] text-[#666666] border-[#E5E5E1]')
                   }`}
                 >
                   {item.badge}
@@ -229,24 +188,20 @@ export const Sidebar: React.FC = () => {
         })}
       </nav>
 
-      {/* Bottom Status / User footer */}
-      <div className="p-3.5 border-t border-white/10 bg-[#141416] text-[11px] text-zinc-400">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded bg-[#a5b4fc] flex items-center justify-center text-[10px] font-bold font-mono text-[#111113]">
-              AC
+      {/* User Block at bottom matching the design */}
+      <div className="p-4 border-t border-[#E5E5E1] bg-[#FFFFFF]">
+        <div className="flex items-center gap-3 p-2 bg-[#FFFFFF] border border-[#E5E5E1] rounded-lg">
+          <div className="w-7 h-7 bg-[#E5E5E1] text-[#1A1A1A] rounded flex items-center justify-center text-xs font-semibold font-mono">
+            {userProfile?.fullName ? userProfile.fullName.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase() : 'MP'}
+          </div>
+          <div className="min-w-0 flex-1">
+            <div className="text-xs font-medium text-[#1A1A1A] truncate">
+              {userProfile?.fullName || 'Mariano Pipkin'}
             </div>
-            <div>
-              <p className="font-bold text-zinc-200 leading-tight">Admin Central</p>
-              <p className="font-mono text-[9px] text-[#34d399] flex items-center gap-1">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#34d399] animate-pulse"></span>
-                System Online
-              </p>
+            <div className="text-[11px] text-[#666666] truncate capitalize">
+              {currentRole === 'socio' ? 'Socio Administrador' : currentRole}
             </div>
           </div>
-          <span className="font-mono text-[10px] text-zinc-500 bg-[#222224] px-1.5 py-0.5 rounded border border-white/10">
-            v2026
-          </span>
         </div>
       </div>
     </aside>

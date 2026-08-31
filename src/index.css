@@ -2,54 +2,65 @@
 
 @layer base {
   :root {
-    --bg: #111113;
-    --surface: #18181a;
-    --surface-elevated: #222224;
-    --ink: #f2f2f2;
-    --accent: #a5b4fc;
-    --emerald: #34d399;
-    --amber: #fbbf24;
-    --rose: #fb7185;
-    --border: rgba(242, 242, 242, 0.08);
+    --bg: #F9F9F7;
+    --surface: #FFFFFF;
+    --surface-elevated: #F4F4F0;
+    --ink: #1A1A1A;
+    --ink-muted: #666666;
+    --ink-faint: #E5E5E1;
+    --accent: #4F46E5;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger: #EF4444;
+    --cyan: #06B6D4;
+    --border: #E5E5E1;
   }
 
   body {
     background-color: var(--bg);
     color: var(--ink);
-    font-family: 'Geist', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
   }
 
-  h1, h2, h3, .font-display, .font-syne {
-    font-family: 'Syne', sans-serif;
-    letter-spacing: -0.03em;
+  h1, h2, h3, .font-serif, .font-editorial {
+    font-family: 'Newsreader', Georgia, serif;
+    letter-spacing: -0.02em;
   }
 
-  .font-mono {
+  .font-mono, .label-mono {
     font-family: 'JetBrains Mono', monospace;
   }
 }
 
-.bg-grid-dots {
-  background-image: radial-gradient(circle, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-  background-size: 32px 32px;
+.label-mono {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.68rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--ink-muted);
 }
 
-/* Custom dark terminal scrollbars */
+.bg-grid-dots {
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.04) 1px, transparent 1px);
+  background-size: 28px 28px;
+}
+
+/* Custom scrollbars matching clean light aesthetic */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #18181a;
+  background: #F9F9F7;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #27272a;
+  background: #D8D8D4;
   border-radius: 9999px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #3f3f46;
+  background: #B0B0A8;
 }
