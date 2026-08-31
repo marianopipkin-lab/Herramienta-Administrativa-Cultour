@@ -23,10 +23,10 @@ export const MonthlyClosingView: React.FC = () => {
   const [selectedMonthLabel, setSelectedMonthLabel] = useState<string>('Agosto 2026');
 
   // Real account balances entered at closing time
-  const [accountRealBalances, setAccountRealBalances] = useState<Record<string, number>>({});
+  const [accountRealBalances, setAccountRealBalances] = useState<Record<string, string | number>>({});
 
   useEffect(() => {
-    const initial: Record<string, number> = {};
+    const initial: Record<string, string | number> = {};
     accounts.forEach(a => {
       initial[a.id] = a.currentBalance || 0;
     });
@@ -50,7 +50,11 @@ export const MonthlyClosingView: React.FC = () => {
 
   const realFinalBalanceARS = accounts
     .filter(a => a.currency === 'ARS')
-    .reduce((sum, a) => sum + (Number(accountRealBalances[a.id]) || 0), 0);
+    .reduce((sum, a) => {
+      const raw = accountRealBalances[a.id];
+      const num = typeof raw === 'number' ? raw : (parseFloat(raw) || 0);
+      return sum + num;
+    }, 0);
 
   const differenceARS = realFinalBalanceARS - calculatedFinalBalanceARS;
 
@@ -288,11 +292,17 @@ export const MonthlyClosingView: React.FC = () => {
                     </div>
                     <input
                       type="number"
-                      value={accountRealBalances[acc.id] !== undefined ? accountRealBalances[acc.id] : acc.currentBalance}
-                      onChange={(e) => setAccountRealBalances({
-                        ...accountRealBalances,
-                        [acc.id]: parseFloat(e.target.value) || 0
-                      })}
+                      step="any"
+                      value={accountRealBalances[acc.id] !== undefined ? accountRealBalances[acc.id] : (acc.currentBalance ?? '')}
+                      onChange={(e) => {
+                        const val = e.target.value;
+                        setAccountRealBalances(prev => ({
+                          ...prev,
+                          [acc.id]: val
+                        }));
+                      }}
+                      onFocus={(e) => e.target.select()}
+                      placeholder="0.00"
                       className="w-full bg-white border border-gray-200 rounded p-1.5 text-gray-900 font-mono focus:border-indigo-500 text-xs font-semibold"
                     />
                   </div>

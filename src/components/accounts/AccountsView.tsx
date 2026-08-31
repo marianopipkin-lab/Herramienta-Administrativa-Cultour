@@ -41,25 +41,35 @@ export const AccountsView: React.FC = () => {
   const [savedSuccess, setSavedSuccess] = useState(false);
   const [isDataModalOpen, setIsDataModalOpen] = useState(false);
 
-  // Balances state mapped by account.id
-  const [balances, setBalances] = useState<Record<string, number>>({});
+  // Balances state mapped by account.id (stores string or number for smooth typing)
+  const [balances, setBalances] = useState<Record<string, string | number>>({});
 
   useEffect(() => {
-    const initial: Record<string, number> = {};
+    const initial: Record<string, string | number> = {};
     accounts.forEach(acc => {
       initial[acc.id] = acc.currentBalance ?? 0;
     });
     setBalances(initial);
   }, [accounts]);
 
+  const parseBalanceValue = (val: unknown): number => {
+    if (val === undefined || val === null || val === '') return 0;
+    if (typeof val === 'number') return isNaN(val) ? 0 : val;
+    if (typeof val === 'string') {
+      const num = parseFloat(val);
+      return isNaN(num) ? 0 : num;
+    }
+    return 0;
+  };
+
   // Calculate separated ARS and USD totals
   const totalARS = accounts
     .filter(a => a.currency === 'ARS')
-    .reduce((sum, a) => sum + (Number(balances[a.id]) || 0), 0);
+    .reduce((sum, a) => sum + parseBalanceValue(balances[a.id]), 0);
 
   const totalUSD = accounts
     .filter(a => a.currency === 'USD')
-    .reduce((sum, a) => sum + (Number(balances[a.id]) || 0), 0);
+    .reduce((sum, a) => sum + parseBalanceValue(balances[a.id]), 0);
 
   const rate = exchangeRate?.usdToArsRate || 1320;
   const totalEquivalentUSD = totalUSD + (rate > 0 ? totalARS / rate : 0);
@@ -73,7 +83,7 @@ export const AccountsView: React.FC = () => {
     name: string;
     type: 'banco' | 'mercado_pago' | 'efectivo' | 'inversion';
     currency: 'ARS' | 'USD';
-    initialBalance: number;
+    initialBalance: string | number;
     alias: string;
     cbu: string;
     holder: string;
@@ -82,7 +92,7 @@ export const AccountsView: React.FC = () => {
     name: '',
     type: 'banco',
     currency: 'ARS',
-    initialBalance: 0,
+    initialBalance: '',
     alias: '',
     cbu: '',
     holder: '',
@@ -90,17 +100,21 @@ export const AccountsView: React.FC = () => {
   });
 
   const handleSaveCutoffAndBalances = () => {
+    const numericBalances: Record<string, number> = {};
+    Object.entries(balances).forEach(([accId, bal]) => {
+      numericBalances[accId] = parseBalanceValue(bal);
+    });
+
     // Update cutoff config
     updateCutoffConfig({
       cutoffDate,
       description: cutoffDescription,
-      accountsInitialBalances: balances,
+      accountsInitialBalances: numericBalances,
       initialFixedCostsMonthly: cutoffConfig.initialFixedCostsMonthly
     });
 
     // Update each account balance and initial balance
-    Object.entries(balances).forEach(([accId, bal]) => {
-      const numBal = Number(bal) || 0;
+    Object.entries(numericBalances).forEach(([accId, numBal]) => {
       updateAccount(accId, { currentBalance: numBal, initialBalance: numBal });
     });
 
@@ -115,12 +129,14 @@ export const AccountsView: React.FC = () => {
       return;
     }
 
+    const initBalNum = parseBalanceValue(newAccountForm.initialBalance);
+
     const created = addAccount({
       name: newAccountForm.name,
       type: newAccountForm.type,
       currency: newAccountForm.currency,
-      currentBalance: Number(newAccountForm.initialBalance) || 0,
-      initialBalance: Number(newAccountForm.initialBalance) || 0,
+      currentBalance: initBalNum,
+      initialBalance: initBalNum,
       alias: newAccountForm.alias,
       cbu: newAccountForm.cbu,
       holder: newAccountForm.holder || 'Titular',
@@ -129,7 +145,7 @@ export const AccountsView: React.FC = () => {
 
     setBalances(prev => ({
       ...prev,
-      [created.id]: Number(newAccountForm.initialBalance) || 0
+      [created.id]: initBalNum
     }));
 
     setIsAddAccountModalOpen(false);
@@ -137,7 +153,7 @@ export const AccountsView: React.FC = () => {
       name: '',
       type: 'banco',
       currency: 'ARS',
-      initialBalance: 0,
+      initialBalance: '',
       alias: '',
       cbu: '',
       holder: '',
@@ -338,18 +354,24 @@ export const AccountsView: React.FC = () => {
                   </label>
                   <input
                     type="number"
-                    value={balances[account.id] !== undefined ? balances[account.id] : account.currentBalance}
-                    onChange={(e) => setBalances({
-                      ...balances,
-                      [account.id]: parseFloat(e.target.value) || 0
-                    })}
+                    step="any"
+                    value={balances[account.id] !== undefined ? balances[account.id] : (account.currentBalance ?? '')}
+                    onChange={(e) => {
+                      const val = e.target.value;
+                      setBalances(prev => ({
+                        ...prev,
+                        [account.id]: val
+                      }));
+                    }}
+                    onFocus={(e) => e.target.select()}
+                    placeholder="0.00"
                     className="w-full bg-white border border-gray-200 rounded-lg p-2 font-mono text-base font-bold text-gray-900 focus:outline-none focus:border-indigo-500"
                   />
                 </div>
 
                 <div className="pt-2 border-t border-gray-200 text-[11px] text-gray-500 flex justify-between items-center">
                   <span>Moneda: {account.currency}</span>
-                  <span className="text-emerald-700 font-semibold">{formatCurrency(balances[account.id] || 0)}</span>
+                  <span className="text-emerald-700 font-semibold">{formatCurrency(parseBalanceValue(balances[account.id]), account.currency)}</span>
                 </div>
               </div>
             );
@@ -436,9 +458,11 @@ export const AccountsView: React.FC = () => {
                 <label className="block text-gray-600 mb-1 font-medium">Saldo Inicial al Corte ($)</label>
                 <input
                   type="number"
-                  value={newAccountForm.initialBalance || ''}
-                  onChange={(e) => setNewAccountForm({ ...newAccountForm, initialBalance: parseFloat(e.target.value) || 0 })}
-                  placeholder="0"
+                  step="any"
+                  value={newAccountForm.initialBalance}
+                  onChange={(e) => setNewAccountForm({ ...newAccountForm, initialBalance: e.target.value })}
+                  onFocus={(e) => e.target.select()}
+                  placeholder="0.00"
                   className="w-full bg-white border border-gray-200 rounded-lg p-2 text-gray-900 font-bold font-mono focus:outline-none focus:border-indigo-500"
                 />
               </div>
