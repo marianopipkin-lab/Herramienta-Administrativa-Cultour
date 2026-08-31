@@ -195,6 +195,8 @@ export interface StudentPayer {
   paymentMethod?: PaymentMethod;
   destinationAccountId?: AccountId;
   notes?: string;
+  isLiberated?: boolean;
+  quotasCount?: number;
   status: 'al_dia' | 'pago_parcial' | 'pendiente' | 'vencido';
 }
 
