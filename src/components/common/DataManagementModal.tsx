@@ -8,16 +8,15 @@ import {
   FileSpreadsheet,
   AlertTriangle,
   CheckCircle2,
-  Wallet,
-  Calendar,
   X,
   Sparkles,
-  ArrowRight,
-  ShieldAlert
+  RefreshCw,
+  ShieldAlert,
+  Cloud
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
-import { formatCurrency } from '../../utils/financialCalculations';
 import { generateTemplateWorkbook } from '../../utils/excelParser';
+import { isSupabaseConfigured } from '../../lib/supabase';
 
 interface Props {
   isOpen: boolean;
@@ -28,23 +27,28 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose }) => {
   const {
     operations,
     suppliers,
-    accounts,
     movements,
     fixedExpenses,
-    cutoffConfig,
     clearAllData,
     resetToDemoData,
     exportDatabaseJSON,
     importDatabaseJSON,
     setIsImportModalOpen,
-    setActiveTab
+    setActiveTab,
+    supabaseStatus,
+    syncFromSupabase,
+    seedSupabaseDatabase,
+    isLoadingData
   } = useApp();
 
   const [confirmClearOpen, setConfirmClearOpen] = useState(false);
   const [resetBalancesToZero, setResetBalancesToZero] = useState(true);
   const [statusMessage, setStatusMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
+  const [isSeeding, setIsSeeding] = useState(false);
 
   if (!isOpen) return null;
+
+  const isConfigured = isSupabaseConfigured();
 
   const handleClearData = () => {
     clearAllData({ resetBalancesToZero });
@@ -69,6 +73,48 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose }) => {
       setTimeout(() => {
         onClose();
       }, 1500);
+    }
+  };
+
+  const handleSeedSupabase = async () => {
+    setIsSeeding(true);
+    setStatusMessage(null);
+    try {
+      const res = await seedSupabaseDatabase();
+      if (res.success) {
+        setStatusMessage({
+          type: 'success',
+          text: '¡Base de datos de Supabase poblada con éxito! Todos los registros ahora están en la nube.'
+        });
+      } else {
+        setStatusMessage({
+          type: 'error',
+          text: res.message
+        });
+      }
+    } catch (err: any) {
+      setStatusMessage({
+        type: 'error',
+        text: `Error al poblar Supabase: ${err.message || err}`
+      });
+    } finally {
+      setIsSeeding(false);
+    }
+  };
+
+  const handleSyncSupabase = async () => {
+    setStatusMessage(null);
+    try {
+      await syncFromSupabase();
+      setStatusMessage({
+        type: 'success',
+        text: 'Datos sincronizados exitosamente desde las tablas de Supabase.'
+      });
+    } catch (err: any) {
+      setStatusMessage({
+        type: 'error',
+        text: `Error al sincronizar: ${err.message || err}`
+      });
     }
   };
 
@@ -126,9 +172,9 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <Database className="w-5 h-5" />
             </div>
             <div>
-              <h2 className="text-base font-bold text-gray-900">Gestión de Datos & Puesta a Cero</h2>
+              <h2 className="text-base font-bold text-gray-900">Gestión de Datos & Supabase</h2>
               <p className="text-xs text-gray-500">
-                Limpieza de datos ficticios, configuración de saldos reales y copias de seguridad.
+                Sincronización en la nube, población de datos iniciales y copias de seguridad.
               </p>
             </div>
           </div>
@@ -141,7 +187,7 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose }) => {
         </div>
 
         {/* Content */}
-        <div className="p-6 space-y-6">
+        <div className="p-6 space-y-5">
           
           {/* Status Message */}
           {statusMessage && (
@@ -160,6 +206,51 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <span className="font-medium">{statusMessage.text}</span>
             </div>
           )}
+
+          {/* Supabase Cloud Status Card */}
+          <div className="p-4 rounded-xl border border-indigo-100 bg-indigo-50/40 space-y-3">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <Cloud className="w-4 h-4 text-indigo-600" />
+                <span className="font-bold text-gray-900 text-xs font-mono uppercase">Conexión Supabase</span>
+              </div>
+              <span
+                className={`px-2 py-0.5 rounded-full text-[10px] font-bold font-mono ${
+                  isConfigured
+                    ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                    : 'bg-amber-100 text-amber-800 border border-amber-300'
+                }`}
+              >
+                {isConfigured ? 'Conectado a PostgreSQL' : 'Modo Local (Variables sin configurar)'}
+              </span>
+            </div>
+
+            <p className="text-[11px] text-gray-600">
+              {isConfigured
+                ? 'La aplicación está conectada directamente con Supabase PostgreSQL. Puedes poblar tus tablas con los datos iniciales o sincronizar en tiempo real.'
+                : 'Para persistir en Supabase, asegúrate de configurar VITE_SUPABASE_URL y VITE_SUPABASE_ANON_KEY en tus variables de entorno.'}
+            </p>
+
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button
+                onClick={handleSyncSupabase}
+                disabled={isLoadingData || !isConfigured}
+                className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 disabled:opacity-50 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${isLoadingData ? 'animate-spin' : ''}`} />
+                <span>Recargar desde Supabase</span>
+              </button>
+
+              <button
+                onClick={handleSeedSupabase}
+                disabled={isSeeding || !isConfigured}
+                className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 disabled:opacity-50 text-white font-semibold text-xs flex items-center gap-1.5 transition-colors cursor-pointer"
+              >
+                <Sparkles className="w-3.5 h-3.5" />
+                <span>{isSeeding ? 'Poblando tablas...' : 'Poblar Tablas con Datos Iniciales (Seed)'}</span>
+              </button>
+            </div>
+          </div>
 
           {/* Current Database Summary */}
           <div className="bg-gray-50 p-4 rounded-xl border border-gray-200">
@@ -201,7 +292,7 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose }) => {
                 </div>
                 <button
                   onClick={() => setConfirmClearOpen(true)}
-                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-xs transition-colors shrink-0"
+                  className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 text-white font-semibold text-xs shadow-xs transition-colors shrink-0 cursor-pointer"
                 >
                   Limpiar Base
                 </button>
@@ -230,13 +321,13 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose }) => {
               <div className="flex items-center justify-end gap-2 pt-2">
                 <button
                   onClick={() => setConfirmClearOpen(false)}
-                  className="px-3.5 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors font-medium"
+                  className="px-3.5 py-2 rounded-lg bg-gray-200 text-gray-700 hover:bg-gray-300 transition-colors font-medium cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   onClick={handleClearData}
-                  className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold transition-colors shadow-xs"
+                  className="px-4 py-2 rounded-lg bg-rose-600 hover:bg-rose-700 text-white font-bold transition-colors shadow-xs cursor-pointer"
                 >
                   Sí, vaciar y empezar de cero
                 </button>
@@ -287,7 +378,7 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <div className="flex flex-wrap gap-2.5">
               <button
                 onClick={handleExportJSON}
-                className="px-3.5 py-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 font-medium flex items-center gap-1.5 transition-colors"
+                className="px-3.5 py-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <Download className="w-3.5 h-3.5 text-indigo-600" />
                 <span>Descargar Copia JSON</span>
@@ -301,7 +392,7 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose }) => {
 
               <button
                 onClick={handleDownloadTemplate}
-                className="px-3.5 py-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 font-medium flex items-center gap-1.5 transition-colors"
+                className="px-3.5 py-2 rounded-lg bg-white border border-gray-300 hover:bg-gray-100 text-gray-800 font-medium flex items-center gap-1.5 transition-colors cursor-pointer"
               >
                 <FileSpreadsheet className="w-3.5 h-3.5 text-emerald-600" />
                 <span>Plantilla Excel</span>
@@ -314,7 +405,7 @@ export const DataManagementModal: React.FC<Props> = ({ isOpen, onClose }) => {
             <span>¿Quieres volver a explorar con datos de prueba?</span>
             <button
               onClick={handleRestoreDemo}
-              className="text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 hover:underline"
+              className="text-indigo-600 hover:text-indigo-800 font-semibold flex items-center gap-1 hover:underline cursor-pointer"
             >
               <RotateCcw className="w-3 h-3" />
               <span>Restaurar Datos de Demostración</span>

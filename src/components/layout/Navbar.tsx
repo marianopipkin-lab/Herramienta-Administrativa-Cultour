@@ -7,12 +7,13 @@ import {
   Upload,
   RotateCcw,
   Bell,
-  Search,
   CheckCircle2,
   AlertTriangle,
-  HelpCircle,
   Database,
-  ArrowRight
+  LogOut,
+  User,
+  RefreshCw,
+  Sparkles
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency } from '../../utils/financialCalculations';
@@ -29,14 +30,18 @@ export const Navbar: React.FC = () => {
     resetToDemoData,
     exportDatabaseJSON,
     importDatabaseJSON,
-    movements,
-    operations,
     currentRole,
-    setCurrentRole
+    setCurrentRole,
+    userProfile,
+    logout,
+    supabaseStatus,
+    syncFromSupabase,
+    isLoadingData
   } = useApp();
 
   const [showBackupMenu, setShowBackupMenu] = useState(false);
   const [showAlertsMenu, setShowAlertsMenu] = useState(false);
+  const [showUserMenu, setShowUserMenu] = useState(false);
   const [showDataManagementModal, setShowDataManagementModal] = useState(false);
 
   // Download Excel Template
@@ -112,22 +117,68 @@ export const Navbar: React.FC = () => {
         {/* Live Cash Snapshot Ribbon */}
         <div className="hidden lg:flex items-center gap-4 bg-[#222224] border border-white/10 rounded-lg px-4 py-1.5 shadow-inner">
           <div className="border-r border-white/10 pr-4">
-            <span className="text-[9px] uppercase font-bold text-zinc-400 tracking-wider block font-mono">Caja Actual</span>
-            <span className="text-xs font-bold text-white font-mono">{formatCurrency(kpis.currentCash)}</span>
+            <span className="text-[9px] uppercase font-bold text-zinc-400 tracking-wider block font-mono">Caja Real (ARS / USD)</span>
+            <div className="flex items-center gap-1.5 text-xs font-mono">
+              <span className="font-bold text-white">{formatCurrency(kpis.currentCashARS, 'ARS')}</span>
+              <span className="text-zinc-400 font-normal">|</span>
+              <span className="font-bold text-cyan-400">{formatCurrency(kpis.currentCashUSD, 'USD')}</span>
+            </div>
           </div>
           <div className="border-r border-white/10 pr-4">
             <span className="text-[9px] uppercase font-bold text-[#fbbf24] tracking-wider block font-mono">Comprometido</span>
-            <span className="text-xs font-semibold text-[#fbbf24] font-mono">-{formatCurrency(kpis.committedCash)}</span>
+            <div className="flex items-center gap-1.5 text-xs font-mono">
+              <span className="font-semibold text-[#fbbf24]">-{formatCurrency(kpis.committedCashARS, 'ARS')}</span>
+              <span className="text-zinc-500 font-normal">|</span>
+              <span className="font-semibold text-[#fbbf24]">-{formatCurrency(kpis.committedCashUSD, 'USD')}</span>
+            </div>
           </div>
           <div>
-            <span className="text-[9px] uppercase font-bold text-[#34d399] tracking-wider block font-mono">Caja Libre Proy.</span>
-            <span className="text-xs font-bold text-[#34d399] font-mono">{formatCurrency(kpis.projectedFreeCash)}</span>
+            <span className="text-[9px] uppercase font-bold text-[#34d399] tracking-wider block font-mono">Caja Libre Real</span>
+            <div className="flex items-center gap-1.5 text-xs font-mono">
+              <span className="font-bold text-[#34d399]">{formatCurrency(kpis.freeCashARS, 'ARS')}</span>
+              <span className="text-zinc-500 font-normal">|</span>
+              <span className="font-bold text-[#34d399]">{formatCurrency(kpis.freeCashUSD, 'USD')}</span>
+            </div>
           </div>
         </div>
 
         {/* Right Actions */}
         <div className="flex items-center gap-2.5">
           
+          {/* Supabase Status Pill */}
+          <button
+            onClick={() => setShowDataManagementModal(true)}
+            className={`px-2.5 py-1 rounded-full text-[11px] font-mono font-semibold border flex items-center gap-1.5 transition-all ${
+              supabaseStatus === 'connected'
+                ? 'bg-emerald-950/60 border-emerald-700/80 text-emerald-300 hover:bg-emerald-900/80'
+                : supabaseStatus === 'connecting'
+                ? 'bg-indigo-950/60 border-indigo-700/80 text-indigo-300 hover:bg-indigo-900/80'
+                : 'bg-amber-950/60 border-amber-700/80 text-amber-300 hover:bg-amber-900/80'
+            }`}
+            title="Base de datos Supabase: Click para abrir panel de sincronización"
+          >
+            <Database className="w-3.5 h-3.5" />
+            <span className="hidden sm:inline">
+              {supabaseStatus === 'connected'
+                ? 'Supabase Conectado'
+                : supabaseStatus === 'connecting'
+                ? 'Sincronizando...'
+                : 'Modo Local'}
+            </span>
+          </button>
+
+          {/* Quick sync button if connected */}
+          {supabaseStatus === 'connected' && (
+            <button
+              onClick={() => syncFromSupabase()}
+              disabled={isLoadingData}
+              className="p-1.5 rounded-lg bg-[#222224] hover:bg-[#28282b] text-zinc-400 hover:text-zinc-200 border border-white/10 transition-colors"
+              title="Recargar datos desde Supabase"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isLoadingData ? 'animate-spin text-indigo-400' : ''}`} />
+            </button>
+          )}
+
           {/* Alerts notification bell */}
           <div className="relative">
             <button
@@ -209,7 +260,7 @@ export const Navbar: React.FC = () => {
                   className="w-full text-left px-3 py-2 rounded bg-[#a5b4fc]/15 hover:bg-[#a5b4fc]/25 text-[#a5b4fc] font-bold flex items-center gap-2"
                 >
                   <Database className="w-4 h-4 text-[#a5b4fc]" />
-                  <span>Empezar de Cero / Limpiar</span>
+                  <span>Sincronizar Supabase / Limpiar</span>
                 </button>
                 <div className="border-t border-white/10 my-1"></div>
                 <button
@@ -248,16 +299,6 @@ export const Navbar: React.FC = () => {
             )}
           </div>
 
-          {/* Google Sheets button */}
-          <button
-            onClick={() => setActiveTab('sheets')}
-            className="px-2.5 py-1.5 rounded bg-[#34d399]/15 hover:bg-[#34d399]/25 text-[#34d399] border border-[#34d399]/30 font-bold text-xs flex items-center gap-1.5 transition-all shadow-sm font-mono"
-            title="Google Sheets & Google Drive Workspace"
-          >
-            <FileSpreadsheet className="w-3.5 h-3.5 text-[#34d399]" />
-            <span className="hidden sm:inline">Sheets</span>
-          </button>
-
           {/* Role Switcher */}
           <div className="flex items-center bg-[#222224] border border-white/10 rounded-lg p-0.5 text-xs">
             <span className="text-[9px] font-mono uppercase text-zinc-500 px-2 font-bold hidden xl:inline">Rol:</span>
@@ -273,6 +314,45 @@ export const Navbar: React.FC = () => {
             </select>
           </div>
 
+          {/* User Profile & Logout */}
+          <div className="relative">
+            <button
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="p-1.5 rounded-lg bg-[#222224] hover:bg-[#28282b] text-zinc-300 hover:text-white border border-white/10 flex items-center gap-2"
+              title="Cuenta de Usuario"
+            >
+              <div className="w-6 h-6 rounded-md bg-indigo-600/30 text-indigo-400 border border-indigo-500/40 flex items-center justify-center font-bold text-[11px] font-mono uppercase">
+                {userProfile?.fullName ? userProfile.fullName[0] : 'U'}
+              </div>
+              <span className="text-xs font-mono text-zinc-300 hidden md:inline max-w-[100px] truncate">
+                {userProfile?.fullName || 'Usuario'}
+              </span>
+            </button>
+
+            {showUserMenu && (
+              <div className="absolute right-0 mt-2 w-56 bg-[#18181a] border border-white/15 rounded-lg shadow-2xl p-3 z-50 text-xs space-y-2">
+                <div className="border-b border-white/10 pb-2">
+                  <p className="font-bold text-white truncate">{userProfile?.fullName || 'Usuario'}</p>
+                  <p className="text-[11px] text-zinc-400 font-mono truncate">{userProfile?.email || 'mariano@cultour.com'}</p>
+                  <span className="inline-block mt-1 text-[10px] font-mono px-2 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800 uppercase font-bold">
+                    Rol: {currentRole}
+                  </span>
+                </div>
+
+                <button
+                  onClick={() => {
+                    logout();
+                    setShowUserMenu(false);
+                  }}
+                  className="w-full text-left px-2.5 py-1.5 rounded hover:bg-rose-950/60 text-rose-300 hover:text-rose-200 flex items-center gap-2 font-medium transition-colors"
+                >
+                  <LogOut className="w-3.5 h-3.5" />
+                  <span>Cerrar Sesión</span>
+                </button>
+              </div>
+            )}
+          </div>
+
           {/* Import Excel */}
           <button
             onClick={() => setIsImportModalOpen(true)}
@@ -282,7 +362,7 @@ export const Navbar: React.FC = () => {
             <span className="hidden md:inline">Importar</span>
           </button>
 
-          {/* + Nueva Operación button (Accent button from design HTML) */}
+          {/* + Nueva Operación button */}
           <button
             onClick={() => setIsNewOpModalOpen(true)}
             className="px-3.5 py-1.5 rounded bg-[#a5b4fc] hover:bg-[#c7d2fe] text-[#111113] font-extrabold text-xs flex items-center gap-1.5 transition-all shadow-sm uppercase tracking-wider font-mono"

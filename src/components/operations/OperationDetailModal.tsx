@@ -28,6 +28,11 @@ import {
   AccountId
 } from '../../types';
 import { formatCurrency, formatPercent } from '../../utils/financialCalculations';
+import { OperationPreparationChecklistView } from './OperationPreparationChecklistView';
+import { OperationItineraryView } from './OperationItineraryView';
+import { PassengerChecklistGrid } from './PassengerChecklistGrid';
+import { SupplierChecklistGrid } from './SupplierChecklistGrid';
+import { ShieldCheck, CheckSquare, ListChecks } from 'lucide-react';
 
 interface Props {
   operationId: string;
@@ -48,7 +53,9 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
 
   const operation = operations.find(op => op.id === operationId);
 
-  const [activeTab, setActiveTab] = useState<'info' | 'ingresos' | 'costos' | 'estudiantes' | 'rentabilidad' | 'movimientos'>('rentabilidad');
+  const [activeTab, setActiveTab] = useState<
+    'rentabilidad' | 'preparacion' | 'itinerario' | 'pasajeros_checklist' | 'proveedores_checklist' | 'ingresos' | 'costos' | 'estudiantes' | 'movimientos' | 'info'
+  >('rentabilidad');
   const [isEditingInfo, setIsEditingInfo] = useState(false);
 
   // Edit form state
@@ -306,13 +313,13 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
         </div>
 
         {/* Tab Navigation */}
-        <div className="px-6 bg-white border-b border-gray-100 flex items-center gap-1 overflow-x-auto text-xs font-medium">
+        <div className="px-6 bg-[#18181b] border-b border-[#27272a] flex items-center gap-1 overflow-x-auto text-xs font-medium">
           <button
             onClick={() => setActiveTab('rentabilidad')}
             className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
               activeTab === 'rentabilidad'
-                ? 'border-indigo-600 text-indigo-700 font-bold bg-indigo-50/50'
-                : 'border-transparent text-gray-500 hover:text-gray-800'
+                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-950/40'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <TrendingUp className="w-3.5 h-3.5" />
@@ -320,61 +327,95 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
           </button>
 
           <button
+            onClick={() => setActiveTab('preparacion')}
+            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+              activeTab === 'preparacion'
+                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-950/40'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <ShieldCheck className="w-3.5 h-3.5 text-indigo-400" />
+            <span>Checklist Preparación File (18)</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('itinerario')}
+            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+              activeTab === 'itinerario'
+                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-950/40'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Calendar className="w-3.5 h-3.5 text-sky-400" />
+            <span>Itinerario Operativo ({operation.itinerary?.length || 0})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('pasajeros_checklist')}
+            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+              activeTab === 'pasajeros_checklist'
+                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-950/40'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Users className="w-3.5 h-3.5 text-emerald-400" />
+            <span>Checklist Pasajeros ({operation.students?.length || operation.passengers?.length || 0})</span>
+          </button>
+
+          <button
+            onClick={() => setActiveTab('proveedores_checklist')}
+            className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
+              activeTab === 'proveedores_checklist'
+                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-950/40'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
+            }`}
+          >
+            <Building2 className="w-3.5 h-3.5 text-amber-400" />
+            <span>Checklist Proveedores ({operation.suppliers?.length || operation.supplierContracts?.length || 0})</span>
+          </button>
+
+          <button
             onClick={() => setActiveTab('ingresos')}
             className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
               activeTab === 'ingresos'
-                ? 'border-indigo-600 text-emerald-700 font-bold bg-emerald-50/50'
-                : 'border-transparent text-gray-500 hover:text-gray-800'
+                ? 'border-indigo-500 text-emerald-400 font-bold bg-emerald-950/40'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <DollarSign className="w-3.5 h-3.5" />
-            <span>Ingresos ({operation.incomes?.length || 0})</span>
+            <span>Cobranzas ({operation.incomes?.length || 0})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('costos')}
             className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
               activeTab === 'costos'
-                ? 'border-indigo-600 text-rose-700 font-bold bg-rose-50/50'
-                : 'border-transparent text-gray-500 hover:text-gray-800'
+                ? 'border-indigo-500 text-rose-400 font-bold bg-rose-950/40'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
             }`}
           >
-            <Building2 className="w-3.5 h-3.5" />
-            <span>Costos & Proveedores ({operation.suppliers?.length || 0})</span>
+            <CreditCard className="w-3.5 h-3.5" />
+            <span>Costos ({operation.suppliers?.length || 0})</span>
           </button>
-
-          {(operation.businessUnit === 'viajes' || (operation.students && operation.students.length > 0)) && (
-            <button
-              onClick={() => setActiveTab('estudiantes')}
-              className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
-                activeTab === 'estudiantes'
-                  ? 'border-indigo-600 text-indigo-700 font-bold bg-indigo-50/50'
-                  : 'border-transparent text-gray-500 hover:text-gray-800'
-              }`}
-            >
-              <Users className="w-3.5 h-3.5" />
-              <span>Estudiantes & Pagadores ({operation.students?.length || 0})</span>
-            </button>
-          )}
 
           <button
             onClick={() => setActiveTab('movimientos')}
             className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
               activeTab === 'movimientos'
-                ? 'border-indigo-600 text-indigo-700 font-bold bg-indigo-50/50'
-                : 'border-transparent text-gray-500 hover:text-gray-800'
+                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-950/40'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <Receipt className="w-3.5 h-3.5" />
-            <span>Movimientos Vinculados ({linkedMovements.length})</span>
+            <span>Movimientos ({linkedMovements.length})</span>
           </button>
 
           <button
             onClick={() => setActiveTab('info')}
             className={`py-3 px-3.5 border-b-2 flex items-center gap-1.5 transition-colors whitespace-nowrap ${
               activeTab === 'info'
-                ? 'border-indigo-600 text-indigo-700 font-bold bg-indigo-50/50'
-                : 'border-transparent text-gray-500 hover:text-gray-800'
+                ? 'border-indigo-500 text-indigo-400 font-bold bg-indigo-950/40'
+                : 'border-transparent text-zinc-400 hover:text-zinc-200'
             }`}
           >
             <Compass className="w-3.5 h-3.5" />
@@ -490,6 +531,26 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
               </div>
 
             </div>
+          )}
+
+          {/* TAB: PREPARACIÓN DEL FILE (18 ÍTEMS CONTEXTUALES) */}
+          {activeTab === 'preparacion' && (
+            <OperationPreparationChecklistView operation={operation} />
+          )}
+
+          {/* TAB: ITINERARIO OPERATIVO INTEGRADO (15-DAY ALERTS) */}
+          {activeTab === 'itinerario' && (
+            <OperationItineraryView operation={operation} />
+          )}
+
+          {/* TAB: CHECKLIST PASAJEROS / ALUMNOS (DOC, MED, AUTH, CUOTAS) */}
+          {activeTab === 'pasajeros_checklist' && (
+            <PassengerChecklistGrid operation={operation} />
+          )}
+
+          {/* TAB: CHECKLIST PROVEEDORES (SERVICIOS, ESTADOS, PAGOS) */}
+          {activeTab === 'proveedores_checklist' && (
+            <SupplierChecklistGrid operation={operation} />
           )}
 
           {/* TAB 2: INGRESOS */}

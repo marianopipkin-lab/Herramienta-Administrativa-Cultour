@@ -198,15 +198,62 @@ export interface StudentPayer {
   status: 'al_dia' | 'pago_parcial' | 'pendiente' | 'vencido';
 }
 
+export interface PassengerChecklist {
+  docComplete: boolean;
+  authSigned: boolean;
+  medicalForm: boolean;
+  notes?: string;
+}
+
 export interface OperationPassenger {
   id: string;
   name: string;
+  lastName?: string;
   documentId?: string;
+  birthDate?: string;
+  parentName?: string;
+  parentPhone?: string;
+  parentEmail?: string;
   country?: string;
   email?: string;
   phone?: string;
   isPayer?: boolean;
+  totalPrice?: number;
+  currency?: Currency;
   dietaryRestrictions?: string;
+  participationStatus?: 'confirmado' | 'condicional' | 'cancelado';
+  checklist?: PassengerChecklist;
+  notes?: string;
+}
+
+export type PreparationItemStatus = 'no_aplica' | 'pendiente' | 'en_proceso' | 'completado' | 'con_problema';
+
+export interface PreparationItemDef {
+  key: string;
+  label: string;
+  category: 'pasajeros' | 'proveedores' | 'finanzas' | 'operacion';
+  description: string;
+}
+
+export type PreparationChecklistMap = Record<string, PreparationItemStatus>;
+
+export interface OperationItineraryItem {
+  id: string;
+  operationId: string;
+  dayNumber: number;
+  date: string;
+  time: string;
+  locationOrActivity: string;
+  supplierId?: string;
+  supplierName: string;
+  serviceCategory?: string;
+  guideOrContact?: string;
+  totalCost: number;
+  currency: Currency;
+  depositPaid: number;
+  balance: number;
+  supplierStatus: 'pendiente' | 'contactado' | 'presupuestado' | 'reserva_confirmada' | 'reconfirmado_48h' | 'con_problema';
+  paymentStatus?: 'sin_anticipo' | 'reserva_pagada' | 'saldo_pendiente' | 'totalmente_pagado';
   notes?: string;
 }
 
@@ -246,10 +293,14 @@ export interface Operation {
   receivedRevenue: number;
   expectedCost: number;
   paidCost: number;
+  grossCommercialValue?: number;
+  agencyCommission?: number;
 
   // Pasajeros y checklist operativo
   passengers?: OperationPassenger[];
   checklist?: OperationChecklist;
+  preparationChecklist?: PreparationChecklistMap;
+  itinerary?: OperationItineraryItem[];
 
   // Colecciones operativas y cuotas
   quotas?: PaymentQuota[];
@@ -423,43 +474,99 @@ export interface ExchangeRateConfig {
 // ==========================================
 // 10. MODELO FINANCIERO RIGUROSO (SOCIOS)
 // ==========================================
+export interface UnitChannelPerformance {
+  name: string;
+  currency: Currency;
+  opsCount: number;
+  expectedRevenue: number;
+  receivedRevenue: number;
+  pendingRevenue: number;
+  expectedCost: number;
+  paidCost: number;
+  pendingCost: number;
+  expectedProfit: number;
+  realizedProfit: number;
+  margin: number;
+  agencyCommission?: number; // Para Receptivo Agencias
+}
+
 export interface CultourFinancialPosition {
-  // 1. Dinero actualmente existente en cuentas
+  // 1. Dinero actualmente existente en cuentas (Separado por moneda)
   cashARS: number;
   cashUSD: number;
   cashEquivalentUSD: number;
 
-  // 2. Dinero cobrado correspondiente a operaciones futuras (anticipos / pasivo)
+  // 2. Dinero cobrado de operaciones futuras (Anticipos / Fondos en custodia)
   futureOpsCollectedARS: number;
   futureOpsCollectedUSD: number;
   futureOpsCollectedEquivalentUSD: number;
 
-  // 3. Costos / pagos pendientes de operaciones futuras
+  // 3. Obligaciones / Costos pendientes de operaciones futuras
   futureOpsPendingCostsARS: number;
   futureOpsPendingCostsUSD: number;
   futureOpsPendingCostsEquivalentUSD: number;
 
-  // 4. Dinero comprometido total (Costos pendientes futuras + Gastos fijos mes)
+  // 4. Obligaciones / Costos pendientes de operaciones pasadas
+  pastOpsPendingCostsARS: number;
+  pastOpsPendingCostsUSD: number;
+  pastOpsPendingCostsEquivalentUSD: number;
+
+  // 5. Gastos fijos del mes
+  monthlyFixedARS: number;
+  monthlyFixedUSD: number;
+
+  // 6. Dinero comprometido total (Costos pendientes + Gastos fijos devengados)
   committedFundsARS: number;
   committedFundsUSD: number;
   committedFundsEquivalentUSD: number;
 
-  // 5. Resultado / ganancia de operaciones ya realizadas
-  pastOpsRealizedProfitARS: number;
-  pastOpsRealizedProfitUSD: number;
-  pastOpsRealizedProfitEquivalentUSD: number;
-
-  // 6. Resultado proyectado de operaciones futuras
-  futureOpsProjectedProfitARS: number;
-  futureOpsProjectedProfitUSD: number;
-  futureOpsProjectedProfitEquivalentUSD: number;
-
-  // 7. Ganancia disponible real
-  availableProfitARS: number;
+  // 7. Caja Libre / Disponible Real (Liquidez disponible tras custodia y obligaciones inmediatas)
+  availableCashARS: number;
+  availableCashUSD: number;
+  availableCashEquivalentUSD: number;
+  freeCashARS?: number;
+  freeCashUSD?: number;
+  freeCashEquivalentUSD?: number;
+  availableProfitARS: number; // Alias de compatibilidad
   availableProfitUSD: number;
   availableProfitEquivalentUSD: number;
 
-  // Rendimiento por Unidad de Negocio
+  // 8. Resultado económico devengado de operaciones ya realizadas
+  pastOpsRevenueARS: number;
+  pastOpsRevenueUSD: number;
+  pastOpsCostsARS: number;
+  pastOpsCostsUSD: number;
+  pastOpsRealizedProfitARS: number;
+  pastOpsRealizedProfitUSD: number;
+  pastOpsRealizedProfitEquivalentUSD: number;
+  pastOpsMarginARS: number;
+  pastOpsMarginUSD: number;
+
+  // 9. Resultado proyectado de operaciones futuras
+  futureOpsExpectedRevenueARS: number;
+  futureOpsExpectedRevenueUSD: number;
+  futureOpsExpectedCostARS: number;
+  futureOpsExpectedCostUSD: number;
+  futureOpsProjectedProfitARS: number;
+  futureOpsProjectedProfitUSD: number;
+  futureOpsProjectedProfitEquivalentUSD: number;
+  futureOpsProjectedMarginARS: number;
+  futureOpsProjectedMarginUSD: number;
+
+  // 10. Cobranzas pendientes
+  pendingReceivablesARS: number;
+  pendingReceivablesUSD: number;
+  pendingReceivablesEquivalentUSD: number;
+
+  // Rendimiento desglosado por Unidad y Canal
+  byUnitAndChannel: {
+    receptivoDirecto: UnitChannelPerformance;
+    receptivoAgencia: UnitChannelPerformance;
+    salidasEducativas: UnitChannelPerformance;
+    viajesEducativos: UnitChannelPerformance;
+  };
+
+  // Compatibilidad con vistas previas
   byBusinessUnit: {
     receptivo: { revenue: number; costs: number; profit: number; margin: number; opsCount: number; currency: Currency };
     salidas: { revenue: number; costs: number; profit: number; margin: number; opsCount: number; currency: Currency };

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   CalendarCheck,
   CheckCircle2,
@@ -16,37 +16,46 @@ import { MonthlyClosing, AccountId } from '../../types';
 import { formatCurrency } from '../../utils/financialCalculations';
 
 export const MonthlyClosingView: React.FC = () => {
-  const { monthlyClosings, performMonthlyClosing, reopenMonthlyClosing, accounts, movements, kpis } = useApp();
+  const { monthlyClosings, performMonthlyClosing, reopenMonthlyClosing, accounts, movements, kpis, cutoffConfig, exchangeRate } = useApp();
 
   const [currentStep, setCurrentStep] = useState<number>(1);
   const [selectedMonthKey, setSelectedMonthKey] = useState<string>('2026-08');
   const [selectedMonthLabel, setSelectedMonthLabel] = useState<string>('Agosto 2026');
 
   // Real account balances entered at closing time
-  const [accountRealBalances, setAccountRealBalances] = useState<Record<AccountId, number>>({
-    mp_gaston: accounts.find(a => a.id === 'mp_gaston')?.currentBalance || 0,
-    mp_maria: accounts.find(a => a.id === 'mp_maria')?.currentBalance || 0,
-    banco_santander: accounts.find(a => a.id === 'banco_santander')?.currentBalance || 0,
-    banco_galicia: accounts.find(a => a.id === 'banco_galicia')?.currentBalance || 0,
-    caja_efectivo: accounts.find(a => a.id === 'caja_efectivo')?.currentBalance || 0,
-    plazo_fijo: accounts.find(a => a.id === 'plazo_fijo')?.currentBalance || 0
-  });
+  const [accountRealBalances, setAccountRealBalances] = useState<Record<string, number>>({});
+
+  useEffect(() => {
+    const initial: Record<string, number> = {};
+    accounts.forEach(a => {
+      initial[a.id] = a.currentBalance || 0;
+    });
+    setAccountRealBalances(initial);
+  }, [accounts]);
 
   const [notes, setNotes] = useState('');
 
   // Month calculation
   const monthMovements = movements.filter(m => m.date.startsWith(selectedMonthKey));
-  const monthIncomes = monthMovements.filter(m => m.type === 'ingreso').reduce((sum, m) => sum + m.amount, 0);
-  const monthExpenses = monthMovements.filter(m => m.type === 'egreso').reduce((sum, m) => sum + m.amount, 0);
+  const monthIncomesARS = monthMovements.filter(m => m.type === 'ingreso' && m.currency !== 'USD').reduce((sum, m) => sum + m.amount, 0);
+  const monthExpensesARS = monthMovements.filter(m => m.type === 'egreso' && m.currency !== 'USD').reduce((sum, m) => sum + m.amount, 0);
   const unreconciledMovements = monthMovements.filter(m => m.matchStatus !== 'verde');
 
-  const initialCash = 42270000;
-  const calculatedFinalBalance = initialCash + monthIncomes - monthExpenses;
-  const realFinalBalance: number = (Object.values(accountRealBalances) as number[]).reduce((sum: number, val: number) => sum + val, 0);
-  const difference = realFinalBalance - calculatedFinalBalance;
+  // Initial cash calculation (sum of initial balances for ARS accounts)
+  const initialCashARS = accounts
+    .filter(a => a.currency === 'ARS')
+    .reduce((sum, a) => sum + (a.initialBalance ?? a.currentBalance ?? 0), 0);
+
+  const calculatedFinalBalanceARS = initialCashARS + monthIncomesARS - monthExpensesARS;
+
+  const realFinalBalanceARS = accounts
+    .filter(a => a.currency === 'ARS')
+    .reduce((sum, a) => sum + (Number(accountRealBalances[a.id]) || 0), 0);
+
+  const differenceARS = realFinalBalanceARS - calculatedFinalBalanceARS;
 
   const handleExecuteClose = () => {
-    performMonthlyClosing(selectedMonthKey, notes || 'Cierre mensual auditado.', realFinalBalance);
+    performMonthlyClosing(selectedMonthKey, notes || 'Cierre mensual auditado.', realFinalBalanceARS);
     alert(`¡Mes de ${selectedMonthLabel} cerrado con éxito! Los saldos han sido fijados.`);
     setCurrentStep(1);
   };
@@ -62,7 +71,7 @@ export const MonthlyClosingView: React.FC = () => {
             <span>Auditoría & Cierres Mensuales</span>
           </h1>
           <p className="text-xs text-gray-500 mt-1">
-            Proceso de conciliación integral: Control de saldo calculado vs saldo real de cuentas.
+            Proceso de conciliación integral: Control de saldo calculado vs saldo real de cuentas (ARS y USD).
           </p>
         </div>
 
@@ -98,39 +107,39 @@ export const MonthlyClosingView: React.FC = () => {
             <button
               key={item.step}
               onClick={() => setCurrentStep(item.step)}
-              className={`flex items-center gap-2 py-1 px-3 rounded-lg font-semibold transition-all whitespace-nowrap ${
+              className={`px-3 py-1.5 rounded-xl font-semibold flex items-center gap-1.5 transition-all whitespace-nowrap ${
                 currentStep === item.step
-                  ? 'bg-indigo-600 text-white shadow-2xs'
+                  ? 'bg-indigo-600 text-white shadow-xs'
                   : currentStep > item.step
-                  ? 'text-emerald-700 bg-emerald-50 border border-emerald-100'
-                  : 'text-gray-500 hover:text-gray-800'
+                  ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
+                  : 'bg-gray-50 text-gray-400 hover:bg-gray-100'
               }`}
             >
+              {currentStep > item.step && <CheckCircle2 className="w-3.5 h-3.5" />}
               <span>{item.title}</span>
             </button>
           ))}
         </div>
 
-        {/* STEP 1: Extractos del mes */}
+        {/* STEP 1: Extractos */}
         {currentStep === 1 && (
           <div className="space-y-4 text-xs">
-            <h3 className="text-sm font-bold text-gray-900">Paso 1: Verificación de Extractos del Mes ({selectedMonthLabel})</h3>
-            <p className="text-gray-500 leading-relaxed">
-              Compruebe que todos los extractos bancarios de Santander, Galicia y los reportes de cobros de Mercado Pago Gastón y María hayan sido cargados en el sistema.
+            <h3 className="text-sm font-bold text-gray-900">Paso 1: Verificación de Extractos Bancarios</h3>
+            <p className="text-gray-500">
+              Comprueba que los extractos bancarios de Mercado Pago, Santander y Galicia correspondientes a <strong>{selectedMonthLabel}</strong> hayan sido importados.
             </p>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 bg-gray-50 p-4 rounded-xl border border-gray-200">
-              <div>
-                <span className="text-gray-400 block">Movimientos Registrados:</span>
-                <span className="font-mono text-base font-bold text-gray-900">{monthMovements.length} operaciones</span>
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2">
+              <div className="flex justify-between">
+                <span className="text-gray-600">Movimientos Registrados en el Período:</span>
+                <span className="font-mono font-bold text-gray-900">{monthMovements.length} movimientos</span>
               </div>
-              <div>
-                <span className="text-gray-400 block">Total Ingresos Registrados:</span>
-                <span className="font-mono text-base font-bold text-emerald-700">+{formatCurrency(monthIncomes)}</span>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Total Ingresos ARS Registrados:</span>
+                <span className="font-mono font-bold text-emerald-700">+{formatCurrency(monthIncomesARS, 'ARS')}</span>
               </div>
-              <div>
-                <span className="text-gray-400 block">Total Egresos Registrados:</span>
-                <span className="font-mono text-base font-bold text-rose-700">-{formatCurrency(monthExpenses)}</span>
+              <div className="flex justify-between">
+                <span className="text-gray-600">Total Egresos ARS Registrados:</span>
+                <span className="font-mono font-bold text-rose-700">-{formatCurrency(monthExpensesARS, 'ARS')}</span>
               </div>
             </div>
 
@@ -139,7 +148,7 @@ export const MonthlyClosingView: React.FC = () => {
                 onClick={() => setCurrentStep(2)}
                 className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
               >
-                <span>Continuar a Conciliación</span>
+                <span>Avanzar a Conciliación</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -149,27 +158,30 @@ export const MonthlyClosingView: React.FC = () => {
         {/* STEP 2: Conciliación */}
         {currentStep === 2 && (
           <div className="space-y-4 text-xs">
-            <h3 className="text-sm font-bold text-gray-900">Paso 2: Estado de Conciliación de Movimientos</h3>
-            <p className="text-gray-500 leading-relaxed">
-              Todos los movimientos de cobro y pago deben estar vinculados a su operación o proveedor correspondiente.
+            <h3 className="text-sm font-bold text-gray-900">Paso 2: Revisión de Partidas Sin Clasificar</h3>
+            <p className="text-gray-500">
+              Para asegurar la exactitud del cierre, ningún movimiento debe quedar en estado "rojo" o "amarillo".
             </p>
 
-            {unreconciledMovements.length > 0 ? (
-              <div className="p-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 space-y-2">
-                <div className="flex items-center gap-2 font-bold text-amber-800">
-                  <AlertTriangle className="w-4 h-4 text-amber-600" />
-                  <span>Advertencia: Existen {unreconciledMovements.length} movimientos sin conciliar (Rojo/Amarillo)</span>
-                </div>
-                <p className="text-[11px] text-amber-700">
-                  Se recomienda conciliar estos movimientos antes de emitir el cierre formal para evitar distorsiones en las ganancias unitarias.
-                </p>
+            <div className={`p-4 rounded-xl border ${
+              unreconciledMovements.length === 0
+                ? 'bg-emerald-50 border-emerald-200 text-emerald-800'
+                : 'bg-amber-50 border-amber-200 text-amber-800'
+            }`}>
+              <div className="flex items-center gap-2 font-bold">
+                {unreconciledMovements.length === 0 ? (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                    <span>¡Todos los movimientos del mes están correctamente clasificados!</span>
+                  </>
+                ) : (
+                  <>
+                    <AlertTriangle className="w-4 h-4 text-amber-600" />
+                    <span>Quedan {unreconciledMovements.length} movimientos pendientes de clasificar en el módulo de Conciliación.</span>
+                  </>
+                )}
               </div>
-            ) : (
-              <div className="p-4 rounded-xl bg-emerald-50 border border-emerald-200 text-emerald-800 flex items-center gap-2 font-bold">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-                <span>100% de los movimientos del mes están correctamente conciliados (Verde).</span>
-              </div>
-            )}
+            </div>
 
             <div className="flex justify-between pt-2">
               <button
@@ -182,7 +194,7 @@ export const MonthlyClosingView: React.FC = () => {
                 onClick={() => setCurrentStep(3)}
                 className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white font-semibold flex items-center gap-1.5 shadow-xs transition-colors"
               >
-                <span>Continuar a Gastos Fijos</span>
+                <span>Revisar Gastos Fijos</span>
                 <ArrowRight className="w-4 h-4" />
               </button>
             </div>
@@ -192,15 +204,15 @@ export const MonthlyClosingView: React.FC = () => {
         {/* STEP 3: Gastos Fijos */}
         {currentStep === 3 && (
           <div className="space-y-4 text-xs">
-            <h3 className="text-sm font-bold text-gray-900">Paso 3: Validación de Gastos Fijos de Estructura</h3>
-            <p className="text-gray-500 leading-relaxed">
-              Confirmar que los gastos fijos del mes (sueldos, sistemas, alquiler, administración) hayan impactado en los egresos reales.
+            <h3 className="text-sm font-bold text-gray-900">Paso 3: Verificación de Gastos Fijos del Mes</h3>
+            <p className="text-gray-500">
+              Confirmar que los costos de estructura operativa (sueldos, alquiler, suscripciones, etc.) hayan sido imputados o pagados.
             </p>
 
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-2">
               <div className="flex justify-between">
                 <span className="text-gray-600">Total Estructura Mensual Presupuestada:</span>
-                <span className="font-mono font-bold text-rose-700">{formatCurrency(kpis.monthlyFixedExpenses)}</span>
+                <span className="font-mono font-bold text-rose-700">{formatCurrency(kpis.monthlyFixedExpenses, 'ARS')}</span>
               </div>
             </div>
 
@@ -226,7 +238,7 @@ export const MonthlyClosingView: React.FC = () => {
         {currentStep === 4 && (
           <div className="space-y-5 text-xs">
             <div>
-              <h3 className="text-sm font-bold text-gray-900">Paso 4: Comprobación de la Ecuación Financiera</h3>
+              <h3 className="text-sm font-bold text-gray-900">Paso 4: Comprobación de la Ecuación Financiera (ARS)</h3>
               <p className="text-gray-500 mt-1">
                 Comprobación: Saldo Inicial + Ingresos - Egresos = Saldo Final Calculado vs Saldo Real en Cuentas.
               </p>
@@ -235,30 +247,30 @@ export const MonthlyClosingView: React.FC = () => {
             {/* Equation Breakdown Box */}
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 space-y-3 font-mono">
               <div className="flex justify-between items-center text-gray-700">
-                <span>(+) Saldo Inicial del período:</span>
-                <span className="font-bold text-gray-900">{formatCurrency(initialCash)}</span>
+                <span>(+) Saldo Inicial ARS del período:</span>
+                <span className="font-bold text-gray-900">{formatCurrency(initialCashARS, 'ARS')}</span>
               </div>
               <div className="flex justify-between items-center text-emerald-700">
-                <span>(+) Ingresos reales conciliados:</span>
-                <span className="font-bold">+{formatCurrency(monthIncomes)}</span>
+                <span>(+) Ingresos reales ARS:</span>
+                <span className="font-bold">+{formatCurrency(monthIncomesARS, 'ARS')}</span>
               </div>
               <div className="flex justify-between items-center text-rose-700">
-                <span>(-) Egresos reales conciliados:</span>
-                <span className="font-bold">-{formatCurrency(monthExpenses)}</span>
+                <span>(-) Egresos reales ARS:</span>
+                <span className="font-bold">-{formatCurrency(monthExpensesARS, 'ARS')}</span>
               </div>
               <div className="border-t border-gray-200 pt-2 flex justify-between items-center text-indigo-700 font-bold text-sm">
-                <span>(=) Saldo Final Teórico Calculado:</span>
-                <span>{formatCurrency(calculatedFinalBalance)}</span>
+                <span>(=) Saldo Final Teórico Calculado ARS:</span>
+                <span>{formatCurrency(calculatedFinalBalanceARS, 'ARS')}</span>
               </div>
               <div className="flex justify-between items-center text-gray-900 font-bold text-sm">
-                <span>(vs) Saldo Real en Cuentas (Extractos):</span>
-                <span>{formatCurrency(realFinalBalance)}</span>
+                <span>(vs) Saldo Real en Cuentas ARS (Extractos):</span>
+                <span>{formatCurrency(realFinalBalanceARS, 'ARS')}</span>
               </div>
               <div className={`border-t border-gray-200 pt-2 flex justify-between items-center font-extrabold text-sm ${
-                Math.abs(difference) < 1 ? 'text-emerald-700' : 'text-rose-700'
+                Math.abs(differenceARS) < 1000 ? 'text-emerald-700' : 'text-rose-700'
               }`}>
-                <span>(=) Diferencia de Conciliación:</span>
-                <span>{formatCurrency(difference)}</span>
+                <span>(=) Diferencia de Conciliación ARS:</span>
+                <span>{formatCurrency(differenceARS, 'ARS')}</span>
               </div>
             </div>
 
@@ -270,7 +282,10 @@ export const MonthlyClosingView: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 {accounts.map(acc => (
                   <div key={acc.id} className="bg-gray-50 p-2.5 rounded-lg border border-gray-200">
-                    <label className="block text-gray-600 mb-1">{acc.name}</label>
+                    <div className="flex justify-between items-center mb-1">
+                      <label className="text-gray-700 font-medium">{acc.name}</label>
+                      <span className="text-[10px] font-mono px-1 py-0.2 rounded bg-gray-200 text-gray-600 font-bold">{acc.currency}</span>
+                    </div>
                     <input
                       type="number"
                       value={accountRealBalances[acc.id] !== undefined ? accountRealBalances[acc.id] : acc.currentBalance}
@@ -278,7 +293,7 @@ export const MonthlyClosingView: React.FC = () => {
                         ...accountRealBalances,
                         [acc.id]: parseFloat(e.target.value) || 0
                       })}
-                      className="w-full bg-white border border-gray-200 rounded p-1.5 text-gray-900 font-mono focus:border-indigo-500"
+                      className="w-full bg-white border border-gray-200 rounded p-1.5 text-gray-900 font-mono focus:border-indigo-500 text-xs font-semibold"
                     />
                   </div>
                 ))}
@@ -376,11 +391,11 @@ export const MonthlyClosingView: React.FC = () => {
                   <tr key={c.id} className="hover:bg-gray-50/60">
                     <td className="py-3 px-3.5 font-sans font-bold text-gray-900">{c.yearMonth}</td>
                     <td className="py-3 px-3 text-gray-500 text-[11px]">{c.closedAt ? c.closedAt.split('T')[0] : '-'}</td>
-                    <td className="py-3 px-3 text-right text-gray-600">{formatCurrency(c.initialCash)}</td>
-                    <td className="py-3 px-3 text-right text-emerald-700">+{formatCurrency(c.totalIncome)}</td>
-                    <td className="py-3 px-3 text-right text-rose-700">-{formatCurrency(c.totalExpense)}</td>
-                    <td className="py-3 px-3 text-right font-bold text-indigo-700">{formatCurrency(c.actualAccountCash)}</td>
-                    <td className="py-3 px-3 text-right text-gray-800 font-semibold">{formatCurrency(c.reconciliationDifference)}</td>
+                    <td className="py-3 px-3 text-right text-gray-600">{formatCurrency(c.initialCash, 'ARS')}</td>
+                    <td className="py-3 px-3 text-right text-emerald-700">+{formatCurrency(c.totalIncome, 'ARS')}</td>
+                    <td className="py-3 px-3 text-right text-rose-700">-{formatCurrency(c.totalExpense, 'ARS')}</td>
+                    <td className="py-3 px-3 text-right font-bold text-indigo-700">{formatCurrency(c.actualAccountCash, 'ARS')}</td>
+                    <td className="py-3 px-3 text-right text-gray-800 font-semibold">{formatCurrency(c.reconciliationDifference, 'ARS')}</td>
                     <td className="py-3 px-3 text-center font-sans">
                       <span className={`text-[10px] px-2 py-0.5 rounded-full font-medium ${
                         c.status === 'cerrado'

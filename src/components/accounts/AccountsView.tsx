@@ -32,6 +32,7 @@ export const AccountsView: React.FC = () => {
     updateAccountBalance,
     cutoffConfig,
     updateCutoffConfig,
+    exchangeRate,
     kpis
   } = useApp();
 
@@ -50,6 +51,18 @@ export const AccountsView: React.FC = () => {
     });
     setBalances(initial);
   }, [accounts]);
+
+  // Calculate separated ARS and USD totals
+  const totalARS = accounts
+    .filter(a => a.currency === 'ARS')
+    .reduce((sum, a) => sum + (Number(balances[a.id]) || 0), 0);
+
+  const totalUSD = accounts
+    .filter(a => a.currency === 'USD')
+    .reduce((sum, a) => sum + (Number(balances[a.id]) || 0), 0);
+
+  const rate = exchangeRate?.usdToArsRate || 1320;
+  const totalEquivalentUSD = totalUSD + (rate > 0 ? totalARS / rate : 0);
 
   // Account Edit Modal state
   const [editingAccount, setEditingAccount] = useState<FinancialAccount | null>(null);
@@ -75,8 +88,6 @@ export const AccountsView: React.FC = () => {
     holder: '',
     description: ''
   });
-
-  const totalCalculated: number = (Object.values(balances) as number[]).reduce((sum: number, v: number) => sum + (Number(v) || 0), 0);
 
   const handleSaveCutoffAndBalances = () => {
     // Update cutoff config
@@ -201,9 +212,16 @@ export const AccountsView: React.FC = () => {
             <span>+ Nueva Cuenta</span>
           </button>
 
-          <div className="bg-gray-50 px-4 py-2 rounded-xl border border-gray-200 text-right">
-            <span className="text-[10px] uppercase font-bold text-gray-400 block">Total en Cuentas</span>
-            <span className="text-base font-bold text-gray-900 font-mono">{formatCurrency(totalCalculated)}</span>
+          <div className="bg-gray-50 px-4 py-2 rounded-xl border border-gray-200 text-right font-mono">
+            <span className="text-[10px] uppercase font-bold text-gray-400 block font-sans">Total en Cuentas</span>
+            <div className="flex items-center gap-2 justify-end">
+              <span className="text-sm font-bold text-gray-900">{formatCurrency(totalARS, 'ARS')}</span>
+              <span className="text-xs text-gray-500">+</span>
+              <span className="text-sm font-bold text-indigo-600">{formatCurrency(totalUSD, 'USD')}</span>
+            </div>
+            <span className="text-[10px] text-gray-400 block mt-0.5">
+              ≈ {formatCurrency(totalEquivalentUSD, 'USD')} eq.
+            </span>
           </div>
         </div>
       </div>

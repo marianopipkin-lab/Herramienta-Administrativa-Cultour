@@ -15,7 +15,10 @@ import {
   Compass,
   ArrowRight,
   Info,
-  Clock
+  Clock,
+  RefreshCw,
+  Sliders,
+  DollarSign
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -25,9 +28,7 @@ import {
   YAxis,
   Tooltip,
   CartesianGrid,
-  Legend,
-  LineChart,
-  Line
+  Legend
 } from 'recharts';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency, formatPercent } from '../../utils/financialCalculations';
@@ -42,63 +43,37 @@ export const GeneralDashboard: React.FC = () => {
     accounts,
     setActiveTab,
     setSelectedOperationId,
-    cutoffConfig
+    cutoffConfig,
+    exchangeRate,
+    setExchangeRate
   } = useApp();
 
   const [viewMode, setViewMode] = useState<'fotografia' | 'evolucion'>('fotografia');
+  const [isEditingRate, setIsEditingRate] = useState(false);
+  const [tempRate, setTempRate] = useState(exchangeRate.usdToArsRate.toString());
 
-  // Business units breakdown
-  const buStats = {
-    receptivo: {
-      name: 'Turismo Receptivo',
-      color: 'text-cyan-700',
-      bg: 'bg-cyan-50/60 border-cyan-200',
-      expectedRev: 0,
-      receivedRev: 0,
-      expectedCost: 0,
-      paidCost: 0,
-      count: 0
-    },
-    salidas: {
-      name: 'Salidas Educativas',
-      color: 'text-emerald-700',
-      bg: 'bg-emerald-50/60 border-emerald-200',
-      expectedRev: 0,
-      receivedRev: 0,
-      expectedCost: 0,
-      paidCost: 0,
-      count: 0
-    },
-    viajes: {
-      name: 'Viajes Educativos',
-      color: 'text-indigo-700',
-      bg: 'bg-indigo-50/60 border-indigo-200',
-      expectedRev: 0,
-      receivedRev: 0,
-      expectedCost: 0,
-      paidCost: 0,
-      count: 0
+  const handleSaveRate = () => {
+    const num = Number(tempRate);
+    if (!isNaN(num) && num > 0) {
+      setExchangeRate({
+        ...exchangeRate,
+        usdToArsRate: num,
+        rateDate: new Date().toISOString().split('T')[0]
+      });
+      setIsEditingRate(false);
     }
   };
 
-  operations.forEach(op => {
-    if (op.status !== 'cancelada' && buStats[op.businessUnit]) {
-      buStats[op.businessUnit].expectedRev += op.expectedRevenue || 0;
-      buStats[op.businessUnit].receivedRev += op.receivedRevenue || 0;
-      buStats[op.businessUnit].expectedCost += op.expectedCost || 0;
-      buStats[op.businessUnit].paidCost += op.paidCost || 0;
-      buStats[op.businessUnit].count += 1;
-    }
-  });
+  const channels = financialPosition.byUnitAndChannel;
 
   return (
     <div className="space-y-6 pb-12">
       
-      {/* Header Bar matching Design HTML */}
+      {/* Header Bar */}
       <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 pb-2 border-b border-white/10">
         <div>
           <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#a5b4fc] mb-1">
-            Auditoría Ejecutiva de Socios
+            Auditoría Ejecutiva de Socios — Cultour
           </div>
           <h1 className="font-syne font-extrabold text-3xl sm:text-4xl text-white tracking-tight leading-none uppercase">
             DASHBOARD<br />POSICIÓN FINANCIERA
@@ -139,458 +114,486 @@ export const GeneralDashboard: React.FC = () => {
       </div>
 
       {/* ========================================================
-          AUDIT PANEL (SOCIOS) - MATCHING DESIGN VARIATION
+          BLOQUE 1 — POSICIÓN ACTUAL (AUDITORÍA DE CAJA VS DISPONIBLE)
       ======================================================== */}
       <div className="bg-[#222224] border border-[#a5b4fc]/30 rounded-lg p-6 shadow-[0_0_40px_rgba(165,180,252,0.08)]">
-        <div className="flex flex-col md:flex-row md:items-start md:justify-between pb-4 border-b border-white/10 gap-2">
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between pb-4 border-b border-white/10 gap-3">
           <div>
-            <h2 className="font-syne font-extrabold text-xl text-white tracking-tight uppercase">
-              AUDITORÍA DE CAJA VS DISPONIBLE
-            </h2>
-            <p className="text-xs text-zinc-400 mt-1 max-w-xl">
-              Desglose estricto: el saldo de cuentas incluye anticipos de viajes futuros que no deben confundirse con ganancia disponible.
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#a5b4fc]/20 text-[#a5b4fc] font-bold uppercase border border-[#a5b4fc]/30">
+                BLOQUE 1
+              </span>
+              <h2 className="font-syne font-extrabold text-xl text-white tracking-tight uppercase">
+                POSICIÓN ACTUAL & AUDITORÍA DE FONDOS
+              </h2>
+            </div>
+            <p className="text-xs text-zinc-400 mt-1 max-w-2xl">
+              Principio Central: <strong>Dinero en Cuentas ≠ Ganancia</strong> y <strong>Dinero de Viajes Futuros ≠ Caja Libre</strong>.
+              Los saldos de ARS y USD se administran en sus monedas de origen y se consolidan al tipo de cambio de referencia.
             </p>
           </div>
-          <div className="font-mono text-xs text-zinc-300 bg-[#18181a] px-3 py-1.5 rounded border border-white/10 self-start md:self-auto">
-            REF: <span className="text-white font-bold">$1.320 / USD</span>
+
+          {/* Exchange rate widget */}
+          <div className="font-mono text-xs text-zinc-300 bg-[#18181a] px-3 py-2 rounded-lg border border-white/10 self-start md:self-auto flex items-center gap-2.5">
+            {isEditingRate ? (
+              <div className="flex items-center gap-1.5">
+                <span className="text-zinc-400">$</span>
+                <input
+                  type="number"
+                  value={tempRate}
+                  onChange={(e) => setTempRate(e.target.value)}
+                  className="w-20 bg-[#222224] text-white px-1.5 py-0.5 rounded border border-[#a5b4fc] text-xs font-mono"
+                  autoFocus
+                />
+                <button
+                  onClick={handleSaveRate}
+                  className="px-2 py-0.5 rounded bg-[#34d399] text-[#111113] font-bold text-[10px] uppercase"
+                >
+                  OK
+                </button>
+              </div>
+            ) : (
+              <>
+                <div>
+                  <span className="text-zinc-400 text-[10px] block uppercase">Ref USD/ARS ({exchangeRate.sourceLabel}):</span>
+                  <span className="text-white font-bold">${exchangeRate.usdToArsRate.toLocaleString('es-AR')}</span>
+                  <span className="text-zinc-500 text-[10px] ml-1">({exchangeRate.rateDate})</span>
+                </div>
+                <button
+                  onClick={() => { setIsEditingRate(true); setTempRate(exchangeRate.usdToArsRate.toString()); }}
+                  className="text-zinc-400 hover:text-[#a5b4fc] p-1 rounded hover:bg-white/5"
+                  title="Modificar tipo de cambio de referencia"
+                >
+                  <Sliders className="w-3.5 h-3.5" />
+                </button>
+              </>
+            )}
           </div>
         </div>
 
-        {/* Stat Grid with colored left borders */}
+        {/* Stat Grid with strictly separated ARS, USD & Equivalent */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
           
-          {/* Stat 1: Dinero en Cuentas */}
-          <div className="border-l-2 border-white/30 pl-4 py-1">
+          {/* Stat 1: Dinero Real en Cuentas */}
+          <div className="border-l-2 border-white/40 pl-4 py-1 bg-[#18181a]/40 rounded-r-lg group relative">
             <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 flex items-center justify-between">
               <span>1. Dinero en Cuentas</span>
-              <Wallet className="w-3.5 h-3.5 text-zinc-400" />
+              <div className="flex items-center gap-1">
+                <Info className="w-3 h-3 text-zinc-500 cursor-help" title="Caja total: dinero actualmente existente en las cuentas financieras de Cultour." />
+                <Wallet className="w-3.5 h-3.5 text-zinc-400" />
+              </div>
             </div>
             <div className="text-2xl font-bold font-mono text-white mt-1.5">
               {formatCurrency(financialPosition.cashARS, 'ARS')}
             </div>
-            <div className="text-[10px] font-mono text-zinc-400 mt-1">
-              USD {financialPosition.cashUSD.toLocaleString('es-AR')} ({formatCurrency(financialPosition.cashEquivalentUSD, 'USD')} equiv.)
+            <div className="text-xs font-mono text-zinc-300 mt-1 flex items-center justify-between">
+              <span>+ {formatCurrency(financialPosition.cashUSD, 'USD')}</span>
+              <span className="text-[10px] text-zinc-400">({formatCurrency(financialPosition.cashEquivalentUSD, 'USD')} eq.)</span>
+            </div>
+            <div className="text-[10px] font-mono text-zinc-500 mt-1 pt-1 border-t border-white/5">
+              Saldos en cuentas (ARS y USD independientes)
             </div>
           </div>
 
-          {/* Stat 2: Fondos Custodia */}
-          <div className="border-l-2 border-[#a5b4fc] pl-4 py-1">
+          {/* Stat 2: Fondos de Operaciones Futuras */}
+          <div className="border-l-2 border-[#a5b4fc] pl-4 py-1 bg-[#18181a]/40 rounded-r-lg group relative">
             <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#a5b4fc] flex items-center justify-between">
-              <span>2. Fondos Custodia</span>
-              <Clock className="w-3.5 h-3.5 text-[#a5b4fc]" />
+              <span>2. Fondos Viajes Futuros</span>
+              <div className="flex items-center gap-1">
+                <Info className="w-3 h-3 text-[#a5b4fc]/70 cursor-help" title="Fondos futuros: dinero cobrado de operaciones que todavía no ocurrieron. Es dinero en custodia que NO es ganancia disponible." />
+                <Clock className="w-3.5 h-3.5 text-[#a5b4fc]" />
+              </div>
             </div>
             <div className="text-2xl font-bold font-mono text-[#a5b4fc] mt-1.5">
               {formatCurrency(financialPosition.futureOpsCollectedARS, 'ARS')}
             </div>
-            <div className="text-[10px] font-mono text-[#a5b4fc]/80 mt-1">
-              {formatCurrency(financialPosition.futureOpsCollectedEquivalentUSD, 'USD')} (Antic. Futuros)
+            <div className="text-xs font-mono text-[#a5b4fc]/90 mt-1 flex items-center justify-between">
+              <span>+ {formatCurrency(financialPosition.futureOpsCollectedUSD, 'USD')}</span>
+              <span className="text-[10px] text-[#a5b4fc]/70">({formatCurrency(financialPosition.futureOpsCollectedEquivalentUSD, 'USD')} eq.)</span>
+            </div>
+            <div className="text-[10px] font-mono text-[#a5b4fc]/60 mt-1 pt-1 border-t border-white/5">
+              Anticipos cobrados de viajes futuros (Custodia)
             </div>
           </div>
 
-          {/* Stat 3: Comprometido */}
-          <div className="border-l-2 border-[#fbbf24] pl-4 py-1">
+          {/* Stat 3: Obligaciones Pendientes / Fondos Comprometidos */}
+          <div className="border-l-2 border-[#fbbf24] pl-4 py-1 bg-[#18181a]/40 rounded-r-lg group relative">
             <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#fbbf24] flex items-center justify-between">
-              <span>3. Comprometido</span>
-              <ArrowDownRight className="w-3.5 h-3.5 text-[#fbbf24]" />
+              <span>3. Obligaciones Pendientes</span>
+              <div className="flex items-center gap-1">
+                <Info className="w-3 h-3 text-[#fbbf24]/70 cursor-help" title="Obligaciones pendientes: dinero que Cultour todavía debe pagar a proveedores y gastos de estructura mensual." />
+                <ArrowDownRight className="w-3.5 h-3.5 text-[#fbbf24]" />
+              </div>
             </div>
             <div className="text-2xl font-bold font-mono text-[#fbbf24] mt-1.5">
               -{formatCurrency(financialPosition.committedFundsARS, 'ARS')}
             </div>
-            <div className="text-[10px] font-mono text-[#fbbf24]/80 mt-1">
-              Costos Pendientes ({formatCurrency(financialPosition.committedFundsEquivalentUSD, 'USD')})
+            <div className="text-xs font-mono text-[#fbbf24]/90 mt-1 flex items-center justify-between">
+              <span>- {formatCurrency(financialPosition.committedFundsUSD, 'USD')}</span>
+              <span className="text-[10px] text-[#fbbf24]/70">({formatCurrency(financialPosition.committedFundsEquivalentUSD, 'USD')} eq.)</span>
+            </div>
+            <div className="text-[10px] font-mono text-[#fbbf24]/60 mt-1 pt-1 border-t border-white/5">
+              Proveedores pendientes + Estructura mensual
             </div>
           </div>
 
-          {/* Stat 4: Ganancia Real */}
-          <div className="border-l-2 border-[#34d399] pl-4 py-1">
+          {/* Stat 4: Caja Libre / Dinero Disponible Real */}
+          <div className="border-l-2 border-[#34d399] pl-4 py-1 bg-[#18181a]/40 rounded-r-lg group relative">
             <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-[#34d399] flex items-center justify-between">
-              <span>4. Ganancia Real</span>
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#34d399]" />
+              <span>4. Caja Libre Real</span>
+              <div className="flex items-center gap-1">
+                <Info className="w-3 h-3 text-[#34d399]/70 cursor-help" title="Caja libre: liquidez disponible después de reservar la custodia de viajes futuros y obligaciones inmediatas. Caja Libre = Caja Actual - Fondos Futuros - Estructura." />
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#34d399]" />
+              </div>
             </div>
             <div className="text-2xl font-bold font-mono text-[#34d399] mt-1.5">
-              {formatCurrency(financialPosition.availableProfitEquivalentUSD, 'USD')}
+              {formatCurrency(financialPosition.availableCashEquivalentUSD ?? financialPosition.availableProfitEquivalentUSD, 'USD')}
             </div>
-            <div className="text-[10px] font-mono text-[#34d399]/80 mt-1">
-              Retiro/Inversión ({formatCurrency(financialPosition.availableProfitARS, 'ARS')})
+            <div className="text-xs font-mono text-[#34d399]/90 mt-1 flex items-center justify-between">
+              <span>{formatCurrency(financialPosition.availableCashARS ?? financialPosition.availableProfitARS, 'ARS')}</span>
+              <span className="text-zinc-400 text-[10px]">+ {formatCurrency(financialPosition.availableCashUSD ?? financialPosition.availableProfitUSD, 'USD')}</span>
+            </div>
+            <div className="text-[10px] font-mono text-[#34d399]/60 mt-1 pt-1 border-t border-white/5">
+              Liquidez neta libre de pasivos y custodia
             </div>
           </div>
 
         </div>
 
-        {/* Sub-strip for Realized vs Projected Profit */}
+        {/* Realized vs Projected Profit Banner */}
         <div className="mt-6 pt-4 border-t border-white/10 grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
-          <div className="flex items-center justify-between bg-[#18181a] px-4 py-2.5 rounded border border-white/10">
-            <span className="text-zinc-300">
-              <strong className="text-white">Operaciones ya realizadas:</strong> Ganancia devengada real
-            </span>
-            <span className="font-mono font-bold text-[#34d399]">
-              {formatCurrency(financialPosition.pastOpsRealizedProfitARS, 'ARS')} / {formatCurrency(financialPosition.pastOpsRealizedProfitUSD, 'USD')}
-            </span>
+          <div className="flex items-center justify-between bg-[#18181a] px-4 py-3 rounded-lg border border-white/10">
+            <div>
+              <span className="text-white font-bold block">Operaciones Realizadas (Devengado):</span>
+              <span className="text-zinc-400 text-[11px]">Resultado económico real de viajes ya ejecutados</span>
+            </div>
+            <div className="text-right font-mono">
+              <span className="font-bold text-[#34d399] block text-sm">
+                {formatCurrency(financialPosition.pastOpsRealizedProfitEquivalentUSD, 'USD')}
+              </span>
+              <span className="text-[10px] text-zinc-400">
+                {formatCurrency(financialPosition.pastOpsRealizedProfitARS, 'ARS')} + {formatCurrency(financialPosition.pastOpsRealizedProfitUSD, 'USD')}
+              </span>
+            </div>
           </div>
 
-          <div className="flex items-center justify-between bg-[#18181a] px-4 py-2.5 rounded border border-white/10">
-            <span className="text-zinc-300">
-              <strong className="text-white">Operaciones futuras:</strong> Margen proyectado
-            </span>
-            <span className="font-mono font-bold text-[#a5b4fc]">
-              {formatCurrency(financialPosition.futureOpsProjectedProfitARS, 'ARS')} / {formatCurrency(financialPosition.futureOpsProjectedProfitUSD, 'USD')}
-            </span>
+          <div className="flex items-center justify-between bg-[#18181a] px-4 py-3 rounded-lg border border-white/10">
+            <div>
+              <span className="text-white font-bold block">Operaciones Futuras (Proyectado):</span>
+              <span className="text-zinc-400 text-[11px]">Margen presupuestado a devengar tras ejecución</span>
+            </div>
+            <div className="text-right font-mono">
+              <span className="font-bold text-[#a5b4fc] block text-sm">
+                {formatCurrency(financialPosition.futureOpsProjectedProfitEquivalentUSD, 'USD')}
+              </span>
+              <span className="text-[10px] text-zinc-400">
+                {formatCurrency(financialPosition.futureOpsProjectedProfitARS, 'ARS')} + {formatCurrency(financialPosition.futureOpsProjectedProfitUSD, 'USD')}
+              </span>
+            </div>
           </div>
         </div>
 
       </div>
 
       {/* ========================================================
-          RESUMEN MENSUAL & ALERTAS CRÍTICAS (DESIGN SPLIT GRID)
+          BLOQUE 2 — RESULTADO ECONÓMICO POR UNIDAD Y CANAL
       ======================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        
-        {/* Card: Resumen Mensual */}
-        <div className="bg-[#18181a] border border-white/10 rounded-lg p-5">
-          <div className="flex items-center justify-between mb-4">
-            <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400">
-              Resumen Mensual
+      <div className="bg-[#18181a] border border-white/10 rounded-lg p-6 space-y-5">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pb-3 border-b border-white/10">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#34d399]/20 text-[#34d399] font-bold uppercase border border-[#34d399]/30">
+                BLOQUE 2
+              </span>
+              <h2 className="font-syne font-extrabold text-xl text-white tracking-tight uppercase">
+                RESULTADO ECONÓMICO & RENTABILIDAD POR CANAL
+              </h2>
             </div>
-            <button
-              onClick={() => setActiveTab('projection')}
-              className="text-[11px] font-mono text-[#a5b4fc] hover:underline flex items-center gap-1"
-            >
-              <span>Ver Proyección</span>
-              <ArrowRight className="w-3 h-3" />
-            </button>
+            <p className="text-xs text-zinc-400 mt-1">
+              Desglose estricto por unidad y canal comercial. Las comisiones de agencias B2B se deducen del valor comercial y los costos reflejan contrataciones a proveedores.
+            </p>
           </div>
 
-          <table className="w-full text-left text-xs border-collapse">
-            <thead>
-              <tr className="border-b border-white/10 text-zinc-400 font-mono text-[10px] uppercase">
-                <th className="pb-2">MES</th>
-                <th className="pb-2 text-right">C. INICIAL</th>
-                <th className="pb-2 text-right">RESULTADO</th>
-                <th className="pb-2 text-right">CAJA FINAL</th>
-              </tr>
-            </thead>
-            <tbody className="font-mono divide-y divide-white/5">
-              {monthlyProjection.slice(0, 4).map((m) => {
-                const diff = m.projectedIncome - m.projectedSupplierPayments - m.projectedFixedExpenses;
-                return (
-                  <tr key={m.monthKey} className={m.isProjected ? "bg-[#a5b4fc]/5" : "hover:bg-[#222224]/50"}>
-                    <td className="py-2.5 text-zinc-200">
-                      {m.monthLabel} {m.isProjected && <span className="text-[9px] text-[#a5b4fc] font-bold">(P)</span>}
-                    </td>
-                    <td className="py-2.5 text-right text-zinc-400">
-                      ${(m.initialCash / 1000000).toFixed(1)}M
-                    </td>
-                    <td className={`py-2.5 text-right font-bold ${diff >= 0 ? 'text-[#34d399]' : 'text-[#fb7185]'}`}>
-                      {diff >= 0 ? '+' : ''}${(diff / 1000000).toFixed(1)}M
-                    </td>
-                    <td className="py-2.5 text-right font-bold text-white">
-                      ${(m.finalProjectedCash / 1000000).toFixed(1)}M
-                    </td>
-                  </tr>
-                );
-              })}
-            </tbody>
-          </table>
+          <button
+            onClick={() => setActiveTab('operations')}
+            className="text-xs font-mono text-[#a5b4fc] hover:underline font-bold flex items-center gap-1.5 self-start sm:self-auto"
+          >
+            <span>Ver Master de Operaciones</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
         </div>
 
-        {/* Card: Alertas Críticas */}
+        {/* 4 Commercial Channels Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          
+          {/* Channel 1: Receptivo Directo */}
+          <div className="rounded-lg p-4 bg-[#222224] border border-cyan-500/30 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <span className="text-xs font-bold text-cyan-400">Receptivo — Directo</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#18181a] text-zinc-300 font-mono border border-white/10 font-bold">
+                  {channels.receptivoDirecto.opsCount} ops (USD)
+                </span>
+              </div>
+
+              <div className="mt-3 space-y-1.5 text-xs font-mono">
+                <div className="flex justify-between text-zinc-400">
+                  <span>Ventas Esperadas:</span>
+                  <span className="text-white font-bold">{formatCurrency(channels.receptivoDirecto.expectedRevenue, 'USD')}</span>
+                </div>
+                <div className="flex justify-between text-zinc-400">
+                  <span>Costos Proveedores:</span>
+                  <span className="text-[#fb7185]">-{formatCurrency(channels.receptivoDirecto.expectedCost, 'USD')}</span>
+                </div>
+                <div className="flex justify-between text-[#34d399] font-bold pt-1.5 border-t border-white/10">
+                  <span>Resultado Esperado:</span>
+                  <span>{formatCurrency(channels.receptivoDirecto.expectedProfit, 'USD')}</span>
+                </div>
+                <div className="flex justify-between text-zinc-400 text-[11px]">
+                  <span>Margen Comercial:</span>
+                  <span className="text-[#34d399] font-bold">{formatPercent(channels.receptivoDirecto.margin)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-2.5 border-t border-white/10 text-[11px] font-mono flex justify-between text-zinc-400">
+              <span>Cobrado Real:</span>
+              <span className="text-[#34d399] font-bold">{formatCurrency(channels.receptivoDirecto.receivedRevenue, 'USD')}</span>
+            </div>
+          </div>
+
+          {/* Channel 2: Receptivo Agencias */}
+          <div className="rounded-lg p-4 bg-[#222224] border border-blue-500/30 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <span className="text-xs font-bold text-blue-400">Receptivo — Agencias B2B</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#18181a] text-zinc-300 font-mono border border-white/10 font-bold">
+                  {channels.receptivoAgencia.opsCount} ops (USD)
+                </span>
+              </div>
+
+              <div className="mt-3 space-y-1.5 text-xs font-mono">
+                <div className="flex justify-between text-zinc-400">
+                  <span>Ventas Netas:</span>
+                  <span className="text-white font-bold">{formatCurrency(channels.receptivoAgencia.expectedRevenue, 'USD')}</span>
+                </div>
+                <div className="flex justify-between text-zinc-400">
+                  <span>Costos Proveedores:</span>
+                  <span className="text-[#fb7185]">-{formatCurrency(channels.receptivoAgencia.expectedCost, 'USD')}</span>
+                </div>
+                <div className="flex justify-between text-[#34d399] font-bold pt-1.5 border-t border-white/10">
+                  <span>Resultado Esperado:</span>
+                  <span>{formatCurrency(channels.receptivoAgencia.expectedProfit, 'USD')}</span>
+                </div>
+                <div className="flex justify-between text-zinc-400 text-[11px]">
+                  <span>Margen Comercial:</span>
+                  <span className="text-[#34d399] font-bold">{formatPercent(channels.receptivoAgencia.margin)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-2.5 border-t border-white/10 text-[11px] font-mono flex justify-between text-zinc-400">
+              <span>Cobrado Real:</span>
+              <span className="text-[#34d399] font-bold">{formatCurrency(channels.receptivoAgencia.receivedRevenue, 'USD')}</span>
+            </div>
+          </div>
+
+          {/* Channel 3: Salidas Educativas */}
+          <div className="rounded-lg p-4 bg-[#222224] border border-emerald-500/30 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <span className="text-xs font-bold text-emerald-400">Salidas Educativas</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#18181a] text-zinc-300 font-mono border border-white/10 font-bold">
+                  {channels.salidasEducativas.opsCount} ops (ARS)
+                </span>
+              </div>
+
+              <div className="mt-3 space-y-1.5 text-xs font-mono">
+                <div className="flex justify-between text-zinc-400">
+                  <span>Recaudación:</span>
+                  <span className="text-white font-bold">{formatCurrency(channels.salidasEducativas.expectedRevenue, 'ARS')}</span>
+                </div>
+                <div className="flex justify-between text-zinc-400">
+                  <span>Costos Servicios:</span>
+                  <span className="text-[#fb7185]">-{formatCurrency(channels.salidasEducativas.expectedCost, 'ARS')}</span>
+                </div>
+                <div className="flex justify-between text-[#34d399] font-bold pt-1.5 border-t border-white/10">
+                  <span>Resultado Esperado:</span>
+                  <span>{formatCurrency(channels.salidasEducativas.expectedProfit, 'ARS')}</span>
+                </div>
+                <div className="flex justify-between text-zinc-400 text-[11px]">
+                  <span>Margen Operativo:</span>
+                  <span className="text-[#34d399] font-bold">{formatPercent(channels.salidasEducativas.margin)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-2.5 border-t border-white/10 text-[11px] font-mono flex justify-between text-zinc-400">
+              <span>Cobrado Real:</span>
+              <span className="text-[#34d399] font-bold">{formatCurrency(channels.salidasEducativas.receivedRevenue, 'ARS')}</span>
+            </div>
+          </div>
+
+          {/* Channel 4: Viajes Educativos */}
+          <div className="rounded-lg p-4 bg-[#222224] border border-indigo-500/30 flex flex-col justify-between">
+            <div>
+              <div className="flex items-center justify-between pb-2 border-b border-white/10">
+                <span className="text-xs font-bold text-indigo-400">Viajes Educativos</span>
+                <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#18181a] text-zinc-300 font-mono border border-white/10 font-bold">
+                  {channels.viajesEducativos.opsCount} ops (ARS)
+                </span>
+              </div>
+
+              <div className="mt-3 space-y-1.5 text-xs font-mono">
+                <div className="flex justify-between text-zinc-400">
+                  <span>Total Contratado:</span>
+                  <span className="text-white font-bold">{formatCurrency(channels.viajesEducativos.expectedRevenue, 'ARS')}</span>
+                </div>
+                <div className="flex justify-between text-zinc-400">
+                  <span>Costos Proveedores:</span>
+                  <span className="text-[#fb7185]">-{formatCurrency(channels.viajesEducativos.expectedCost, 'ARS')}</span>
+                </div>
+                <div className="flex justify-between text-[#34d399] font-bold pt-1.5 border-t border-white/10">
+                  <span>Resultado Esperado:</span>
+                  <span>{formatCurrency(channels.viajesEducativos.expectedProfit, 'ARS')}</span>
+                </div>
+                <div className="flex justify-between text-zinc-400 text-[11px]">
+                  <span>Margen Operativo:</span>
+                  <span className="text-[#34d399] font-bold">{formatPercent(channels.viajesEducativos.margin)}</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-3 pt-2.5 border-t border-white/10 text-[11px] font-mono flex justify-between text-zinc-400">
+              <span>Cobrado Real:</span>
+              <span className="text-[#34d399] font-bold">{formatCurrency(channels.viajesEducativos.receivedRevenue, 'ARS')}</span>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* ========================================================
+          BLOQUE 3 — PROYECCIÓN & ALERTAS CRÍTICAS
+      ======================================================== */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        {/* Card 1: Cobranzas y Pagos Pendientes */}
         <div className="bg-[#18181a] border border-white/10 rounded-lg p-5 flex flex-col justify-between">
           <div>
-            <div className="text-[10px] font-mono font-bold uppercase tracking-widest text-zinc-400 mb-4">
-              Alertas Críticas
+            <div className="flex items-center gap-2 mb-3">
+              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#fbbf24]/20 text-[#fbbf24] font-bold uppercase border border-[#fbbf24]/30">
+                BLOQUE 3
+              </span>
+              <h3 className="text-sm font-bold text-white uppercase">
+                Cobranzas & Pagos Pendientes
+              </h3>
             </div>
-            
-            <div className="space-y-3">
+
+            <div className="space-y-3 mt-4 text-xs font-mono">
+              <div className="p-3 bg-[#222224] rounded-lg border border-white/5">
+                <div className="flex justify-between items-center text-zinc-400 text-[11px]">
+                  <span>Cobranzas Pendientes ARS:</span>
+                  <span className="text-[#34d399] font-bold text-sm">+{formatCurrency(financialPosition.pendingReceivablesARS, 'ARS')}</span>
+                </div>
+                <div className="flex justify-between items-center text-zinc-400 text-[11px] mt-1.5">
+                  <span>Cobranzas Pendientes USD:</span>
+                  <span className="text-cyan-400 font-bold text-sm">+{formatCurrency(financialPosition.pendingReceivablesUSD, 'USD')}</span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-[#222224] rounded-lg border border-white/5">
+                <div className="flex justify-between items-center text-zinc-400 text-[11px]">
+                  <span>Proveedores a Pagar ARS:</span>
+                  <span className="text-[#fbbf24] font-bold text-sm">-{formatCurrency(financialPosition.futureOpsPendingCostsARS + financialPosition.pastOpsPendingCostsARS, 'ARS')}</span>
+                </div>
+                <div className="flex justify-between items-center text-zinc-400 text-[11px] mt-1.5">
+                  <span>Proveedores a Pagar USD:</span>
+                  <span className="text-[#fbbf24] font-bold text-sm">-{formatCurrency(financialPosition.futureOpsPendingCostsUSD + financialPosition.pastOpsPendingCostsUSD, 'USD')}</span>
+                </div>
+              </div>
+
+              <div className="p-3 bg-[#222224] rounded-lg border border-white/5">
+                <div className="flex justify-between items-center text-zinc-400 text-[11px]">
+                  <span>Gastos Fijos Estructura:</span>
+                  <span className="text-[#fb7185] font-bold">{formatCurrency(financialPosition.monthlyFixedARS, 'ARS')}/mes</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-mono">
+            <span className="text-zinc-400">Resultado Proyectado Neto:</span>
+            <span className="text-[#34d399] font-bold text-sm">{formatCurrency(financialPosition.futureOpsProjectedProfitEquivalentUSD, 'USD')}</span>
+          </div>
+        </div>
+
+        {/* Card 2 & 3: Alertas y Resumen Mensual */}
+        <div className="lg:col-span-2 bg-[#18181a] border border-white/10 rounded-lg p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between mb-3">
+              <h3 className="text-sm font-bold text-white uppercase flex items-center gap-2">
+                <AlertTriangle className="w-4 h-4 text-[#fbbf24]" />
+                <span>Alertas Operativas & Conciliación</span>
+              </h3>
+              <span className="text-[10px] font-mono text-zinc-400">Control en Tiempo Real</span>
+            </div>
+
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Alert 1: Unreconciled */}
               <div 
                 onClick={() => setActiveTab('reconciliation')}
-                className="p-3 border border-dashed border-[#fb7185]/60 bg-[#fb7185]/5 rounded cursor-pointer hover:bg-[#fb7185]/10 transition-colors flex items-center justify-between text-xs"
+                className="p-3 border border-dashed border-[#fb7185]/60 bg-[#fb7185]/5 rounded-lg cursor-pointer hover:bg-[#fb7185]/10 transition-colors flex flex-col justify-between text-xs"
               >
                 <div>
-                  <span className="font-bold text-zinc-200 block">{kpis.unreconciledMovementsCount} Movimientos sin clasificar</span>
+                  <span className="font-bold text-zinc-200 block">{kpis.unreconciledMovementsCount} Sin clasificar</span>
                   <span className="text-[11px] text-zinc-400">Extractos pendientes de conciliar</span>
                 </div>
-                <span className="font-mono text-[#fb7185] font-bold text-sm">
-                  {formatCurrency(kpis.unreconciledAmount)}
-                </span>
+                <div className="font-mono text-[#fb7185] font-bold text-base mt-2">
+                  {formatCurrency(kpis.unreconciledAmount, 'ARS')}
+                </div>
               </div>
 
               {/* Alert 2: Monthly Closing */}
               <div 
                 onClick={() => setActiveTab('closing')}
-                className="p-3 border border-[#fbbf24]/50 bg-[#fbbf24]/5 rounded cursor-pointer hover:bg-[#fbbf24]/10 transition-colors flex items-center justify-between text-xs"
+                className="p-3 border border-[#fbbf24]/50 bg-[#fbbf24]/5 rounded-lg cursor-pointer hover:bg-[#fbbf24]/10 transition-colors flex flex-col justify-between text-xs"
               >
                 <div>
-                  <span className="font-medium text-zinc-200 block">Cierre {cutoffConfig.cutoffDate.slice(0, 7)} en revisión</span>
-                  <span className="text-[11px] text-zinc-400">Auditoría y conciliación de saldos</span>
+                  <span className="font-bold text-zinc-200 block">Cierre {cutoffConfig.cutoffDate.slice(0, 7)}</span>
+                  <span className="text-[11px] text-zinc-400">Auditoría y conciliación mensual</span>
                 </div>
-                <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#fbbf24] bg-[#fbbf24]/10 px-2 py-1 rounded">
-                  Ver Auditoría
-                </span>
+                <div className="mt-2 flex items-center justify-between">
+                  <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-[#fbbf24] bg-[#fbbf24]/10 px-2 py-1 rounded">
+                    Auditar Saldo
+                  </span>
+                </div>
               </div>
 
               {/* Alert 3: Students Debt */}
               <div 
                 onClick={() => setActiveTab('students')}
-                className="p-3 border border-white/10 bg-[#222224]/50 rounded cursor-pointer hover:bg-[#222224] transition-colors flex items-center justify-between text-xs"
+                className="p-3 border border-white/10 bg-[#222224]/50 rounded-lg cursor-pointer hover:bg-[#222224] transition-colors flex flex-col justify-between text-xs"
               >
                 <div>
-                  <span className="font-medium text-zinc-200 block">Alumnos con cuotas pendientes</span>
-                  <span className="text-[11px] text-zinc-400">{kpis.pendingStudentsDebtCount} pagadores en mora</span>
+                  <span className="font-bold text-zinc-200 block">Cuotas en Mora</span>
+                  <span className="text-[11px] text-zinc-400">{kpis.pendingStudentsDebtCount} pagadores pendientes</span>
                 </div>
-                <span className="font-mono text-[#fb7185] font-bold">
-                  {formatCurrency(kpis.pendingStudentsDebtAmount)}
-                </span>
+                <div className="font-mono text-[#fb7185] font-bold text-base mt-2">
+                  {formatCurrency(kpis.pendingStudentsDebtAmount, 'ARS')}
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-[11px] text-zinc-400 font-mono">
-            <span>Sistema Online</span>
-            <span className="text-[#34d399] flex items-center gap-1">
-              <span className="w-1.5 h-1.5 rounded-full bg-[#34d399]"></span> 100% Sincronizado
-            </span>
-          </div>
-        </div>
-
-      </div>
-
-      {/* ========================================================
-          1. CAJA / TENENCIA METRICS (SECTION 3 PROMPT MANDATE)
-      ======================================================== */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        
-        {/* Card 1: Tenencia Actual */}
-        <div className="bg-[#18181a] border border-white/10 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-widest">Tenencia Actual</span>
-            <div className="p-1.5 rounded bg-[#222224] text-[#a5b4fc] border border-white/10">
-              <Wallet className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-2xl font-bold text-white font-mono tracking-tight">
-              {formatCurrency(kpis.currentCash)}
-            </div>
-            <p className="text-[11px] text-zinc-400 mt-1 font-mono">
-              Total en 6 cuentas (MP, Bancos, Caja)
-            </p>
-          </div>
-          <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] font-mono">
-            <span className="text-zinc-400">Santander + Galicia:</span>
-            <span className="text-zinc-200 font-bold">
-              {formatCurrency((accounts.find(a => a.id === 'banco_santander')?.currentBalance || 0) + (accounts.find(a => a.id === 'banco_galicia')?.currentBalance || 0))}
-            </span>
-          </div>
-        </div>
-
-        {/* Card 2: Cobros Pendientes */}
-        <div className="bg-[#18181a] border border-white/10 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono font-bold text-[#34d399] uppercase tracking-widest">Cobros Pendientes</span>
-            <div className="p-1.5 rounded bg-[#34d399]/15 text-[#34d399] border border-[#34d399]/30">
-              <ArrowUpRight className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-2xl font-bold text-[#34d399] font-mono tracking-tight">
-              +{formatCurrency(kpis.pendingReceivables)}
-            </div>
-            <p className="text-[11px] text-zinc-400 mt-1 font-mono">
-              Operaciones confirmadas y cuotas
-            </p>
-          </div>
-          <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] font-mono">
-            <span className="text-zinc-400">Recaudación Cobrada:</span>
-            <span className="text-[#34d399] font-bold">{formatCurrency(kpis.totalReceivedRevenue)}</span>
-          </div>
-        </div>
-
-        {/* Card 3: Caja Comprometida */}
-        <div className="bg-[#18181a] border border-white/10 rounded-lg p-4">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono font-bold text-[#fbbf24] uppercase tracking-widest">Caja Comprometida</span>
-            <div className="p-1.5 rounded bg-[#fbbf24]/15 text-[#fbbf24] border border-[#fbbf24]/30">
-              <ArrowDownRight className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-2xl font-bold text-[#fbbf24] font-mono tracking-tight">
-              -{formatCurrency(kpis.committedCash)}
-            </div>
-            <p className="text-[11px] text-zinc-400 mt-1 font-mono">
-              Proveedores pendientes + Gastos fijos
-            </p>
-          </div>
-          <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] font-mono">
-            <span className="text-zinc-400">Proveedores a pagar:</span>
-            <span className="text-[#fbbf24] font-bold">{formatCurrency(kpis.pendingSupplierPayables)}</span>
-          </div>
-        </div>
-
-        {/* Card 4: Caja Libre Proyectada */}
-        <div className="bg-[#18181a] border border-[#34d399]/40 rounded-lg p-4 shadow-[0_0_20px_rgba(52,211,153,0.05)]">
-          <div className="flex items-center justify-between">
-            <span className="text-[10px] font-mono font-bold text-[#34d399] uppercase tracking-widest">Caja Libre Proyectada</span>
-            <div className="p-1.5 rounded bg-[#34d399]/20 text-[#34d399] border border-[#34d399]/40">
-              <Scale className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="mt-2">
-            <div className="text-2xl font-bold text-[#34d399] font-mono tracking-tight">
-              {formatCurrency(kpis.projectedFreeCash)}
-            </div>
-            <p className="text-[11px] text-zinc-400 mt-1 font-mono">
-              Caja neta disponible tras saldar compromisos
-            </p>
-          </div>
-          <div className="mt-3 pt-2.5 border-t border-white/10 flex items-center justify-between text-[11px] font-mono">
-            <span className="text-zinc-400">Tenencia Proyectada:</span>
-            <span className="text-white font-bold">{formatCurrency(kpis.projectedCash)}</span>
-          </div>
-        </div>
-
-      </div>
-
-      {/* ========================================================
-          2. GANANCIA VS CAJA & UNIDADES DE NEGOCIO
-      ======================================================== */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        
-        {/* Ganancia vs Caja explainer card */}
-        <div className="lg:col-span-1 bg-[#18181a] border border-white/10 rounded-lg p-5 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Info className="w-4 h-4 text-[#a5b4fc]" />
-                <span>Principio: Ganancia vs Caja</span>
-              </h3>
-              <span className="text-[10px] font-mono px-2 py-0.5 rounded bg-[#222224] text-[#a5b4fc] border border-white/10 font-bold uppercase">
-                Regla Central
-              </span>
-            </div>
-
-            <p className="text-xs text-zinc-400 mt-3 leading-relaxed">
-              <strong className="text-zinc-200">Caja</strong> es el dinero real disponible hoy en cuentas bancarias y Mercado Pago.
-              <br /><br />
-              <strong className="text-zinc-200">Ganancia</strong> es el resultado económico devengado por las operaciones (Ventas menos Costos asociados).
-            </p>
-
-            <div className="mt-4 space-y-2 text-xs bg-[#222224] p-3.5 rounded border border-white/10">
-              <div className="flex justify-between items-center">
-                <span className="text-zinc-400">Ingresos Totales Esperados:</span>
-                <span className="font-bold text-white font-mono">{formatCurrency(kpis.totalExpectedRevenue)}</span>
-              </div>
-              <div className="flex justify-between items-center">
-                <span className="text-zinc-400">Costos Totales Esperados:</span>
-                <span className="font-semibold text-[#fb7185] font-mono">-{formatCurrency(kpis.totalExpectedCost)}</span>
-              </div>
-              <div className="border-t border-white/10 pt-2 flex justify-between items-center font-bold">
-                <span className="text-[#a5b4fc]">Ganancia Esperada:</span>
-                <span className="text-[#34d399] font-mono">{formatCurrency(kpis.totalExpectedProfit)}</span>
-              </div>
-              <div className="flex justify-between items-center text-[11px] text-zinc-400 font-mono">
-                <span>Margen Operativo Promedio:</span>
-                <span className="text-[#34d399] font-bold">{formatPercent(kpis.expectedProfitMargin)}</span>
-              </div>
-            </div>
-          </div>
-
-          <div className="mt-4 pt-3 border-t border-white/10 space-y-1.5 text-xs font-mono">
-            <div className="flex justify-between text-zinc-300">
-              <span>Ganancia Realizada:</span>
-              <span className="text-[#34d399] font-bold">{formatCurrency(kpis.totalRealizedProfit)}</span>
-            </div>
-            <div className="flex justify-between text-zinc-400">
-              <span>Resultado Pendiente:</span>
-              <span className="text-[#fbbf24] font-bold">{formatCurrency(kpis.totalPendingProfit)}</span>
-            </div>
-          </div>
-        </div>
-
-        {/* Business Units Performance Cards */}
-        <div className="lg:col-span-2 bg-[#18181a] border border-white/10 rounded-lg p-5 flex flex-col justify-between">
-          <div>
-            <div className="flex items-center justify-between pb-3 border-b border-white/10">
-              <h3 className="text-sm font-bold text-white flex items-center gap-2">
-                <Layers className="w-4 h-4 text-[#a5b4fc]" />
-                <span>Rendimiento por Unidad de Negocio</span>
-              </h3>
-              <button
-                onClick={() => setActiveTab('operations')}
-                className="text-xs font-mono text-[#a5b4fc] hover:underline flex items-center gap-1 font-bold"
-              >
-                <span>Ver Master Operaciones</span>
-                <ArrowRight className="w-3.5 h-3.5" />
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mt-4">
-              {Object.entries(buStats).map(([key, stat]) => {
-                const profit = stat.expectedRev - stat.expectedCost;
-                const margin = stat.expectedRev > 0 ? (profit / stat.expectedRev) * 100 : 0;
-                const cobradoPercent = stat.expectedRev > 0 ? (stat.receivedRev / stat.expectedRev) * 100 : 0;
-
-                const borderColor = key === 'receptivo' ? 'border-cyan-500/30' : key === 'salidas' ? 'border-emerald-500/30' : 'border-indigo-500/30';
-                const tagColor = key === 'receptivo' ? 'text-cyan-400' : key === 'salidas' ? 'text-emerald-400' : 'text-[#a5b4fc]';
-
-                return (
-                  <div key={key} className={`rounded-lg p-3.5 bg-[#222224] border ${borderColor} flex flex-col justify-between`}>
-                    <div>
-                      <div className="flex items-center justify-between">
-                        <span className={`text-xs font-bold ${tagColor}`}>{stat.name}</span>
-                        <span className="text-[10px] px-1.5 py-0.5 rounded bg-[#18181a] text-zinc-300 font-mono border border-white/10 font-medium">
-                          {stat.count} ops
-                        </span>
-                      </div>
-
-                      <div className="mt-3 space-y-1.5 text-xs font-mono">
-                        <div className="flex justify-between text-zinc-400">
-                          <span className="text-[11px]">Ventas:</span>
-                          <span className="text-zinc-200">{formatCurrency(stat.expectedRev)}</span>
-                        </div>
-                        <div className="flex justify-between text-zinc-400">
-                          <span className="text-[11px]">Costos:</span>
-                          <span className="text-zinc-400">{formatCurrency(stat.expectedCost)}</span>
-                        </div>
-                        <div className="flex justify-between text-[#34d399] font-bold pt-1.5 border-t border-white/10">
-                          <span className="text-[11px]">Margen:</span>
-                          <span>{formatPercent(margin)}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-3 pt-2.5 border-t border-white/10">
-                      <div className="flex justify-between text-[10px] font-mono text-zinc-400 mb-1">
-                        <span>Cobrado ({formatPercent(cobradoPercent)})</span>
-                        <span className="text-zinc-200 font-bold">{formatCurrency(stat.receivedRev)}</span>
-                      </div>
-                      <div className="w-full h-1.5 bg-[#18181a] rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-[#34d399] rounded-full transition-all"
-                          style={{ width: `${Math.min(100, cobradoPercent)}%` }}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          </div>
-
-          {/* Quick Action bar */}
-          <div className="mt-4 pt-3 border-t border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
-            <div className="flex items-center gap-4 text-zinc-400">
-              <span className="flex items-center gap-1.5">
-                <span className="w-2 h-2 rounded-full bg-[#34d399]"></span>
-                <span>Gastos fijos estructura: <strong className="text-white font-mono">{formatCurrency(kpis.monthlyFixedExpenses)}/mes</strong></span>
-              </span>
-            </div>
+          <div className="mt-4 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-mono text-zinc-400">
+            <span>Motor de Clasificación y Reglas Activo</span>
             <button
-              onClick={() => setActiveTab('fixed_expenses')}
-              className="text-xs font-mono text-[#a5b4fc] hover:underline font-bold"
+              onClick={() => setActiveTab('reconciliation')}
+              className="text-[#a5b4fc] hover:underline font-bold flex items-center gap-1"
             >
-              Ver detalle de gastos fijos →
+              <span>Ir a Conciliación</span>
+              <ArrowRight className="w-3 h-3" />
             </button>
           </div>
         </div>
@@ -598,17 +601,17 @@ export const GeneralDashboard: React.FC = () => {
       </div>
 
       {/* ========================================================
-          3. EVOLUCIÓN MENSUAL DE CAJA (CHART & TABLE)
+          EVOLUCIÓN MENSUAL & PROYECCIÓN DE FLUJO DE CAJA (REAL DATA)
       ======================================================== */}
       <div className="bg-[#18181a] border border-white/10 rounded-lg p-5 space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2 pb-3 border-b border-white/10">
           <div>
             <h3 className="text-sm font-bold text-white flex items-center gap-2">
               <Calendar className="w-4 h-4 text-[#a5b4fc]" />
-              <span>Evolución Mensual & Proyección de Caja</span>
+              <span>Evolución Mensual & Proyección de Flujo de Caja (Datos Reales)</span>
             </h3>
             <p className="text-xs text-zinc-400 mt-0.5">
-              Caja inicial, cobros operativos, pagos a proveedores, gastos fijos y caja final proyectada mes a mes.
+              Caja inicial, cobranzas operativas, pagos a proveedores, gastos de estructura y caja final calculada exclusivamente sobre compromisos reales.
             </p>
           </div>
 
@@ -616,12 +619,12 @@ export const GeneralDashboard: React.FC = () => {
             onClick={() => setActiveTab('projection')}
             className="text-xs font-mono text-[#a5b4fc] hover:underline font-bold flex items-center gap-1 self-start sm:self-auto"
           >
-            <span>Ver Análisis Completo</span>
+            <span>Ver Simulación Completa</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
-        {/* Recharts Monthly Projection Chart with dark styling */}
+        {/* Recharts Monthly Projection Chart */}
         <div className="h-64 w-full pt-2">
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
@@ -646,7 +649,7 @@ export const GeneralDashboard: React.FC = () => {
                   fontSize: '12px',
                   boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.5)'
                 }}
-                formatter={(value: any) => formatCurrency(Number(value))}
+                formatter={(value: any) => formatCurrency(Number(value), 'ARS')}
               />
               <Legend wrapperStyle={{ fontSize: '11px', paddingTop: '8px' }} />
               <Bar dataKey="projectedIncome" name="Cobros / Ingresos" fill="#34d399" radius={[3, 3, 0, 0]} />
@@ -664,10 +667,10 @@ export const GeneralDashboard: React.FC = () => {
               <tr>
                 <th className="py-2.5 px-4">Mes</th>
                 <th className="py-2.5 px-4 text-right">Caja Inicial</th>
-                <th className="py-2.5 px-4 text-right text-[#34d399]">Cobros</th>
+                <th className="py-2.5 px-4 text-right text-[#34d399]">Cobros Reales</th>
                 <th className="py-2.5 px-4 text-right text-[#fbbf24]">Pagos Proveedores</th>
                 <th className="py-2.5 px-4 text-right text-[#fb7185]">Gastos Fijos</th>
-                <th className="py-2.5 px-4 text-right text-[#a5b4fc] font-bold">Caja Final Proyectada</th>
+                <th className="py-2.5 px-4 text-right text-[#a5b4fc] font-bold">Caja Final</th>
                 <th className="py-2.5 px-4 text-center">Estado</th>
               </tr>
             </thead>
@@ -678,19 +681,19 @@ export const GeneralDashboard: React.FC = () => {
                     {row.monthLabel}
                   </td>
                   <td className="py-2.5 px-4 text-right text-zinc-400">
-                    {formatCurrency(row.initialCash)}
+                    {formatCurrency(row.initialCash, 'ARS')}
                   </td>
                   <td className="py-2.5 px-4 text-right text-[#34d399] font-bold">
-                    +{formatCurrency(row.projectedIncome)}
+                    +{formatCurrency(row.projectedIncome, 'ARS')}
                   </td>
                   <td className="py-2.5 px-4 text-right text-[#fbbf24] font-semibold">
-                    -{formatCurrency(row.projectedSupplierPayments)}
+                    -{formatCurrency(row.projectedSupplierPayments, 'ARS')}
                   </td>
                   <td className="py-2.5 px-4 text-right text-[#fb7185] font-semibold">
-                    -{formatCurrency(row.projectedFixedExpenses)}
+                    -{formatCurrency(row.projectedFixedExpenses, 'ARS')}
                   </td>
                   <td className="py-2.5 px-4 text-right font-bold text-[#a5b4fc]">
-                    {formatCurrency(row.finalProjectedCash)}
+                    {formatCurrency(row.finalProjectedCash, 'ARS')}
                   </td>
                   <td className="py-2.5 px-4 text-center font-sans">
                     <span className={`text-[10px] font-mono px-2 py-0.5 rounded border font-semibold ${
@@ -708,20 +711,20 @@ export const GeneralDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Footer bar matching Design variation */}
+      {/* Footer bar */}
       <div className="flex flex-col sm:flex-row items-center justify-between gap-3 pt-4 border-t border-white/10 text-xs text-zinc-400 font-mono">
         <div className="text-[10px] font-bold uppercase tracking-widest text-zinc-500">
-          Google Sheets & Database Integrated
+          Cultour — Sistema de Gestión Operativa y Financiera
         </div>
         <div className="flex flex-wrap gap-2">
           <span className="px-2.5 py-1 rounded bg-[#222224] text-zinc-300 border border-white/10 text-[10px] font-bold uppercase">
-            Turismo Receptivo: 33% Margen
+            Receptivo: {formatPercent(channels.receptivoDirecto.margin)} Margen
           </span>
           <span className="px-2.5 py-1 rounded bg-[#222224] text-[#34d399] border border-white/10 text-[10px] font-bold uppercase">
-            Viajes Educativos: 87% Cobrado
+            Educativo: {formatPercent(channels.viajesEducativos.margin)} Margen
           </span>
           <span className="px-2.5 py-1 rounded bg-[#222224] text-[#a5b4fc] border border-white/10 text-[10px] font-bold uppercase">
-            SGOF Enterprise 2026
+            SGOF v2.0
           </span>
         </div>
       </div>

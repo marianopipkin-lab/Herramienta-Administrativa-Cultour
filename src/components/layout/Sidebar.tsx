@@ -123,6 +123,14 @@ export const Sidebar: React.FC = () => {
       roles: ['socio']
     },
     {
+      id: 'templates',
+      label: 'Plantillas & Importación',
+      icon: FileSpreadsheet,
+      badge: '12',
+      badgeColor: 'bg-indigo-950 text-indigo-300 border-indigo-800',
+      roles: ['socio', 'administrativo', 'operativo']
+    },
+    {
       id: 'sheets',
       label: 'Google Sheets & Drive',
       icon: FileSpreadsheet,

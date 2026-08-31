@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useEffect, useMemo } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback } from 'react';
 import {
   Operation,
   Supplier,
@@ -42,13 +42,60 @@ import {
   DEFAULT_EXCHANGE_RATE
 } from '../utils/financialCalculations';
 import { ImportPreviewRow } from '../utils/excelParser';
+import { supabase, isSupabaseConfigured } from '../lib/supabase';
+import {
+  fetchOperationsFromSupabase,
+  saveOperationToSupabase,
+  deleteOperationFromSupabase,
+  fetchClientsFromSupabase,
+  saveClientToSupabase,
+  deleteClientFromSupabase,
+  fetchSuppliersFromSupabase,
+  saveSupplierToSupabase,
+  deleteSupplierFromSupabase,
+  fetchAccountsFromSupabase,
+  saveAccountToSupabase,
+  updateAccountBalanceInSupabase,
+  fetchMovementsFromSupabase,
+  saveMovementToSupabase,
+  batchSaveMovementsToSupabase,
+  deleteMovementFromSupabase,
+  clearMovementsInSupabase,
+  fetchFixedExpensesFromSupabase,
+  saveFixedExpenseToSupabase,
+  deleteFixedExpenseFromSupabase,
+  fetchMonthlyClosingsFromSupabase,
+  saveMonthlyClosingToSupabase,
+  fetchClassificationRulesFromSupabase,
+  saveClassificationRuleToSupabase,
+  deleteClassificationRuleFromSupabase,
+  seedInitialDataToSupabase,
+  fetchUserProfile,
+  upsertUserProfile
+} from '../services/supabaseService';
 
 const STORAGE_PREFIX = 'turismo_gestion_v2_';
 
+export interface UserProfile {
+  id: string;
+  email: string;
+  fullName: string;
+  role: UserRole;
+}
+
 interface AppContextType {
-  // Roles & Permissions
+  // Roles, Auth & Profile
   currentRole: UserRole;
   setCurrentRole: (role: UserRole) => void;
+  userProfile: UserProfile | null;
+  setUserProfile: (profile: UserProfile | null) => void;
+  isAuthenticated: boolean;
+  isLoadingAuth: boolean;
+  isLoadingData: boolean;
+  supabaseStatus: 'connected' | 'connecting' | 'local';
+  logout: () => Promise<void>;
+  syncFromSupabase: () => Promise<void>;
+  seedSupabaseDatabase: () => Promise<{ success: boolean; message: string }>;
 
   // Navigation & UI state
   activeTab: string;
@@ -216,7 +263,7 @@ interface AppContextType {
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
 export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Helper for localStorage
+  // Helper for localStorage fallback
   const loadStored = <T,>(key: string, fallback: T): T => {
     try {
       const item = localStorage.getItem(STORAGE_PREFIX + key);
@@ -226,8 +273,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   };
 
-  // 1. Roles & Permissions State (default: 'socio' for full testability)
+  // 1. Roles & Auth State
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(() => loadStored('userProfile', null));
   const [currentRole, setCurrentRole] = useState<UserRole>(() => loadStored('currentRole', 'socio'));
+  const [isLoadingAuth, setIsLoadingAuth] = useState<boolean>(true);
+  const [isLoadingData, setIsLoadingData] = useState<boolean>(false);
+  const [supabaseStatus, setSupabaseStatus] = useState<'connected' | 'connecting' | 'local'>(
+    isSupabaseConfigured() ? 'connecting' : 'local'
+  );
 
   // 2. Navigation & UI state
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -259,7 +312,162 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [monthlyClosings, setMonthlyClosings] = useState<MonthlyClosing[]>(() => loadStored('closings', INITIAL_MONTHLY_CLOSINGS));
   const [cutoffConfig, setCutoffConfig] = useState<CutoffConfig>(() => loadStored('cutoff', INITIAL_CUTOFF_CONFIG));
 
-  // Persistence to localStorage
+  // Synchronization with Supabase Database
+  const syncFromSupabase = useCallback(async () => {
+    if (!isSupabaseConfigured()) {
+      setSupabaseStatus('local');
+      return;
+    }
+
+    setIsLoadingData(true);
+    setSupabaseStatus('connecting');
+
+    try {
+      const [
+        remoteOps,
+        remoteClients,
+        remoteSuppliers,
+        remoteAccounts,
+        remoteMovements,
+        remoteFixedExpenses,
+        remoteClosings,
+        remoteRules
+      ] = await Promise.all([
+        fetchOperationsFromSupabase(),
+        fetchClientsFromSupabase(),
+        fetchSuppliersFromSupabase(),
+        fetchAccountsFromSupabase(),
+        fetchMovementsFromSupabase(),
+        fetchFixedExpensesFromSupabase(),
+        fetchMonthlyClosingsFromSupabase(),
+        fetchClassificationRulesFromSupabase()
+      ]);
+
+      if (remoteOps && remoteOps.length > 0) setOperations(remoteOps);
+      if (remoteClients && remoteClients.length > 0) setClients(remoteClients);
+      if (remoteSuppliers && remoteSuppliers.length > 0) setSuppliers(remoteSuppliers);
+      if (remoteAccounts && remoteAccounts.length > 0) setAccounts(remoteAccounts);
+      if (remoteMovements && remoteMovements.length > 0) setMovements(remoteMovements);
+      if (remoteFixedExpenses && remoteFixedExpenses.length > 0) setFixedExpenses(remoteFixedExpenses);
+      if (remoteClosings && remoteClosings.length > 0) setMonthlyClosings(remoteClosings);
+      if (remoteRules && remoteRules.length > 0) setRules(remoteRules);
+
+      setSupabaseStatus('connected');
+    } catch (err) {
+      console.warn('Could not sync with Supabase tables, keeping local data:', err);
+      setSupabaseStatus('local');
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, []);
+
+  // Supabase Seed Method
+  const seedSupabaseDatabase = useCallback(async (): Promise<{ success: boolean; message: string }> => {
+    if (!isSupabaseConfigured()) {
+      return { success: false, message: 'Supabase no está configurado.' };
+    }
+    setIsLoadingData(true);
+    try {
+      const result = await seedInitialDataToSupabase(
+        accounts,
+        suppliers,
+        clients,
+        operations,
+        fixedExpenses,
+        movements
+      );
+      if (result.success) {
+        await syncFromSupabase();
+      }
+      return result;
+    } finally {
+      setIsLoadingData(false);
+    }
+  }, [accounts, suppliers, clients, operations, fixedExpenses, movements, syncFromSupabase]);
+
+  // Auth Initialization Effect
+  useEffect(() => {
+    let isMounted = true;
+
+    const initAuth = async () => {
+      setIsLoadingAuth(true);
+
+      if (isSupabaseConfigured()) {
+        try {
+          const { data: { session } } = await supabase.auth.getSession();
+          if (session?.user && isMounted) {
+            const profile = await fetchUserProfile(session.user.id);
+            const userRole = profile?.role || (session.user.user_metadata?.role as UserRole) || 'socio';
+            const fullName = profile?.full_name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario';
+
+            const uProf: UserProfile = {
+              id: session.user.id,
+              email: session.user.email || '',
+              fullName,
+              role: userRole
+            };
+            setUserProfile(uProf);
+            setCurrentRole(userRole);
+          }
+        } catch (err) {
+          console.error('Error fetching Supabase session:', err);
+        }
+      }
+
+      if (isMounted) {
+        setIsLoadingAuth(false);
+      }
+    };
+
+    initAuth();
+
+    // Listen to auth state changes
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const profile = await fetchUserProfile(session.user.id);
+        const userRole = profile?.role || (session.user.user_metadata?.role as UserRole) || 'socio';
+        const fullName = profile?.full_name || session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario';
+
+        const uProf: UserProfile = {
+          id: session.user.id,
+          email: session.user.email || '',
+          fullName,
+          role: userRole
+        };
+        setUserProfile(uProf);
+        setCurrentRole(userRole);
+      } else if (event === 'SIGNED_OUT') {
+        setUserProfile(null);
+      }
+    });
+
+    return () => {
+      isMounted = false;
+      authListener?.subscription?.unsubscribe();
+    };
+  }, []);
+
+  // Initial Data Fetch on Mount
+  useEffect(() => {
+    if (isSupabaseConfigured()) {
+      syncFromSupabase();
+    }
+  }, [syncFromSupabase]);
+
+  // Logout method
+  const logout = async () => {
+    if (isSupabaseConfigured()) {
+      await supabase.auth.signOut();
+    }
+    setUserProfile(null);
+    localStorage.removeItem(STORAGE_PREFIX + 'userProfile');
+  };
+
+  // Local storage persistence
+  useEffect(() => {
+    localStorage.setItem(STORAGE_PREFIX + 'userProfile', JSON.stringify(userProfile));
+  }, [userProfile]);
+
   useEffect(() => {
     localStorage.setItem(STORAGE_PREFIX + 'currentRole', JSON.stringify(currentRole));
   }, [currentRole]);
@@ -306,10 +514,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   // Derived Operational KPIs
   const kpis = useMemo(() => {
-    return calculateKPIs(operations, accounts, fixedExpenses, movements);
-  }, [operations, accounts, fixedExpenses, movements]);
+    return calculateKPIs(operations, accounts, fixedExpenses, movements, exchangeRate);
+  }, [operations, accounts, fixedExpenses, movements, exchangeRate]);
 
-  // Derived Cultour Financial Position (Strict Model for Socios)
+  // Derived Cultour Financial Position
   const financialPosition = useMemo(() => {
     return calculateCultourFinancialPosition(operations, accounts, fixedExpenses, exchangeRate);
   }, [operations, accounts, fixedExpenses, exchangeRate]);
@@ -317,13 +525,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // Derived Monthly Cash Projection
   const monthlyProjection = useMemo(() => {
     return generateMonthlyCashProjection(
-      kpis.currentCash,
+      financialPosition.cashARS,
+      financialPosition.cashUSD,
       operations,
       fixedExpenses,
       historicalPeriods,
-      monthlyClosings
+      monthlyClosings,
+      movements
     );
-  }, [kpis.currentCash, operations, fixedExpenses, historicalPeriods, monthlyClosings]);
+  }, [financialPosition.cashARS, financialPosition.cashUSD, operations, fixedExpenses, historicalPeriods, monthlyClosings, movements]);
 
   // ==========================================
   // OPERACIONES CRUD & BATCH
@@ -360,15 +570,26 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       collections: opData.collections || [],
       supplierContracts: opData.supplierContracts || [],
       supplierPayments: opData.supplierPayments || [],
+      preparationChecklist: opData.preparationChecklist || {},
+      passengers: opData.passengers || [],
+      itinerary: opData.itinerary || [],
       createdAt: now,
       updatedAt: now
     };
 
     setOperations(prev => [newOp, ...prev]);
+
+    // Persist to Supabase
+    if (isSupabaseConfigured()) {
+      saveOperationToSupabase(newOp).catch(err => console.error('Error saving operation to Supabase:', err));
+    }
+
     return newOp;
   };
 
   const updateOperation = (id: string, updates: Partial<Operation>) => {
+    let updatedOp: Operation | null = null;
+
     setOperations(prev =>
       prev.map(op => {
         if (op.id !== id) return op;
@@ -391,14 +612,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         }
 
+        updatedOp = updated;
         return updated;
       })
     );
+
+    if (isSupabaseConfigured() && updatedOp) {
+      saveOperationToSupabase(updatedOp).catch(err => console.error('Error updating operation in Supabase:', err));
+    }
   };
 
   const deleteOperation = (id: string) => {
     setOperations(prev => prev.filter(op => op.id !== id));
     if (selectedOperationId === id) setSelectedOperationId(null);
+
+    if (isSupabaseConfigured()) {
+      deleteOperationFromSupabase(id).catch(err => console.error('Error deleting operation from Supabase:', err));
+    }
   };
 
   const batchImportOperations = (rows: ImportPreviewRow[]) => {
@@ -469,6 +699,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return [...opsToCreate, ...next];
     });
 
+    // Save batch to Supabase
+    if (isSupabaseConfigured()) {
+      opsToCreate.forEach(op => saveOperationToSupabase(op).catch(console.error));
+    }
+
     return { created, updated, errors };
   };
 
@@ -483,15 +718,36 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: new Date().toISOString()
     };
     setClients(prev => [...prev, newClient]);
+
+    if (isSupabaseConfigured()) {
+      saveClientToSupabase(newClient).catch(err => console.error('Error saving client to Supabase:', err));
+    }
+
     return newClient;
   };
 
   const updateClient = (id: string, updates: Partial<Client>) => {
-    setClients(prev => prev.map(c => (c.id === id ? { ...c, ...updates, updatedAt: new Date().toISOString() } : c)));
+    let updatedClient: Client | null = null;
+    setClients(prev =>
+      prev.map(c => {
+        if (c.id === id) {
+          updatedClient = { ...c, ...updates, updatedAt: new Date().toISOString() };
+          return updatedClient;
+        }
+        return c;
+      })
+    );
+
+    if (isSupabaseConfigured() && updatedClient) {
+      saveClientToSupabase(updatedClient).catch(err => console.error('Error updating client in Supabase:', err));
+    }
   };
 
   const deleteClient = (id: string) => {
     setClients(prev => prev.filter(c => c.id !== id));
+    if (isSupabaseConfigured()) {
+      deleteClientFromSupabase(id).catch(err => console.error('Error deleting client from Supabase:', err));
+    }
   };
 
   const batchImportClients = (newClients: Array<Omit<Client, 'id' | 'createdAt'>>) => {
@@ -536,6 +792,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
       return [...merged, ...toAdd];
     });
+
+    if (isSupabaseConfigured()) {
+      toAdd.forEach(cl => saveClientToSupabase(cl).catch(console.error));
+    }
 
     return { created, updated };
   };
@@ -616,7 +876,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const updatedCols = [...currentCols, { ...newCollection, movementId: newMovementId }];
         const newReceived = (op.receivedRevenue || 0) + col.amount;
 
-        // Also add legacy income entry for backwards compatibility
         const newIncomeEntry = {
           id: `inc_${newCollectionId}`,
           operationId: op.id,
@@ -715,7 +974,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const updatedPayments = [...currentPayments, { ...newPaymentRecord, movementId: newMovementId }];
         const newPaidCost = (op.paidCost || 0) + pay.amount;
 
-        // Also update supplier cost record status if matching
         const updatedSuppliers = (op.suppliers || []).map(s => {
           if (s.supplierId === pay.supplierId || s.supplierName.toLowerCase() === pay.supplierName.toLowerCase()) {
             const nextPaid = (s.paidCost || 0) + pay.amount;
@@ -924,15 +1182,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       });
     }
 
+    if (isSupabaseConfigured()) {
+      saveSupplierToSupabase(newSup).catch(err => console.error('Error saving supplier to Supabase:', err));
+    }
+
     return newSup;
   };
 
   const updateSupplier = (id: string, updates: Partial<Supplier>) => {
-    setSuppliers(prev => prev.map(s => (s.id === id ? { ...s, ...updates } : s)));
+    let updatedSup: Supplier | null = null;
+    setSuppliers(prev =>
+      prev.map(s => {
+        if (s.id === id) {
+          updatedSup = { ...s, ...updates };
+          return updatedSup;
+        }
+        return s;
+      })
+    );
+
+    if (isSupabaseConfigured() && updatedSup) {
+      saveSupplierToSupabase(updatedSup).catch(err => console.error('Error updating supplier in Supabase:', err));
+    }
   };
 
   const deleteSupplier = (id: string) => {
     setSuppliers(prev => prev.filter(s => s.id !== id));
+    if (isSupabaseConfigured()) {
+      deleteSupplierFromSupabase(id).catch(err => console.error('Error deleting supplier from Supabase:', err));
+    }
   };
 
   const batchImportSuppliers = (sups: Array<Omit<Supplier, 'id'>>) => {
@@ -985,6 +1263,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return [...merged, ...newSuppliersToAdd];
     });
 
+    if (isSupabaseConfigured()) {
+      newSuppliersToAdd.forEach(s => saveSupplierToSupabase(s).catch(console.error));
+    }
+
     return { created, updated };
   };
 
@@ -998,32 +1280,53 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       name: acc.name || 'Nueva Cuenta',
       type: acc.type || 'banco',
       currency: acc.currency || 'ARS',
-      currentBalance: Number(acc.currentBalance) || 0,
-      initialBalance: Number(acc.initialBalance ?? acc.currentBalance) || 0,
-      alias: acc.alias || '',
-      cbu: acc.cbu || '',
-      holder: acc.holder || 'Titular',
-      description: acc.description || ''
+      currentBalance: acc.currentBalance || 0,
+      initialBalance: acc.initialBalance || 0,
+      alias: acc.alias,
+      cbu: acc.cbu,
+      holder: acc.holder || 'Mariano Pipkin',
+      description: acc.description,
+      active: true
     };
 
     setAccounts(prev => [...prev, newAccount]);
+
+    if (isSupabaseConfigured()) {
+      saveAccountToSupabase(newAccount).catch(err => console.error('Error saving account to Supabase:', err));
+    }
+
     return newAccount;
   };
 
   const updateAccount = (id: AccountId, updates: Partial<FinancialAccount>) => {
+    let updatedAcc: FinancialAccount | null = null;
     setAccounts(prev =>
-      prev.map(acc => (acc.id === id ? { ...acc, ...updates } : acc))
+      prev.map(a => {
+        if (a.id === id) {
+          updatedAcc = { ...a, ...updates };
+          return updatedAcc;
+        }
+        return a;
+      })
     );
+
+    if (isSupabaseConfigured() && updatedAcc) {
+      saveAccountToSupabase(updatedAcc).catch(err => console.error('Error updating account in Supabase:', err));
+    }
   };
 
   const deleteAccount = (id: AccountId) => {
-    setAccounts(prev => prev.filter(acc => acc.id !== id));
+    setAccounts(prev => prev.filter(a => a.id !== id));
   };
 
   const updateAccountBalance = (accountId: AccountId, currentBalance: number) => {
     setAccounts(prev =>
       prev.map(acc => (acc.id === accountId ? { ...acc, currentBalance } : acc))
     );
+
+    if (isSupabaseConfigured()) {
+      updateAccountBalanceInSupabase(accountId, currentBalance).catch(err => console.error('Error updating balance in Supabase:', err));
+    }
   };
 
   const updateCutoffConfig = (config: CutoffConfig) => {
@@ -1031,142 +1334,98 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   // ==========================================
-  // MOVEMENTS & RECONCILIATION
+  // MOVEMENTS (LEDGER)
   // ==========================================
   const addMovement = (mov: Partial<FinancialMovement>) => {
-    const newId = `mov_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
-    const newMov: FinancialMovement = {
+    const newId = mov.id || `mov_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newMovement: FinancialMovement = {
       id: newId,
       date: mov.date || new Date().toISOString().split('T')[0],
-      amount: Math.abs(mov.amount || 0),
+      amount: mov.amount || 0,
       currency: mov.currency || 'ARS',
-      type: mov.type || 'ingreso',
-      description: mov.description || 'Movimiento manual',
+      type: mov.type || 'egreso',
+      description: mov.description || '',
       rawPayerOrAlias: mov.rawPayerOrAlias,
-      accountId: mov.accountId || 'mp_gaston',
+      accountId: mov.accountId || accounts[0]?.id || 'acc_mp_mariano',
       targetAccountId: mov.targetAccountId,
       category: mov.category,
       operationId: mov.operationId,
       supplierId: mov.supplierId,
-      studentId: mov.studentId,
-      clientId: mov.clientId,
-      matchStatus: mov.matchStatus || (mov.operationId || mov.supplierId || mov.isInternalTransfer ? 'verde' : 'rojo'),
-      matchConfidence: mov.matchConfidence || (mov.operationId ? 95 : 0),
-      matchReason: mov.matchReason || (mov.isInternalTransfer ? 'Transferencia interna' : undefined),
-      isInternalTransfer: !!mov.isInternalTransfer,
+      matchStatus: mov.matchStatus || 'rojo',
+      matchConfidence: mov.matchConfidence,
+      matchReason: mov.matchReason,
+      isInternalTransfer: mov.isInternalTransfer || false,
       notes: mov.notes,
       importedAt: new Date().toISOString()
     };
 
-    setMovements(prev => [newMov, ...prev]);
+    setMovements(prev => [newMovement, ...prev]);
 
-    // Update account balances
-    if (newMov.type === 'ingreso') {
-      updateAccountBalance(newMov.accountId, (accounts.find(a => a.id === newMov.accountId)?.currentBalance || 0) + newMov.amount);
-    } else if (newMov.type === 'egreso') {
-      updateAccountBalance(newMov.accountId, (accounts.find(a => a.id === newMov.accountId)?.currentBalance || 0) - newMov.amount);
-    } else if (newMov.type === 'transferencia_interna' && newMov.targetAccountId) {
-      updateAccountBalance(newMov.accountId, (accounts.find(a => a.id === newMov.accountId)?.currentBalance || 0) - newMov.amount);
-      updateAccountBalance(newMov.targetAccountId, (accounts.find(a => a.id === newMov.targetAccountId)?.currentBalance || 0) + newMov.amount);
+    if (isSupabaseConfigured()) {
+      saveMovementToSupabase(newMovement).catch(err => console.error('Error saving movement to Supabase:', err));
     }
   };
 
   const batchImportMovements = (newMovs: Partial<FinancialMovement>[]): number => {
-    let imported = 0;
-    const processed: FinancialMovement[] = [];
+    const fullMovs: FinancialMovement[] = newMovs.map((m, idx) => ({
+      id: m.id || `mov_imp_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 4)}`,
+      date: m.date || new Date().toISOString().split('T')[0],
+      amount: m.amount || 0,
+      currency: m.currency || 'ARS',
+      type: m.type || 'egreso',
+      description: m.description || '',
+      rawPayerOrAlias: m.rawPayerOrAlias,
+      accountId: m.accountId || accounts[0]?.id || 'acc_mp_mariano',
+      targetAccountId: m.targetAccountId,
+      category: m.category,
+      operationId: m.operationId,
+      supplierId: m.supplierId,
+      matchStatus: m.matchStatus || 'rojo',
+      matchConfidence: m.matchConfidence,
+      matchReason: m.matchReason,
+      isInternalTransfer: m.isInternalTransfer || false,
+      notes: m.notes,
+      importedAt: new Date().toISOString()
+    }));
 
-    newMovs.forEach(raw => {
-      const amount = Math.abs(raw.amount || 0);
-      if (!amount) return;
+    setMovements(prev => [...fullMovs, ...prev]);
 
-      const desc = raw.description || '';
-      const alias = raw.rawPayerOrAlias || '';
-      const combinedText = `${desc} ${alias}`.toLowerCase();
+    if (isSupabaseConfigured()) {
+      batchSaveMovementsToSupabase(fullMovs).catch(err => console.error('Error batch saving movements to Supabase:', err));
+    }
 
-      let matchedSupplierId: string | undefined = raw.supplierId;
-      let matchedCategory: string | undefined = raw.category;
-      let isInternal = !!raw.isInternalTransfer;
-      let targetAcc = raw.targetAccountId;
-      let matchStatus: 'verde' | 'amarillo' | 'rojo' = 'rojo';
-      let confidence = 0;
-      let reason = 'Movimiento no reconocido';
-
-      if (
-        combinedText.includes('transferencia entre cuentas') ||
-        combinedText.includes('traspaso') ||
-        (combinedText.includes('santander') && combinedText.includes('gaston')) ||
-        (combinedText.includes('gaston') && combinedText.includes('maria'))
-      ) {
-        isInternal = true;
-        matchStatus = 'verde';
-        confidence = 100;
-        reason = 'Transferencia interna detectada automáticamente';
-      }
-
-      if (!isInternal) {
-        suppliers.forEach(s => {
-          if (s.mpAlias && combinedText.includes(s.mpAlias.toLowerCase())) {
-            matchedSupplierId = s.id;
-            matchedCategory = s.category;
-            matchStatus = 'verde';
-            confidence = 100;
-            reason = `Alias coincide con proveedor: ${s.name}`;
-          }
-        });
-      }
-
-      rules.forEach(rule => {
-        if (rule.pattern && combinedText.includes(rule.pattern.toLowerCase())) {
-          if (rule.targetSupplierId) matchedSupplierId = rule.targetSupplierId;
-          if (rule.targetCategory) matchedCategory = rule.targetCategory;
-          if (rule.isInternalTransfer) {
-            isInternal = true;
-            targetAcc = rule.destinationAccountId;
-          }
-          matchStatus = 'verde';
-          confidence = 95;
-          reason = `Regla aprendida aplicada: "${rule.pattern}"`;
-        }
-      });
-
-      processed.push({
-        id: `mov_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
-        date: raw.date || new Date().toISOString().split('T')[0],
-        amount,
-        currency: raw.currency || 'ARS',
-        type: isInternal ? 'transferencia_interna' : (raw.type || 'ingreso'),
-        description: desc || 'Movimiento importado',
-        rawPayerOrAlias: alias,
-        accountId: raw.accountId || 'mp_gaston',
-        targetAccountId: targetAcc,
-        category: matchedCategory,
-        operationId: raw.operationId,
-        supplierId: matchedSupplierId,
-        studentId: raw.studentId,
-        clientId: raw.clientId,
-        matchStatus,
-        matchConfidence: confidence,
-        matchReason: reason,
-        isInternalTransfer: isInternal,
-        importedAt: new Date().toISOString()
-      });
-      imported++;
-    });
-
-    setMovements(prev => [...processed, ...prev]);
-    return imported;
+    return fullMovs.length;
   };
 
   const updateMovement = (id: string, updates: Partial<FinancialMovement>) => {
-    setMovements(prev => prev.map(m => (m.id === id ? { ...m, ...updates } : m)));
+    let updatedMov: FinancialMovement | null = null;
+    setMovements(prev =>
+      prev.map(m => {
+        if (m.id === id) {
+          updatedMov = { ...m, ...updates };
+          return updatedMov;
+        }
+        return m;
+      })
+    );
+
+    if (isSupabaseConfigured() && updatedMov) {
+      saveMovementToSupabase(updatedMov).catch(err => console.error('Error updating movement in Supabase:', err));
+    }
   };
 
   const deleteMovement = (id: string) => {
     setMovements(prev => prev.filter(m => m.id !== id));
+    if (isSupabaseConfigured()) {
+      deleteMovementFromSupabase(id).catch(err => console.error('Error deleting movement from Supabase:', err));
+    }
   };
 
   const clearMovementsOnly = () => {
     setMovements([]);
+    if (isSupabaseConfigured()) {
+      clearMovementsInSupabase().catch(err => console.error('Error clearing movements in Supabase:', err));
+    }
   };
 
   const reconcileMovement = (
@@ -1184,133 +1443,152 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       prev.map(m => {
         if (m.id !== movementId) return m;
 
-        const isInternal = !!target.isInternalTransfer;
         return {
           ...m,
-          operationId: target.operationId,
-          supplierId: target.supplierId,
-          studentId: target.studentId,
+          operationId: target.operationId || m.operationId,
+          supplierId: target.supplierId || m.supplierId,
           category: target.category || m.category,
-          isInternalTransfer: isInternal,
-          type: isInternal ? 'transferencia_interna' : m.type,
-          targetAccountId: target.targetAccountId,
+          isInternalTransfer: target.isInternalTransfer !== undefined ? target.isInternalTransfer : m.isInternalTransfer,
+          targetAccountId: target.targetAccountId || m.targetAccountId,
           matchStatus: 'verde',
           matchConfidence: 100,
-          matchReason: isInternal
-            ? 'Transferencia interna conciliada'
-            : target.operationId
-            ? 'Conciliado manualmente con operación'
-            : target.supplierId
-            ? 'Conciliado manualmente con proveedor'
-            : 'Conciliado manualmente'
+          matchReason: 'Conciliación manual confirmada por usuario'
         };
       })
     );
   };
 
-  const learnRule = (rule: Omit<ClassificationRule, 'id' | 'createdAt'>) => {
+  const learnRule = (ruleData: Omit<ClassificationRule, 'id' | 'createdAt'>) => {
+    const newId = `rule_${Date.now()}`;
     const newRule: ClassificationRule = {
-      ...rule,
-      id: `rule_${Date.now()}`,
+      ...ruleData,
+      id: newId,
       createdAt: new Date().toISOString()
     };
-    setRules(prev => [newRule, ...prev]);
+    setRules(prev => [...prev, newRule]);
+
+    if (isSupabaseConfigured()) {
+      saveClassificationRuleToSupabase(ruleData).catch(err => console.error('Error saving rule to Supabase:', err));
+    }
   };
 
   const deleteRule = (id: string) => {
     setRules(prev => prev.filter(r => r.id !== id));
+    if (isSupabaseConfigured()) {
+      deleteClassificationRuleFromSupabase(id).catch(err => console.error('Error deleting rule from Supabase:', err));
+    }
   };
 
   // ==========================================
   // FIXED EXPENSES
   // ==========================================
   const addFixedExpense = (exp: Omit<FixedExpense, 'id'>) => {
-    const newId = `fix_${Date.now()}`;
-    setFixedExpenses(prev => [...prev, { ...exp, id: newId }]);
+    const newId = `fe_${Date.now()}`;
+    const newExp: FixedExpense = { ...exp, id: newId };
+    setFixedExpenses(prev => [...prev, newExp]);
+
+    if (isSupabaseConfigured()) {
+      saveFixedExpenseToSupabase(newExp).catch(err => console.error('Error saving fixed expense to Supabase:', err));
+    }
   };
 
   const updateFixedExpense = (id: string, updates: Partial<FixedExpense>) => {
-    setFixedExpenses(prev => prev.map(f => (f.id === id ? { ...f, ...updates } : f)));
+    let updatedExp: FixedExpense | null = null;
+    setFixedExpenses(prev =>
+      prev.map(e => {
+        if (e.id === id) {
+          updatedExp = { ...e, ...updates };
+          return updatedExp;
+        }
+        return e;
+      })
+    );
+
+    if (isSupabaseConfigured() && updatedExp) {
+      saveFixedExpenseToSupabase(updatedExp).catch(err => console.error('Error updating fixed expense in Supabase:', err));
+    }
   };
 
   const deleteFixedExpense = (id: string) => {
-    setFixedExpenses(prev => prev.filter(f => f.id !== id));
+    setFixedExpenses(prev => prev.filter(e => e.id !== id));
+    if (isSupabaseConfigured()) {
+      deleteFixedExpenseFromSupabase(id).catch(err => console.error('Error deleting fixed expense from Supabase:', err));
+    }
   };
 
   const toggleFixedExpensePayment = (id: string) => {
+    const today = new Date().toISOString().split('T')[0];
     setFixedExpenses(prev =>
-      prev.map(f => {
-        if (f.id !== id) return f;
-        const willBePaid = !f.isPaidCurrentMonth;
+      prev.map(e => {
+        if (e.id !== id) return e;
+        const nextStatus = e.status === 'activo' ? 'pagado' : 'activo';
         return {
-          ...f,
-          isPaidCurrentMonth: willBePaid,
-          lastPaidDate: willBePaid ? new Date().toISOString().split('T')[0] : f.lastPaidDate
+          ...e,
+          status: nextStatus,
+          lastPaidDate: nextStatus === 'pagado' ? today : e.lastPaidDate
         };
       })
     );
   };
 
-  const batchImportFixedExpenses = (expenses: Array<Omit<FixedExpense, 'id'>>) => {
+  const batchImportFixedExpenses = (expensesList: Array<Omit<FixedExpense, 'id'>>) => {
     let created = 0;
-    const newItems: FixedExpense[] = expenses.map((exp, idx) => ({
-      ...exp,
-      id: `fix_imp_${Date.now()}_${idx}`
+    const toAdd: FixedExpense[] = expensesList.map((e, idx) => ({
+      ...e,
+      id: `fe_imp_${Date.now()}_${idx}`
     }));
 
-    setFixedExpenses(prev => [...prev, ...newItems]);
-    created = newItems.length;
+    setFixedExpenses(prev => [...prev, ...toAdd]);
+    created = toAdd.length;
+
+    if (isSupabaseConfigured()) {
+      toAdd.forEach(fe => saveFixedExpenseToSupabase(fe).catch(console.error));
+    }
+
     return { created };
   };
 
   // ==========================================
   // MONTHLY CLOSING
   // ==========================================
-  const performMonthlyClosing = (yearMonth: string, notes?: string, actualCashInput?: number) => {
-    const actualCash = actualCashInput !== undefined ? actualCashInput : kpis.currentCash;
+  const performMonthlyClosing = (yearMonth: string, notes?: string, actualCash?: number) => {
+    const now = new Date().toISOString();
+    const existing = monthlyClosings.find(c => c.yearMonth === yearMonth);
+    const initialCash = financialPosition.cashARS;
+    const finalCash = actualCash !== undefined ? actualCash : initialCash;
 
-    const monthMovs = movements.filter(m => m.date.startsWith(yearMonth));
-    const income = monthMovs.filter(m => m.type === 'ingreso').reduce((sum, m) => sum + m.amount, 0);
-    const expense = monthMovs.filter(m => m.type === 'egreso').reduce((sum, m) => sum + m.amount, 0);
-    const internal = monthMovs.filter(m => m.type === 'transferencia_interna').reduce((sum, m) => sum + m.amount, 0);
-
-    const initialCash: number = cutoffConfig.accountsInitialBalances
-      ? (Object.values(cutoffConfig.accountsInitialBalances) as number[]).reduce((a: number, b: number) => a + b, 0)
-      : 42270000;
-    const calculatedFinalCash = initialCash + income - expense;
-    const diff = actualCash - calculatedFinalCash;
-
-    const closing: MonthlyClosing = {
-      id: `close_${yearMonth.replace('-', '_')}`,
+    const closingRecord: MonthlyClosing = {
+      id: existing ? existing.id : `close_${yearMonth}`,
       yearMonth,
-      closedAt: new Date().toISOString(),
-      status: Math.abs(diff) < 1000 ? 'cerrado' : 'en_revision',
+      closedAt: now,
+      status: 'cerrado',
       initialCash,
-      totalIncome: income,
-      totalExpense: expense,
-      internalTransfersSum: internal,
-      calculatedFinalCash,
-      actualAccountCash: actualCash,
-      reconciliationDifference: diff,
-      operationsCount: operations.filter(op => op.date.startsWith(yearMonth)).length,
-      closedBy: 'Administración',
-      notes: notes || 'Cierre mensual procesado desde panel'
+      totalIncome: kpis.totalRevenue,
+      totalExpense: kpis.totalCost + kpis.fixedExpensesMonthly,
+      internalTransfersSum: 0,
+      calculatedFinalCash: initialCash,
+      actualAccountCash: finalCash,
+      reconciliationDifference: finalCash - initialCash,
+      operationsCount: operations.length,
+      closedBy: userProfile?.fullName || 'Mariano Pipkin',
+      notes
     };
 
-    setMonthlyClosings(prev => {
-      const filtered = prev.filter(c => c.yearMonth !== yearMonth);
-      return [closing, ...filtered];
-    });
+    setMonthlyClosings(prev => [closingRecord, ...prev.filter(c => c.yearMonth !== yearMonth)]);
+
+    if (isSupabaseConfigured()) {
+      saveMonthlyClosingToSupabase(closingRecord).catch(err => console.error('Error saving closing to Supabase:', err));
+    }
   };
 
   const reopenMonthlyClosing = (id: string) => {
     setMonthlyClosings(prev =>
-      prev.map(c => (c.id === id ? { ...c, status: 'en_revision', closedAt: undefined } : c))
+      prev.map(c => (c.id === id ? { ...c, status: 'abierto', closedAt: undefined } : c))
     );
   };
 
   // ==========================================
-  // RESET & EXPORT/IMPORT & START FROM SCRATCH
+  // RESET & BACKUPS
   // ==========================================
   const clearAllData = (options?: { resetBalancesToZero?: boolean }) => {
     setOperations([]);
@@ -1318,25 +1596,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setSuppliers([]);
     setMovements([]);
     setFixedExpenses([]);
-    setRules([]);
     setMonthlyClosings([]);
-    setSelectedOperationId(null);
-    setSelectedStudentOpId(null);
+    setRules([]);
 
     if (options?.resetBalancesToZero) {
-      setAccounts(prev =>
-        prev.map(acc => ({
-          ...acc,
-          currentBalance: 0,
-          initialBalance: 0
-        }))
-      );
-      setCutoffConfig({
-        cutoffDate: new Date().toISOString().split('T')[0],
-        description: 'Base limpia iniciada con saldos en cero.',
-        accountsInitialBalances: {},
-        initialFixedCostsMonthly: 0
-      });
+      setAccounts(prev => prev.map(a => ({ ...a, currentBalance: 0, initialBalance: 0 })));
     }
   };
 
@@ -1356,7 +1620,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     return JSON.stringify(
       {
         exportedAt: new Date().toISOString(),
-        version: '2.0',
+        version: '3.0_supabase',
         currentRole,
         exchangeRate,
         operations,
@@ -1398,6 +1662,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       value={{
         currentRole,
         setCurrentRole,
+        userProfile,
+        setUserProfile,
+        isAuthenticated: Boolean(userProfile),
+        isLoadingAuth,
+        isLoadingData,
+        supabaseStatus,
+        logout,
+        syncFromSupabase,
+        seedSupabaseDatabase,
 
         activeTab,
         setActiveTab,

@@ -2,6 +2,7 @@ import React from 'react';
 import { AppProvider, useApp } from './context/AppContext';
 import { Navbar } from './components/layout/Navbar';
 import { Sidebar } from './components/layout/Sidebar';
+import { LoginScreen } from './components/auth/LoginScreen';
 import { GeneralDashboard } from './components/dashboard/GeneralDashboard';
 import { OperationsMaster } from './components/operations/OperationsMaster';
 import { OperationDetailModal } from './components/operations/OperationDetailModal';
@@ -20,6 +21,8 @@ import { GoogleSheetsView } from './components/sheets/GoogleSheetsView';
 import { ClientsView } from './components/clients/ClientsView';
 import { OperationalDashboard } from './components/dashboard/OperationalDashboard';
 import { CollectionsView } from './components/collections/CollectionsView';
+import { TemplatesCatalogView } from './components/templates/TemplatesCatalogView';
+import { Loader2 } from 'lucide-react';
 
 const MainContent: React.FC = () => {
   const {
@@ -29,8 +32,37 @@ const MainContent: React.FC = () => {
     isNewOpModalOpen,
     setIsNewOpModalOpen,
     isImportModalOpen,
-    setIsImportModalOpen
+    setIsImportModalOpen,
+    isAuthenticated,
+    isLoadingAuth,
+    setUserProfile,
+    setCurrentRole
   } = useApp();
+
+  if (isLoadingAuth) {
+    return (
+      <div className="min-h-screen bg-[#0d0d0f] flex flex-col items-center justify-center text-white">
+        <Loader2 className="w-8 h-8 text-indigo-500 animate-spin mb-4" />
+        <p className="text-xs text-zinc-400 font-mono">Iniciando Sistema Cultour...</p>
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return (
+      <LoginScreen
+        onBypassLogin={() => {
+          setCurrentRole('socio');
+          setUserProfile({
+            id: 'guest-socio',
+            email: 'mariano@cultour.com',
+            fullName: 'Mariano Pipkin',
+            role: 'socio'
+          });
+        }}
+      />
+    );
+  }
 
   return (
     <div className="min-h-screen bg-[#111113] text-[#f2f2f2] flex flex-col font-sans antialiased selection:bg-[#a5b4fc] selection:text-[#111113]">
@@ -58,6 +90,13 @@ const MainContent: React.FC = () => {
             {activeTab === 'projection' && <FinancialProjectionView />}
             {activeTab === 'closing' && <MonthlyClosingView />}
             {activeTab === 'history' && <HistoricalView />}
+            {activeTab === 'templates' && (
+              <TemplatesCatalogView
+                onOpenImportModal={(_cat) => {
+                  setIsImportModalOpen(true);
+                }}
+              />
+            )}
             {activeTab === 'sheets' && <GoogleSheetsView />}
             {activeTab === 'accounts' && <AccountsView />}
           </div>
