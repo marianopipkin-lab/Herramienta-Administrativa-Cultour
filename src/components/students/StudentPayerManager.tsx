@@ -95,6 +95,63 @@ export const StudentPayerManager: React.FC = () => {
     setTimeout(() => setCopiedId(null), 2500);
   };
 
+  if (educationalTrips.length === 0) {
+    return (
+      <div className="space-y-6 pb-12 animate-in fade-in duration-300">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-[#18181a] border border-white/10 rounded-xl p-5 shadow-sm">
+          <div>
+            <div className="flex items-center gap-2 mb-1">
+              <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-indigo-300 bg-[#222224] px-2 py-0.5 rounded border border-white/10">
+                Turismo Educativo
+              </span>
+              <span className="text-xs text-zinc-400 font-mono">Control de Pasajeros & Cuotas</span>
+            </div>
+            <h1 className="text-2xl font-extrabold text-white font-syne flex items-center gap-2.5">
+              <GraduationCap className="w-6 h-6 text-[#a5b4fc]" />
+              <span>Viajes Educativos & Pagadores</span>
+            </h1>
+            <p className="text-xs text-zinc-400 mt-1">
+              Control nominal de cuotas por alumno: Estudiante ↔ Tutor / Padre ↔ Viaje ↔ Cobranza.
+            </p>
+          </div>
+          <button
+            onClick={() => openImportCenter('students')}
+            className="px-3 py-2 rounded-lg bg-[#222224] hover:bg-[#28282b] text-zinc-200 border border-white/10 font-mono font-bold text-xs flex items-center gap-1.5 transition-colors self-start sm:self-auto"
+          >
+            <FileSpreadsheet className="w-3.5 h-3.5 text-[#34d399]" />
+            <span>Importar Pasajeros</span>
+          </button>
+        </div>
+
+        <div className="bg-[#18181a] border border-dashed border-white/10 rounded-xl p-12 text-center space-y-4 shadow-sm">
+          <div className="w-14 h-14 bg-indigo-950/60 text-[#a5b4fc] border border-indigo-800/50 rounded-2xl flex items-center justify-center mx-auto">
+            <Users className="w-7 h-7" />
+          </div>
+          <div className="max-w-md mx-auto space-y-2">
+            <h3 className="text-base font-bold text-white font-syne">Sin Viajes Educativos Cargados</h3>
+            <p className="text-xs text-zinc-400">
+              Para gestionar estudiantes, tutores y cuotas individualizadas, primero crea una operación de tipo "Viajes Educativos" o importa la nómina de pasajeros desde Excel.
+            </p>
+          </div>
+          <div className="pt-2 flex justify-center gap-3">
+            <button
+              onClick={() => openImportCenter('operations')}
+              className="px-4 py-2 bg-[#a5b4fc] hover:bg-[#c7d2fe] text-[#111113] rounded-lg text-xs font-mono font-bold transition-colors shadow-sm"
+            >
+              Crear o Importar Operación
+            </button>
+            <button
+              onClick={() => openImportCenter('students')}
+              className="px-4 py-2 bg-[#222224] hover:bg-[#28282b] text-zinc-200 border border-white/10 rounded-lg text-xs font-mono font-bold transition-colors"
+            >
+              Importar Lista de Pasajeros
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6 pb-12 animate-in fade-in duration-300">
       

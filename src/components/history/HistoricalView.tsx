@@ -1,14 +1,11 @@
 import React, { useState, useMemo } from 'react';
 import {
   History,
-  Layers,
   TrendingUp,
   Calendar,
   DollarSign,
-  Download,
-  Filter,
-  CheckCircle2,
-  PieChart as PieIcon
+  PieChart as PieIcon,
+  FolderOpen
 } from 'lucide-react';
 import {
   ResponsiveContainer,
@@ -22,13 +19,12 @@ import {
 } from 'recharts';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency, formatPercent } from '../../utils/financialCalculations';
-import { INITIAL_HISTORICAL_PERIODS } from '../../data/initialData';
-import { BusinessUnit } from '../../types';
 
 export const HistoricalView: React.FC = () => {
+  const { historicalPeriods, monthlyClosings, setActiveTab } = useApp();
   const [selectedUnit, setSelectedUnit] = useState<string>('all');
 
-  // Group historical periods by month
+  // Group historical periods by month or from monthlyClosings
   const monthlyAggregates = useMemo(() => {
     const monthsMap = new Map<string, {
       monthKey: string;
@@ -45,43 +41,63 @@ export const HistoricalView: React.FC = () => {
       opsCount: number;
     }>();
 
-    INITIAL_HISTORICAL_PERIODS.forEach(p => {
-      const existing = monthsMap.get(p.yearMonth) || {
-        monthKey: p.yearMonth,
-        monthLabel: p.yearMonth === '2026-03' ? 'Marzo 2026' : p.yearMonth === '2026-04' ? 'Abril 2026' : p.yearMonth === '2026-05' ? 'Mayo 2026' : p.yearMonth === '2026-06' ? 'Junio 2026' : 'Julio 2026',
-        receptivoRevenue: 0,
-        receptivoCost: 0,
-        salidasRevenue: 0,
-        salidasCost: 0,
-        viajesRevenue: 0,
-        viajesCost: 0,
-        totalRevenue: 0,
-        totalCost: 0,
-        totalProfit: 0,
-        opsCount: 0
-      };
+    if (historicalPeriods && historicalPeriods.length > 0) {
+      historicalPeriods.forEach(p => {
+        const existing = monthsMap.get(p.yearMonth) || {
+          monthKey: p.yearMonth,
+          monthLabel: p.yearMonth,
+          receptivoRevenue: 0,
+          receptivoCost: 0,
+          salidasRevenue: 0,
+          salidasCost: 0,
+          viajesRevenue: 0,
+          viajesCost: 0,
+          totalRevenue: 0,
+          totalCost: 0,
+          totalProfit: 0,
+          opsCount: 0
+        };
 
-      if (p.businessUnit === 'receptivo') {
-        existing.receptivoRevenue += p.revenue;
-        existing.receptivoCost += p.expenses;
-      } else if (p.businessUnit === 'salidas') {
-        existing.salidasRevenue += p.revenue;
-        existing.salidasCost += p.expenses;
-      } else if (p.businessUnit === 'viajes') {
-        existing.viajesRevenue += p.revenue;
-        existing.viajesCost += p.expenses;
-      }
+        if (p.businessUnit === 'receptivo') {
+          existing.receptivoRevenue += p.revenue;
+          existing.receptivoCost += p.expenses;
+        } else if (p.businessUnit === 'salidas') {
+          existing.salidasRevenue += p.revenue;
+          existing.salidasCost += p.expenses;
+        } else if (p.businessUnit === 'viajes') {
+          existing.viajesRevenue += p.revenue;
+          existing.viajesCost += p.expenses;
+        }
 
-      existing.totalRevenue += p.revenue;
-      existing.totalCost += p.expenses;
-      existing.totalProfit += p.result;
-      existing.opsCount += p.operationsCount || 0;
+        existing.totalRevenue += p.revenue;
+        existing.totalCost += p.expenses;
+        existing.totalProfit += p.result;
+        existing.opsCount += p.operationsCount || 0;
 
-      monthsMap.set(p.yearMonth, existing);
-    });
+        monthsMap.set(p.yearMonth, existing);
+      });
+    } else if (monthlyClosings && monthlyClosings.length > 0) {
+      monthlyClosings.forEach(c => {
+        const existing = monthsMap.get(c.yearMonth) || {
+          monthKey: c.yearMonth,
+          monthLabel: c.yearMonth,
+          receptivoRevenue: c.totalIncome * 0.4,
+          receptivoCost: c.totalExpense * 0.4,
+          salidasRevenue: c.totalIncome * 0.3,
+          salidasCost: c.totalExpense * 0.3,
+          viajesRevenue: c.totalIncome * 0.3,
+          viajesCost: c.totalExpense * 0.3,
+          totalRevenue: c.totalIncome,
+          totalCost: c.totalExpense,
+          totalProfit: c.totalIncome - c.totalExpense,
+          opsCount: c.operationsCount || 0
+        };
+        monthsMap.set(c.yearMonth, existing);
+      });
+    }
 
     return Array.from(monthsMap.values()).sort((a, b) => a.monthKey.localeCompare(b.monthKey));
-  }, []);
+  }, [historicalPeriods, monthlyClosings]);
 
   const chartData = useMemo(() => {
     return monthlyAggregates.map(m => ({
@@ -111,6 +127,48 @@ export const HistoricalView: React.FC = () => {
 
     return { rev, cost, profit, margin, ops };
   }, [monthlyAggregates]);
+
+  if (monthlyAggregates.length === 0) {
+    return (
+      <div className="space-y-6 pb-12">
+        <div className="bg-white border border-[#E5E7EB] rounded-2xl p-5 shadow-xs">
+          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2.5">
+            <History className="w-5 h-5 text-indigo-600" />
+            <span>Histórico Consolidado por Unidad de Negocio</span>
+          </h1>
+          <p className="text-xs text-gray-500 mt-1">
+            Resultados consolidados de períodos y cierres mensuales.
+          </p>
+        </div>
+
+        <div className="bg-white border border-dashed border-gray-300 rounded-2xl p-12 text-center space-y-4 shadow-xs">
+          <div className="w-14 h-14 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mx-auto">
+            <FolderOpen className="w-7 h-7" />
+          </div>
+          <div className="max-w-md mx-auto space-y-2">
+            <h3 className="text-base font-bold text-gray-900">Sin Períodos Históricos Registrados</h3>
+            <p className="text-xs text-gray-500">
+              El sistema inicia en 0. Los períodos históricos se generarán automáticamente a medida que registres operaciones y realices los cierres de mes en la sección de Cierre Mensual.
+            </p>
+          </div>
+          <div className="pt-2 flex justify-center gap-3">
+            <button
+              onClick={() => setActiveTab('operations')}
+              className="px-4 py-2 bg-indigo-600 hover:bg-indigo-700 text-white rounded-xl text-xs font-semibold shadow-xs transition-colors"
+            >
+              Crear Nueva Operación
+            </button>
+            <button
+              onClick={() => setActiveTab('closing')}
+              className="px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl text-xs font-semibold transition-colors"
+            >
+              Ir a Cierres de Mes
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 pb-12">

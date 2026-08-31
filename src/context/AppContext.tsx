@@ -74,7 +74,7 @@ import {
   upsertUserProfile
 } from '../services/supabaseService';
 
-const STORAGE_PREFIX = 'turismo_gestion_v2_';
+const STORAGE_PREFIX = 'turismo_gestion_prod_clean_v3_';
 
 export interface UserProfile {
   id: string;
@@ -285,7 +285,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // 2. Navigation & UI state
   const [activeTab, setActiveTab] = useState<string>('dashboard');
   const [selectedOperationId, setSelectedOperationId] = useState<string | null>(null);
-  const [selectedStudentOpId, setSelectedStudentOpId] = useState<string | null>('op_viaje_1');
+  const [selectedStudentOpId, setSelectedStudentOpId] = useState<string | null>(null);
   const [isNewOpModalOpen, setIsNewOpModalOpen] = useState<boolean>(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState<boolean>(false);
   const [importCenterCategory, setImportCenterCategory] = useState<'operations' | 'suppliers' | 'students' | 'movements' | 'fixed_expenses' | 'clients'>('operations');
@@ -343,14 +343,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         fetchClassificationRulesFromSupabase()
       ]);
 
-      if (remoteOps && remoteOps.length > 0) setOperations(remoteOps);
-      if (remoteClients && remoteClients.length > 0) setClients(remoteClients);
-      if (remoteSuppliers && remoteSuppliers.length > 0) setSuppliers(remoteSuppliers);
+      if (remoteOps) setOperations(remoteOps);
+      if (remoteClients) setClients(remoteClients);
+      if (remoteSuppliers) setSuppliers(remoteSuppliers);
       if (remoteAccounts && remoteAccounts.length > 0) setAccounts(remoteAccounts);
-      if (remoteMovements && remoteMovements.length > 0) setMovements(remoteMovements);
-      if (remoteFixedExpenses && remoteFixedExpenses.length > 0) setFixedExpenses(remoteFixedExpenses);
-      if (remoteClosings && remoteClosings.length > 0) setMonthlyClosings(remoteClosings);
-      if (remoteRules && remoteRules.length > 0) setRules(remoteRules);
+      if (remoteMovements) setMovements(remoteMovements);
+      if (remoteFixedExpenses) setFixedExpenses(remoteFixedExpenses);
+      if (remoteClosings) setMonthlyClosings(remoteClosings);
+      if (remoteRules) setRules(remoteRules);
 
       setSupabaseStatus('connected');
     } catch (err) {
