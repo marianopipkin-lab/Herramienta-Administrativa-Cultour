@@ -32,6 +32,7 @@ export const AccountsView: React.FC = () => {
     updateAccountBalance,
     cutoffConfig,
     updateCutoffConfig,
+    saveCutoffAndBalances,
     exchangeRate,
     kpis
   } = useApp();
@@ -105,18 +106,8 @@ export const AccountsView: React.FC = () => {
       numericBalances[accId] = parseBalanceValue(bal);
     });
 
-    // Update cutoff config
-    updateCutoffConfig({
-      cutoffDate,
-      description: cutoffDescription,
-      accountsInitialBalances: numericBalances,
-      initialFixedCostsMonthly: cutoffConfig.initialFixedCostsMonthly
-    });
-
-    // Update each account balance and initial balance
-    Object.entries(numericBalances).forEach(([accId, numBal]) => {
-      updateAccount(accId, { currentBalance: numBal, initialBalance: numBal });
-    });
+    // Save cutoff config and account balances atomically
+    saveCutoffAndBalances(cutoffDate, cutoffDescription, numericBalances);
 
     setSavedSuccess(true);
     setTimeout(() => setSavedSuccess(false), 3000);

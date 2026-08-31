@@ -221,6 +221,7 @@ interface AppContextType {
   deleteAccount: (id: AccountId) => void;
   updateAccountBalance: (accountId: AccountId, currentBalance: number) => void;
   updateCutoffConfig: (config: CutoffConfig) => void;
+  saveCutoffAndBalances: (cutoffDate: string, description: string, balancesMap: Record<AccountId, number>) => void;
 
   // Movement & Reconciliation Actions
   addMovement: (mov: Partial<FinancialMovement>) => void;
@@ -270,6 +271,15 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       return item ? JSON.parse(item) : fallback;
     } catch {
       return fallback;
+    }
+  };
+
+  // Helper for immediate synchronous localStorage persistence
+  const persistLocal = <T,>(key: string, data: T): void => {
+    try {
+      localStorage.setItem(STORAGE_PREFIX + key, JSON.stringify(data));
+    } catch (e) {
+      console.error(`[Storage] Error persisting ${key}:`, e);
     }
   };
 
@@ -454,6 +464,31 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     }
   }, [syncFromSupabase]);
 
+  // Persisted state setters
+  const setPersistedUserProfile = (profile: UserProfile | null | ((prev: UserProfile | null) => UserProfile | null)) => {
+    setUserProfile(prev => {
+      const next = typeof profile === 'function' ? profile(prev) : profile;
+      persistLocal('userProfile', next);
+      return next;
+    });
+  };
+
+  const setPersistedCurrentRole = (role: UserRole | ((prev: UserRole) => UserRole)) => {
+    setCurrentRole(prev => {
+      const next = typeof role === 'function' ? role(prev) : role;
+      persistLocal('currentRole', next);
+      return next;
+    });
+  };
+
+  const setPersistedExchangeRate = (rate: ExchangeRateConfig | ((prev: ExchangeRateConfig) => ExchangeRateConfig)) => {
+    setExchangeRate(prev => {
+      const next = typeof rate === 'function' ? rate(prev) : rate;
+      persistLocal('exchangeRate', next);
+      return next;
+    });
+  };
+
   // Logout method
   const logout = async () => {
     if (isSupabaseConfigured()) {
@@ -462,55 +497,6 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setUserProfile(null);
     localStorage.removeItem(STORAGE_PREFIX + 'userProfile');
   };
-
-  // Local storage persistence
-  useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + 'userProfile', JSON.stringify(userProfile));
-  }, [userProfile]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + 'currentRole', JSON.stringify(currentRole));
-  }, [currentRole]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + 'exchangeRate', JSON.stringify(exchangeRate));
-  }, [exchangeRate]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + 'operations', JSON.stringify(operations));
-  }, [operations]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + 'clients', JSON.stringify(clients));
-  }, [clients]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + 'suppliers', JSON.stringify(suppliers));
-  }, [suppliers]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + 'accounts', JSON.stringify(accounts));
-  }, [accounts]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + 'movements', JSON.stringify(movements));
-  }, [movements]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + 'fixedExpenses', JSON.stringify(fixedExpenses));
-  }, [fixedExpenses]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + 'rules', JSON.stringify(rules));
-  }, [rules]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + 'closings', JSON.stringify(monthlyClosings));
-  }, [monthlyClosings]);
-
-  useEffect(() => {
-    localStorage.setItem(STORAGE_PREFIX + 'cutoff', JSON.stringify(cutoffConfig));
-  }, [cutoffConfig]);
 
   // Derived Operational KPIs
   const kpis = useMemo(() => {
@@ -577,7 +563,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       updatedAt: now
     };
 
-    setOperations(prev => [newOp, ...prev]);
+    setOperations(prev => {
+      const next = [newOp, ...prev];
+      persistLocal('operations', next);
+      return next;
+    });
 
     // Persist to Supabase
     if (isSupabaseConfigured()) {
@@ -588,10 +578,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateOperation = (id: string, updates: Partial<Operation>) => {
-    let updatedOp: Operation | null = null;
+    let savedTargetOp: Operation | null = null;
 
-    setOperations(prev =>
-      prev.map(op => {
+    setOperations(prev => {
+      const next = prev.map(op => {
         if (op.id !== id) return op;
         const now = new Date().toISOString();
         const updated = { ...op, ...updates, updatedAt: now };
@@ -612,18 +602,29 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           }
         }
 
-        updatedOp = updated;
+        savedTargetOp = updated;
         return updated;
-      })
-    );
+      });
 
-    if (isSupabaseConfigured() && updatedOp) {
-      saveOperationToSupabase(updatedOp).catch(err => console.error('Error updating operation in Supabase:', err));
+      persistLocal('operations', next);
+      return next;
+    });
+
+    if (isSupabaseConfigured()) {
+      const target = savedTargetOp || operations.find(o => o.id === id);
+      if (target) {
+        const merged = { ...target, ...updates, updatedAt: new Date().toISOString() };
+        saveOperationToSupabase(merged).catch(err => console.error('Error updating operation in Supabase:', err));
+      }
     }
   };
 
   const deleteOperation = (id: string) => {
-    setOperations(prev => prev.filter(op => op.id !== id));
+    setOperations(prev => {
+      const next = prev.filter(op => op.id !== id);
+      persistLocal('operations', next);
+      return next;
+    });
     if (selectedOperationId === id) setSelectedOperationId(null);
 
     if (isSupabaseConfigured()) {
@@ -681,6 +682,13 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           incomes: [],
           suppliers: [],
           students: [],
+          quotas: [],
+          collections: [],
+          supplierContracts: [],
+          supplierPayments: [],
+          preparationChecklist: {},
+          passengers: [],
+          itinerary: [],
           createdAt: now,
           updatedAt: now
         };
@@ -696,7 +704,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         return op;
       });
-      return [...opsToCreate, ...next];
+      const combined = [...opsToCreate, ...next];
+      persistLocal('operations', combined);
+      return combined;
     });
 
     // Save batch to Supabase
@@ -717,7 +727,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: newId,
       createdAt: new Date().toISOString()
     };
-    setClients(prev => [...prev, newClient]);
+    setClients(prev => {
+      const next = [...prev, newClient];
+      persistLocal('clients', next);
+      return next;
+    });
 
     if (isSupabaseConfigured()) {
       saveClientToSupabase(newClient).catch(err => console.error('Error saving client to Supabase:', err));
@@ -727,24 +741,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateClient = (id: string, updates: Partial<Client>) => {
-    let updatedClient: Client | null = null;
-    setClients(prev =>
-      prev.map(c => {
+    let savedClient: Client | null = null;
+    setClients(prev => {
+      const next = prev.map(c => {
         if (c.id === id) {
-          updatedClient = { ...c, ...updates, updatedAt: new Date().toISOString() };
-          return updatedClient;
+          const updated = { ...c, ...updates, updatedAt: new Date().toISOString() };
+          savedClient = updated;
+          return updated;
         }
         return c;
-      })
-    );
+      });
+      persistLocal('clients', next);
+      return next;
+    });
 
-    if (isSupabaseConfigured() && updatedClient) {
-      saveClientToSupabase(updatedClient).catch(err => console.error('Error updating client in Supabase:', err));
+    if (isSupabaseConfigured()) {
+      const target = savedClient || clients.find(c => c.id === id);
+      if (target) {
+        const merged = { ...target, ...updates };
+        saveClientToSupabase(merged).catch(err => console.error('Error updating client in Supabase:', err));
+      }
     }
   };
 
   const deleteClient = (id: string) => {
-    setClients(prev => prev.filter(c => c.id !== id));
+    setClients(prev => {
+      const next = prev.filter(c => c.id !== id);
+      persistLocal('clients', next);
+      return next;
+    });
     if (isSupabaseConfigured()) {
       deleteClientFromSupabase(id).catch(err => console.error('Error deleting client from Supabase:', err));
     }
@@ -790,7 +815,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         return item;
       });
-      return [...merged, ...toAdd];
+      const finalClients = [...merged, ...toAdd];
+      persistLocal('clients', finalClients);
+      return finalClients;
     });
 
     if (isSupabaseConfigured()) {
@@ -842,7 +869,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: now
     };
 
-    // 1. Create corresponding Financial Movement
+    // 1. Create and persist Financial Movement
     const newMovementId = `mov_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
     const newMov: FinancialMovement = {
       id: newMovementId,
@@ -863,14 +890,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       importedAt: now
     };
 
-    setMovements(prev => [newMov, ...prev]);
+    setMovements(prev => {
+      const next = [newMov, ...prev];
+      persistLocal('movements', next);
+      return next;
+    });
 
-    // 2. Update Account Balance
-    updateAccountBalance(col.destinationAccountId, (targetAccount?.currentBalance || 0) + col.amount);
+    if (isSupabaseConfigured()) {
+      saveMovementToSupabase(newMov).catch(err => console.error('Error saving movement in Supabase:', err));
+    }
 
-    // 3. Update Operation Received Revenue
-    setOperations(prev =>
-      prev.map(op => {
+    // 2. Update Account Balance atomically
+    setAccounts(prev => {
+      const next = prev.map(acc => {
+        if (acc.id === col.destinationAccountId) {
+          const nextBal = (acc.currentBalance || 0) + col.amount;
+          if (isSupabaseConfigured()) {
+            updateAccountBalanceInSupabase(acc.id, nextBal).catch(err => console.error('Error updating balance in Supabase:', err));
+          }
+          return { ...acc, currentBalance: nextBal };
+        }
+        return acc;
+      });
+      persistLocal('accounts', next);
+      return next;
+    });
+
+    // 3. Update Operation Received Revenue & Collections
+    setOperations(prev => {
+      const next = prev.map(op => {
         if (op.id !== col.operationId) return op;
         const currentCols = op.collections || [];
         const updatedCols = [...currentCols, { ...newCollection, movementId: newMovementId }];
@@ -890,15 +938,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           movementId: newMovementId
         };
 
-        return {
+        const updatedOp = {
           ...op,
           collections: updatedCols,
           incomes: [...(op.incomes || []), newIncomeEntry],
           receivedRevenue: newReceived,
           updatedAt: now
         };
-      })
-    );
+
+        if (isSupabaseConfigured()) {
+          saveOperationToSupabase(updatedOp).catch(err => console.error('Error saving operation in Supabase:', err));
+        }
+
+        return updatedOp;
+      });
+      persistLocal('operations', next);
+      return next;
+    });
   };
 
   const recordSupplierPayment = (pay: {
@@ -940,7 +996,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       createdAt: now
     };
 
-    // 1. Create corresponding Financial Movement
+    // 1. Create and persist Financial Movement
     const newMovementId = `mov_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
     const newMov: FinancialMovement = {
       id: newMovementId,
@@ -961,14 +1017,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       importedAt: now
     };
 
-    setMovements(prev => [newMov, ...prev]);
+    setMovements(prev => {
+      const next = [newMov, ...prev];
+      persistLocal('movements', next);
+      return next;
+    });
 
-    // 2. Update Account Balance
-    updateAccountBalance(pay.sourceAccountId, (sourceAccount?.currentBalance || 0) - pay.amount);
+    if (isSupabaseConfigured()) {
+      saveMovementToSupabase(newMov).catch(err => console.error('Error saving movement in Supabase:', err));
+    }
+
+    // 2. Update Account Balance atomically
+    setAccounts(prev => {
+      const next = prev.map(acc => {
+        if (acc.id === pay.sourceAccountId) {
+          const nextBal = (acc.currentBalance || 0) - pay.amount;
+          if (isSupabaseConfigured()) {
+            updateAccountBalanceInSupabase(acc.id, nextBal).catch(err => console.error('Error updating balance in Supabase:', err));
+          }
+          return { ...acc, currentBalance: nextBal };
+        }
+        return acc;
+      });
+      persistLocal('accounts', next);
+      return next;
+    });
 
     // 3. Update Operation Paid Cost
-    setOperations(prev =>
-      prev.map(op => {
+    setOperations(prev => {
+      const next = prev.map(op => {
         if (op.id !== pay.operationId) return op;
         const currentPayments = op.supplierPayments || [];
         const updatedPayments = [...currentPayments, { ...newPaymentRecord, movementId: newMovementId }];
@@ -983,15 +1060,23 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           return s;
         });
 
-        return {
+        const updatedOp = {
           ...op,
           supplierPayments: updatedPayments,
           suppliers: updatedSuppliers,
           paidCost: newPaidCost,
           updatedAt: now
         };
-      })
-    );
+
+        if (isSupabaseConfigured()) {
+          saveOperationToSupabase(updatedOp).catch(err => console.error('Error saving operation in Supabase:', err));
+        }
+
+        return updatedOp;
+      });
+      persistLocal('operations', next);
+      return next;
+    });
   };
 
   // ==========================================
@@ -1004,8 +1089,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     paymentMethod: PaymentMethod = 'mercado_pago',
     notes?: string
   ) => {
-    setOperations(prev =>
-      prev.map(op => {
+    setOperations(prev => {
+      const next = prev.map(op => {
         if (op.id !== operationId || !op.students) return op;
 
         const updatedStudents = op.students.map(st => {
@@ -1027,14 +1112,22 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
         const totalStudentPaid = updatedStudents.reduce((sum, s) => sum + s.paidAmount, 0);
 
-        return {
+        const updatedOp = {
           ...op,
           students: updatedStudents,
           receivedRevenue: totalStudentPaid,
           updatedAt: new Date().toISOString()
         };
-      })
-    );
+
+        if (isSupabaseConfigured()) {
+          saveOperationToSupabase(updatedOp).catch(console.error);
+        }
+
+        return updatedOp;
+      });
+      persistLocal('operations', next);
+      return next;
+    });
   };
 
   const addStudentToOperation = (
@@ -1051,8 +1144,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notes?: string;
     }
   ) => {
-    setOperations(prev =>
-      prev.map(op => {
+    setOperations(prev => {
+      const next = prev.map(op => {
         if (op.id !== operationId) return op;
         const currentStudents = op.students || [];
         const isFullyPaid = studentData.paidAmount >= studentData.expectedAmount;
@@ -1079,7 +1172,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const newExpectedRev = updatedStudents.reduce((sum, s) => sum + s.expectedAmount, 0);
         const newReceivedRev = updatedStudents.reduce((sum, s) => sum + s.paidAmount, 0);
 
-        return {
+        const updatedOp = {
           ...op,
           passengerCount: updatedStudents.length,
           expectedRevenue: newExpectedRev,
@@ -1087,8 +1180,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           students: updatedStudents,
           updatedAt: new Date().toISOString()
         };
-      })
-    );
+
+        if (isSupabaseConfigured()) {
+          saveOperationToSupabase(updatedOp).catch(console.error);
+        }
+
+        return updatedOp;
+      });
+      persistLocal('operations', next);
+      return next;
+    });
   };
 
   const batchImportStudents = (studentsList: Array<{
@@ -1107,7 +1208,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     let errors = 0;
 
     setOperations(prev => {
-      return prev.map(op => {
+      const next = prev.map(op => {
         const matchingStudents = studentsList.filter(s => {
           const target = (s.operationCodeOrName || '').toLowerCase().trim();
           return (
@@ -1151,7 +1252,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const totalExpected = mergedStudents.reduce((sum, s) => sum + s.expectedAmount, 0);
         const totalPaid = mergedStudents.reduce((sum, s) => sum + s.paidAmount, 0);
 
-        return {
+        const updatedOp = {
           ...op,
           students: mergedStudents,
           passengerCount: mergedStudents.length,
@@ -1159,7 +1260,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           receivedRevenue: totalPaid > 0 ? totalPaid : op.receivedRevenue,
           updatedAt: new Date().toISOString()
         };
+
+        if (isSupabaseConfigured()) {
+          saveOperationToSupabase(updatedOp).catch(console.error);
+        }
+
+        return updatedOp;
       });
+
+      persistLocal('operations', next);
+      return next;
     });
 
     return { created, errors };
@@ -1171,7 +1281,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addSupplier = (sup: Omit<Supplier, 'id'>): Supplier => {
     const newId = `sup_${Date.now()}`;
     const newSup: Supplier = { ...sup, id: newId };
-    setSuppliers(prev => [...prev, newSup]);
+    setSuppliers(prev => {
+      const next = [...prev, newSup];
+      persistLocal('suppliers', next);
+      return next;
+    });
 
     if (sup.mpAlias) {
       learnRule({
@@ -1190,24 +1304,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateSupplier = (id: string, updates: Partial<Supplier>) => {
-    let updatedSup: Supplier | null = null;
-    setSuppliers(prev =>
-      prev.map(s => {
+    let savedSup: Supplier | null = null;
+    setSuppliers(prev => {
+      const next = prev.map(s => {
         if (s.id === id) {
-          updatedSup = { ...s, ...updates };
-          return updatedSup;
+          const updated = { ...s, ...updates };
+          savedSup = updated;
+          return updated;
         }
         return s;
-      })
-    );
+      });
+      persistLocal('suppliers', next);
+      return next;
+    });
 
-    if (isSupabaseConfigured() && updatedSup) {
-      saveSupplierToSupabase(updatedSup).catch(err => console.error('Error updating supplier in Supabase:', err));
+    if (isSupabaseConfigured()) {
+      const target = savedSup || suppliers.find(s => s.id === id);
+      if (target) {
+        const merged = { ...target, ...updates };
+        saveSupplierToSupabase(merged).catch(err => console.error('Error updating supplier in Supabase:', err));
+      }
     }
   };
 
   const deleteSupplier = (id: string) => {
-    setSuppliers(prev => prev.filter(s => s.id !== id));
+    setSuppliers(prev => {
+      const next = prev.filter(s => s.id !== id);
+      persistLocal('suppliers', next);
+      return next;
+    });
     if (isSupabaseConfigured()) {
       deleteSupplierFromSupabase(id).catch(err => console.error('Error deleting supplier from Supabase:', err));
     }
@@ -1260,7 +1385,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         }
         return item;
       });
-      return [...merged, ...newSuppliersToAdd];
+      const finalSuppliers = [...merged, ...newSuppliersToAdd];
+      persistLocal('suppliers', finalSuppliers);
+      return finalSuppliers;
     });
 
     if (isSupabaseConfigured()) {
@@ -1289,7 +1416,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       active: true
     };
 
-    setAccounts(prev => [...prev, newAccount]);
+    setAccounts(prev => {
+      const next = [...prev, newAccount];
+      persistLocal('accounts', next);
+      return next;
+    });
 
     if (isSupabaseConfigured()) {
       saveAccountToSupabase(newAccount).catch(err => console.error('Error saving account to Supabase:', err));
@@ -1299,30 +1430,43 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateAccount = (id: AccountId, updates: Partial<FinancialAccount>) => {
-    let updatedAcc: FinancialAccount | null = null;
-    setAccounts(prev =>
-      prev.map(a => {
+    let savedAcc: FinancialAccount | null = null;
+    setAccounts(prev => {
+      const next = prev.map(a => {
         if (a.id === id) {
-          updatedAcc = { ...a, ...updates };
-          return updatedAcc;
+          const updated = { ...a, ...updates };
+          savedAcc = updated;
+          return updated;
         }
         return a;
-      })
-    );
+      });
+      persistLocal('accounts', next);
+      return next;
+    });
 
-    if (isSupabaseConfigured() && updatedAcc) {
-      saveAccountToSupabase(updatedAcc).catch(err => console.error('Error updating account in Supabase:', err));
+    if (isSupabaseConfigured()) {
+      const target = savedAcc || accounts.find(a => a.id === id);
+      if (target) {
+        const merged = { ...target, ...updates };
+        saveAccountToSupabase(merged as FinancialAccount).catch(err => console.error('Error updating account in Supabase:', err));
+      }
     }
   };
 
   const deleteAccount = (id: AccountId) => {
-    setAccounts(prev => prev.filter(a => a.id !== id));
+    setAccounts(prev => {
+      const next = prev.filter(a => a.id !== id);
+      persistLocal('accounts', next);
+      return next;
+    });
   };
 
   const updateAccountBalance = (accountId: AccountId, currentBalance: number) => {
-    setAccounts(prev =>
-      prev.map(acc => (acc.id === accountId ? { ...acc, currentBalance } : acc))
-    );
+    setAccounts(prev => {
+      const next = prev.map(acc => (acc.id === accountId ? { ...acc, currentBalance } : acc));
+      persistLocal('accounts', next);
+      return next;
+    });
 
     if (isSupabaseConfigured()) {
       updateAccountBalanceInSupabase(accountId, currentBalance).catch(err => console.error('Error updating balance in Supabase:', err));
@@ -1331,6 +1475,51 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const updateCutoffConfig = (config: CutoffConfig) => {
     setCutoffConfig(config);
+    persistLocal('cutoff', config);
+  };
+
+  const saveCutoffAndBalances = (
+    cutoffDate: string,
+    description: string,
+    balancesMap: Record<AccountId, number>
+  ) => {
+    // 1. Update and persist cutoffConfig
+    setCutoffConfig(prev => {
+      const nextConfig: CutoffConfig = {
+        ...prev,
+        cutoffDate,
+        description,
+        accountsInitialBalances: balancesMap
+      };
+      persistLocal('cutoff', nextConfig);
+      return nextConfig;
+    });
+
+    // 2. Update and persist accounts in a single atomic transaction
+    setAccounts(prev => {
+      const nextAccounts = prev.map(acc => {
+        if (balancesMap[acc.id] !== undefined) {
+          const newBal = balancesMap[acc.id];
+          return {
+            ...acc,
+            currentBalance: newBal,
+            initialBalance: newBal
+          };
+        }
+        return acc;
+      });
+      persistLocal('accounts', nextAccounts);
+
+      if (isSupabaseConfigured()) {
+        nextAccounts.forEach(acc => {
+          if (balancesMap[acc.id] !== undefined) {
+            saveAccountToSupabase(acc).catch(console.error);
+          }
+        });
+      }
+
+      return nextAccounts;
+    });
   };
 
   // ==========================================
@@ -1359,7 +1548,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       importedAt: new Date().toISOString()
     };
 
-    setMovements(prev => [newMovement, ...prev]);
+    setMovements(prev => {
+      const next = [newMovement, ...prev];
+      persistLocal('movements', next);
+      return next;
+    });
 
     if (isSupabaseConfigured()) {
       saveMovementToSupabase(newMovement).catch(err => console.error('Error saving movement to Supabase:', err));
@@ -1388,7 +1581,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       importedAt: new Date().toISOString()
     }));
 
-    setMovements(prev => [...fullMovs, ...prev]);
+    setMovements(prev => {
+      const next = [...fullMovs, ...prev];
+      persistLocal('movements', next);
+      return next;
+    });
 
     if (isSupabaseConfigured()) {
       batchSaveMovementsToSupabase(fullMovs).catch(err => console.error('Error batch saving movements to Supabase:', err));
@@ -1398,24 +1595,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateMovement = (id: string, updates: Partial<FinancialMovement>) => {
-    let updatedMov: FinancialMovement | null = null;
-    setMovements(prev =>
-      prev.map(m => {
+    let savedMov: FinancialMovement | null = null;
+    setMovements(prev => {
+      const next = prev.map(m => {
         if (m.id === id) {
-          updatedMov = { ...m, ...updates };
-          return updatedMov;
+          const updated = { ...m, ...updates };
+          savedMov = updated;
+          return updated;
         }
         return m;
-      })
-    );
+      });
+      persistLocal('movements', next);
+      return next;
+    });
 
-    if (isSupabaseConfigured() && updatedMov) {
-      saveMovementToSupabase(updatedMov).catch(err => console.error('Error updating movement in Supabase:', err));
+    if (isSupabaseConfigured()) {
+      const target = savedMov || movements.find(m => m.id === id);
+      if (target) {
+        const merged = { ...target, ...updates };
+        saveMovementToSupabase(merged).catch(err => console.error('Error updating movement in Supabase:', err));
+      }
     }
   };
 
   const deleteMovement = (id: string) => {
-    setMovements(prev => prev.filter(m => m.id !== id));
+    setMovements(prev => {
+      const next = prev.filter(m => m.id !== id);
+      persistLocal('movements', next);
+      return next;
+    });
     if (isSupabaseConfigured()) {
       deleteMovementFromSupabase(id).catch(err => console.error('Error deleting movement from Supabase:', err));
     }
@@ -1423,6 +1631,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const clearMovementsOnly = () => {
     setMovements([]);
+    persistLocal('movements', []);
     if (isSupabaseConfigured()) {
       clearMovementsInSupabase().catch(err => console.error('Error clearing movements in Supabase:', err));
     }
@@ -1439,11 +1648,12 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       targetAccountId?: AccountId;
     }
   ) => {
-    setMovements(prev =>
-      prev.map(m => {
+    let updatedMovObj: FinancialMovement | null = null;
+    setMovements(prev => {
+      const next = prev.map(m => {
         if (m.id !== movementId) return m;
 
-        return {
+        const updated: FinancialMovement = {
           ...m,
           operationId: target.operationId || m.operationId,
           supplierId: target.supplierId || m.supplierId,
@@ -1454,8 +1664,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           matchConfidence: 100,
           matchReason: 'Conciliación manual confirmada por usuario'
         };
-      })
-    );
+        updatedMovObj = updated;
+        return updated;
+      });
+      persistLocal('movements', next);
+      return next;
+    });
+
+    if (isSupabaseConfigured() && updatedMovObj) {
+      saveMovementToSupabase(updatedMovObj).catch(err => console.error('Error saving reconciled movement to Supabase:', err));
+    }
   };
 
   const learnRule = (ruleData: Omit<ClassificationRule, 'id' | 'createdAt'>) => {
@@ -1465,7 +1683,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: newId,
       createdAt: new Date().toISOString()
     };
-    setRules(prev => [...prev, newRule]);
+    setRules(prev => {
+      const next = [...prev, newRule];
+      persistLocal('rules', next);
+      return next;
+    });
 
     if (isSupabaseConfigured()) {
       saveClassificationRuleToSupabase(ruleData).catch(err => console.error('Error saving rule to Supabase:', err));
@@ -1473,7 +1695,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const deleteRule = (id: string) => {
-    setRules(prev => prev.filter(r => r.id !== id));
+    setRules(prev => {
+      const next = prev.filter(r => r.id !== id);
+      persistLocal('rules', next);
+      return next;
+    });
     if (isSupabaseConfigured()) {
       deleteClassificationRuleFromSupabase(id).catch(err => console.error('Error deleting rule from Supabase:', err));
     }
@@ -1485,7 +1711,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const addFixedExpense = (exp: Omit<FixedExpense, 'id'>) => {
     const newId = `fe_${Date.now()}`;
     const newExp: FixedExpense = { ...exp, id: newId };
-    setFixedExpenses(prev => [...prev, newExp]);
+    setFixedExpenses(prev => {
+      const next = [...prev, newExp];
+      persistLocal('fixedExpenses', next);
+      return next;
+    });
 
     if (isSupabaseConfigured()) {
       saveFixedExpenseToSupabase(newExp).catch(err => console.error('Error saving fixed expense to Supabase:', err));
@@ -1493,24 +1723,35 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const updateFixedExpense = (id: string, updates: Partial<FixedExpense>) => {
-    let updatedExp: FixedExpense | null = null;
-    setFixedExpenses(prev =>
-      prev.map(e => {
+    let savedExp: FixedExpense | null = null;
+    setFixedExpenses(prev => {
+      const next = prev.map(e => {
         if (e.id === id) {
-          updatedExp = { ...e, ...updates };
-          return updatedExp;
+          const updated = { ...e, ...updates };
+          savedExp = updated;
+          return updated;
         }
         return e;
-      })
-    );
+      });
+      persistLocal('fixedExpenses', next);
+      return next;
+    });
 
-    if (isSupabaseConfigured() && updatedExp) {
-      saveFixedExpenseToSupabase(updatedExp).catch(err => console.error('Error updating fixed expense in Supabase:', err));
+    if (isSupabaseConfigured()) {
+      const target = savedExp || fixedExpenses.find(f => f.id === id);
+      if (target) {
+        const merged = { ...target, ...updates };
+        saveFixedExpenseToSupabase(merged).catch(err => console.error('Error updating fixed expense in Supabase:', err));
+      }
     }
   };
 
   const deleteFixedExpense = (id: string) => {
-    setFixedExpenses(prev => prev.filter(e => e.id !== id));
+    setFixedExpenses(prev => {
+      const next = prev.filter(e => e.id !== id);
+      persistLocal('fixedExpenses', next);
+      return next;
+    });
     if (isSupabaseConfigured()) {
       deleteFixedExpenseFromSupabase(id).catch(err => console.error('Error deleting fixed expense from Supabase:', err));
     }
@@ -1518,8 +1759,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const toggleFixedExpensePayment = (id: string) => {
     const today = new Date().toISOString().split('T')[0];
-    setFixedExpenses(prev =>
-      prev.map(e => {
+    setFixedExpenses(prev => {
+      const next = prev.map(e => {
         if (e.id !== id) return e;
         const nextStatus = e.status === 'activo' ? 'pagado' : 'activo';
         return {
@@ -1527,8 +1768,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           status: nextStatus,
           lastPaidDate: nextStatus === 'pagado' ? today : e.lastPaidDate
         };
-      })
-    );
+      });
+      persistLocal('fixedExpenses', next);
+      return next;
+    });
   };
 
   const batchImportFixedExpenses = (expensesList: Array<Omit<FixedExpense, 'id'>>) => {
@@ -1538,7 +1781,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       id: `fe_imp_${Date.now()}_${idx}`
     }));
 
-    setFixedExpenses(prev => [...prev, ...toAdd]);
+    setFixedExpenses(prev => {
+      const next = [...prev, ...toAdd];
+      persistLocal('fixedExpenses', next);
+      return next;
+    });
     created = toAdd.length;
 
     if (isSupabaseConfigured()) {
@@ -1574,7 +1821,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       notes
     };
 
-    setMonthlyClosings(prev => [closingRecord, ...prev.filter(c => c.yearMonth !== yearMonth)]);
+    setMonthlyClosings(prev => {
+      const next = [closingRecord, ...prev.filter(c => c.yearMonth !== yearMonth)];
+      persistLocal('closings', next);
+      return next;
+    });
 
     if (isSupabaseConfigured()) {
       saveMonthlyClosingToSupabase(closingRecord).catch(err => console.error('Error saving closing to Supabase:', err));
@@ -1582,9 +1833,11 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const reopenMonthlyClosing = (id: string) => {
-    setMonthlyClosings(prev =>
-      prev.map(c => (c.id === id ? { ...c, status: 'abierto', closedAt: undefined } : c))
-    );
+    setMonthlyClosings(prev => {
+      const next = prev.map(c => (c.id === id ? { ...c, status: 'abierto', closedAt: undefined } : c));
+      persistLocal('closings', next);
+      return next;
+    });
   };
 
   // ==========================================
@@ -1599,8 +1852,20 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setMonthlyClosings([]);
     setRules([]);
 
+    persistLocal('operations', []);
+    persistLocal('clients', []);
+    persistLocal('suppliers', []);
+    persistLocal('movements', []);
+    persistLocal('fixedExpenses', []);
+    persistLocal('closings', []);
+    persistLocal('rules', []);
+
     if (options?.resetBalancesToZero) {
-      setAccounts(prev => prev.map(a => ({ ...a, currentBalance: 0, initialBalance: 0 })));
+      setAccounts(prev => {
+        const next = prev.map(a => ({ ...a, currentBalance: 0, initialBalance: 0 }));
+        persistLocal('accounts', next);
+        return next;
+      });
     }
   };
 
@@ -1614,6 +1879,16 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     setRules(INITIAL_RULES);
     setMonthlyClosings(INITIAL_MONTHLY_CLOSINGS);
     setCutoffConfig(INITIAL_CUTOFF_CONFIG);
+
+    persistLocal('operations', INITIAL_OPERATIONS);
+    persistLocal('clients', INITIAL_CLIENTS);
+    persistLocal('suppliers', INITIAL_SUPPLIERS);
+    persistLocal('accounts', INITIAL_ACCOUNTS);
+    persistLocal('movements', INITIAL_MOVEMENTS);
+    persistLocal('fixedExpenses', INITIAL_FIXED_EXPENSES);
+    persistLocal('rules', INITIAL_RULES);
+    persistLocal('closings', INITIAL_MONTHLY_CLOSINGS);
+    persistLocal('cutoff', INITIAL_CUTOFF_CONFIG);
   };
 
   const exportDatabaseJSON = (): string => {
@@ -1641,16 +1916,46 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const importDatabaseJSON = (jsonStr: string): boolean => {
     try {
       const data = JSON.parse(jsonStr);
-      if (data.operations) setOperations(data.operations);
-      if (data.clients) setClients(data.clients);
-      if (data.suppliers) setSuppliers(data.suppliers);
-      if (data.accounts) setAccounts(data.accounts);
-      if (data.movements) setMovements(data.movements);
-      if (data.fixedExpenses) setFixedExpenses(data.fixedExpenses);
-      if (data.rules) setRules(data.rules);
-      if (data.monthlyClosings) setMonthlyClosings(data.monthlyClosings);
-      if (data.cutoffConfig) setCutoffConfig(data.cutoffConfig);
-      if (data.exchangeRate) setExchangeRate(data.exchangeRate);
+      if (data.operations) {
+        setOperations(data.operations);
+        persistLocal('operations', data.operations);
+      }
+      if (data.clients) {
+        setClients(data.clients);
+        persistLocal('clients', data.clients);
+      }
+      if (data.suppliers) {
+        setSuppliers(data.suppliers);
+        persistLocal('suppliers', data.suppliers);
+      }
+      if (data.accounts) {
+        setAccounts(data.accounts);
+        persistLocal('accounts', data.accounts);
+      }
+      if (data.movements) {
+        setMovements(data.movements);
+        persistLocal('movements', data.movements);
+      }
+      if (data.fixedExpenses) {
+        setFixedExpenses(data.fixedExpenses);
+        persistLocal('fixedExpenses', data.fixedExpenses);
+      }
+      if (data.rules) {
+        setRules(data.rules);
+        persistLocal('rules', data.rules);
+      }
+      if (data.monthlyClosings) {
+        setMonthlyClosings(data.monthlyClosings);
+        persistLocal('closings', data.monthlyClosings);
+      }
+      if (data.cutoffConfig) {
+        setCutoffConfig(data.cutoffConfig);
+        persistLocal('cutoff', data.cutoffConfig);
+      }
+      if (data.exchangeRate) {
+        setExchangeRate(data.exchangeRate);
+        persistLocal('exchangeRate', data.exchangeRate);
+      }
       return true;
     } catch {
       return false;
@@ -1661,9 +1966,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     <AppContext.Provider
       value={{
         currentRole,
-        setCurrentRole,
+        setCurrentRole: setPersistedCurrentRole,
         userProfile,
-        setUserProfile,
+        setUserProfile: setPersistedUserProfile,
         isAuthenticated: Boolean(userProfile),
         isLoadingAuth,
         isLoadingData,
@@ -1687,7 +1992,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         setSelectedStudentOpId,
 
         exchangeRate,
-        setExchangeRate,
+        setExchangeRate: setPersistedExchangeRate,
 
         operations,
         clients,
@@ -1731,6 +2036,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         deleteAccount,
         updateAccountBalance,
         updateCutoffConfig,
+        saveCutoffAndBalances,
 
         addMovement,
         batchImportMovements,
