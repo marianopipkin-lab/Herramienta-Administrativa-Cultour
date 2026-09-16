@@ -27,6 +27,7 @@ import {
 } from '../../types';
 import { useApp } from '../../context/AppContext';
 import { formatCurrency } from '../../utils/financialCalculations';
+import { generateId } from '../../utils/id';
 import * as XLSX from 'xlsx';
 
 interface Props {
@@ -113,7 +114,7 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
     const calculatedBalance = Math.max(0, itemForm.totalCost - itemForm.depositPaid);
     const newItem: OperationItineraryItem = {
       ...itemForm,
-      id: `itin_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+      id: generateId(),
       operationId: operation.id,
       balance: calculatedBalance
     };
@@ -250,11 +251,11 @@ export const OperationItineraryView: React.FC<Props> = ({ operation, onOpenSuppl
           return;
         }
 
-        const importedItems: OperationItineraryItem[] = data.map((r, idx) => {
+        const importedItems: OperationItineraryItem[] = data.map((r) => {
           const cost = Number(r.Costo_Total || r.costo_total || r.Costo || 0);
           const paid = Number(r.Anticipo_Pagado || r.pago_reserva || r.Pagado || 0);
           return {
-            id: `itin_imp_${Date.now()}_${idx}`,
+            id: generateId(),
             operationId: operation.id,
             dayNumber: Number(r.Día || r.dia_numero || r.dia || 1),
             date: String(r.Fecha || r.fecha || operation.date || ''),

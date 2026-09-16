@@ -42,6 +42,7 @@ import {
   DEFAULT_EXCHANGE_RATE
 } from '../utils/financialCalculations';
 import { ImportPreviewRow } from '../utils/excelParser';
+import { generateId } from '../utils/id';
 import { supabase, isSupabaseConfigured } from '../lib/supabase';
 import {
   fetchOperationsFromSupabase,
@@ -526,7 +527,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // ==========================================
   const addOperation = (opData: Partial<Operation>): Operation => {
     const now = new Date().toISOString();
-    const newId = `op_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newId = generateId();
     const prefix = opData.businessUnit === 'receptivo' ? 'TR' : opData.businessUnit === 'salidas' ? 'SE' : 'VE';
     const code = opData.code || `${prefix}-2026-${String(operations.length + 1).padStart(3, '0')}`;
 
@@ -663,7 +664,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         updated++;
       } else if (row.status === 'new') {
         const newOp: Operation = {
-          id: `op_imp_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          id: generateId(),
           code: row.code,
           name: row.name,
           businessUnit: row.businessUnit,
@@ -726,7 +727,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // CLIENTES Y PAGADORES CRUD & BATCH
   // ==========================================
   const addClient = (clientData: Omit<Client, 'id' | 'createdAt'>): Client => {
-    const newId = `cli_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newId = generateId();
     const newClient: Client = {
       ...clientData,
       id: newId,
@@ -806,7 +807,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       } else {
         toAdd.push({
           ...c,
-          id: `cli_imp_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          id: generateId(),
           createdAt: new Date().toISOString()
         });
         created++;
@@ -850,7 +851,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }) => {
     const now = new Date().toISOString();
     const today = now.split('T')[0];
-    const newCollectionId = `col_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newCollectionId = generateId();
 
     const targetAccount = accounts.find(a => a.id === col.destinationAccountId);
     const targetAccountName = targetAccount ? targetAccount.name : col.destinationAccountId;
@@ -875,7 +876,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     // 1. Create and persist Financial Movement
-    const newMovementId = `mov_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newMovementId = generateId();
     const newMov: FinancialMovement = {
       id: newMovementId,
       date: today,
@@ -977,7 +978,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   }) => {
     const now = new Date().toISOString();
     const today = now.split('T')[0];
-    const newPaymentId = `spay_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newPaymentId = generateId();
 
     const sourceAccount = accounts.find(a => a.id === pay.sourceAccountId);
     const sourceAccountName = sourceAccount ? sourceAccount.name : pay.sourceAccountId;
@@ -1002,7 +1003,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     };
 
     // 1. Create and persist Financial Movement
-    const newMovementId = `mov_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newMovementId = generateId();
     const newMov: FinancialMovement = {
       id: newMovementId,
       date: today,
@@ -1158,7 +1159,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         const status = isFullyPaid ? 'al_dia' : isPartial ? 'pago_parcial' : 'pendiente';
 
         const newStudent = {
-          id: `std_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`,
+          id: generateId(),
           operationId,
           studentName: studentData.studentName,
           payerName: studentData.payerName,
@@ -1226,7 +1227,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         if (matchingStudents.length === 0) return op;
 
         const currentStudents = op.students || [];
-        const newStudentRecords = matchingStudents.map((st, idx) => {
+        const newStudentRecords = matchingStudents.map((st) => {
           const expected = st.expectedAmount || 0;
           const paid = st.paidAmount || 0;
           const isFullyPaid = paid >= expected && expected > 0;
@@ -1234,7 +1235,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
           const status: 'al_dia' | 'pago_parcial' | 'pendiente' = isFullyPaid ? 'al_dia' : isPartial ? 'pago_parcial' : 'pendiente';
 
           return {
-            id: `std_imp_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 4)}`,
+            id: generateId(),
             operationId: op.id,
             studentName: st.studentName,
             studentDni: st.studentDni,
@@ -1284,7 +1285,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // SUPPLIERS CRUD
   // ==========================================
   const addSupplier = (sup: Omit<Supplier, 'id'>): Supplier => {
-    const newId = `sup_${Date.now()}`;
+    const newId = generateId();
     const newSup: Supplier = { ...sup, id: newId };
     setSuppliers(prev => {
       const next = [...prev, newSup];
@@ -1352,7 +1353,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     const newSuppliersToAdd: Supplier[] = [];
     const updatesMap = new Map<string, Partial<Supplier>>();
 
-    sups.forEach((s, idx) => {
+    sups.forEach((s) => {
       const existing = existingMap.get(s.name.trim().toLowerCase());
       if (existing) {
         updatesMap.set(existing.id, {
@@ -1366,7 +1367,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         });
         updated++;
       } else {
-        const newId = `sup_imp_${Date.now()}_${idx}`;
+        const newId = generateId();
         newSuppliersToAdd.push({
           id: newId,
           name: s.name,
@@ -1531,7 +1532,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // MOVEMENTS (LEDGER)
   // ==========================================
   const addMovement = (mov: Partial<FinancialMovement>) => {
-    const newId = mov.id || `mov_${Date.now()}_${Math.random().toString(36).substr(2, 4)}`;
+    const newId = mov.id || generateId();
     const newMovement: FinancialMovement = {
       id: newId,
       date: mov.date || new Date().toISOString().split('T')[0],
@@ -1565,8 +1566,8 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const batchImportMovements = (newMovs: Partial<FinancialMovement>[]): number => {
-    const fullMovs: FinancialMovement[] = newMovs.map((m, idx) => ({
-      id: m.id || `mov_imp_${Date.now()}_${idx}_${Math.random().toString(36).substr(2, 4)}`,
+    const fullMovs: FinancialMovement[] = newMovs.map((m) => ({
+      id: m.id || generateId(),
       date: m.date || new Date().toISOString().split('T')[0],
       amount: m.amount || 0,
       currency: m.currency || 'ARS',
@@ -1682,7 +1683,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   };
 
   const learnRule = (ruleData: Omit<ClassificationRule, 'id' | 'createdAt'>) => {
-    const newId = `rule_${Date.now()}`;
+    const newId = generateId();
     const newRule: ClassificationRule = {
       ...ruleData,
       id: newId,
@@ -1714,7 +1715,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   // FIXED EXPENSES
   // ==========================================
   const addFixedExpense = (exp: Omit<FixedExpense, 'id'>) => {
-    const newId = `fe_${Date.now()}`;
+    const newId = generateId();
     const newExp: FixedExpense = { ...exp, id: newId };
     setFixedExpenses(prev => {
       const next = [...prev, newExp];
@@ -1781,9 +1782,9 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
 
   const batchImportFixedExpenses = (expensesList: Array<Omit<FixedExpense, 'id'>>) => {
     let created = 0;
-    const toAdd: FixedExpense[] = expensesList.map((e, idx) => ({
+    const toAdd: FixedExpense[] = expensesList.map((e) => ({
       ...e,
-      id: `fe_imp_${Date.now()}_${idx}`
+      id: generateId()
     }));
 
     setFixedExpenses(prev => {

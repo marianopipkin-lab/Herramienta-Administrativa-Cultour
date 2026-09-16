@@ -14,6 +14,7 @@ import {
 import { useApp } from '../../context/AppContext';
 import { BusinessUnit, OperationStatus, AccountId, PaymentMethod } from '../../types';
 import { formatCurrency } from '../../utils/financialCalculations';
+import { generateId } from '../../utils/id';
 
 interface Props {
   isOpen: boolean;
@@ -70,12 +71,12 @@ export const NewOperationModal: React.FC<Props> = ({ isOpen, onClose }) => {
       return;
     }
 
-    const opId = `op_${Date.now()}`;
+    const opId = generateId();
 
     // Build incomes
     const incomes = hasInitialIncome && initialIncomeAmount > 0 ? [
       {
-        id: `inc_${Date.now()}`,
+        id: generateId(),
         operationId: opId,
         date: form.date,
         amount: Number(initialIncomeAmount),
@@ -88,10 +89,10 @@ export const NewOperationModal: React.FC<Props> = ({ isOpen, onClose }) => {
     ] : [];
 
     // Build supplier costs
-    const supCosts = assignedSuppliers.map((s, idx) => {
+    const supCosts = assignedSuppliers.map((s) => {
       const supObj = suppliers.find(sp => sp.id === s.supplierId);
       return {
-        id: `supc_${Date.now()}_${idx}`,
+        id: generateId(),
         operationId: opId,
         supplierId: s.supplierId,
         supplierName: supObj?.name || 'Proveedor',

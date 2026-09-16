@@ -35,6 +35,7 @@ import { OperationItineraryView } from './OperationItineraryView';
 import { PassengerChecklistGrid } from './PassengerChecklistGrid';
 import { SupplierChecklistGrid } from './SupplierChecklistGrid';
 import { ShieldCheck, CheckSquare, ListChecks } from 'lucide-react';
+import { generateId } from '../../utils/id';
 import * as XLSX from 'xlsx';
 
 interface Props {
@@ -242,7 +243,7 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
     }
 
     const incomeRecord: OperationIncomeRecord = {
-      id: `inc_${Date.now()}`,
+      id: generateId(),
       operationId: operation.id,
       amount: Number(newIncome.amount),
       payerName: newIncome.payerName,
@@ -284,7 +285,7 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
 
     const supObj = suppliers.find(s => s.id === newSupplierCost.supplierId);
     const costRecord: SupplierCostRecord = {
-      id: `supc_${Date.now()}`,
+      id: generateId(),
       operationId: operation.id,
       supplierId: newSupplierCost.supplierId,
       supplierName: supObj?.name || 'Proveedor General',

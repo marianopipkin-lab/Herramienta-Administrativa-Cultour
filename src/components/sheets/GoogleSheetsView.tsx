@@ -38,6 +38,7 @@ import {
 } from '../../services/googleSheetsService';
 import { User } from 'firebase/auth';
 import { formatCurrency } from '../../utils/financialCalculations';
+import { generateId } from '../../utils/id';
 import { Operation, FinancialMovement, BusinessUnit } from '../../types';
 
 export const GoogleSheetsView: React.FC = () => {
@@ -295,7 +296,7 @@ export const GoogleSheetsView: React.FC = () => {
         const pax = paxIdx >= 0 ? parseInt(String(row[paxIdx])) || 0 : 0;
 
         operations.push({
-          id: `op_gsheet_${Date.now()}_${i}`,
+          id: generateId(),
           code: codeIdx >= 0 && row[codeIdx] ? String(row[codeIdx]) : `OP-GS-${100 + i}`,
           name,
           businessUnit: unit,
@@ -344,7 +345,7 @@ export const GoogleSheetsView: React.FC = () => {
         }
 
         movements.unshift({
-          id: `mov_gsheet_${Date.now()}_${i}`,
+          id: generateId(),
           date,
           amount: Math.abs(amount),
           type,
