@@ -156,10 +156,10 @@ export const GeneralDashboard: React.FC = () => {
           <div className="flex flex-col">
             <span className="label-mono">01. Dinero en Cuentas</span>
             <div className="font-sans text-3xl font-normal tracking-tight text-[#1A1A1A] mt-2">
-              {formatCurrency(financialPosition.cashARS, 'ARS')}
+              {formatCurrency(financialPosition.cashUSD, 'USD')}
             </div>
             <div className="text-xs text-[#666666] mt-1.5 flex items-center justify-between">
-              <span>+ {formatCurrency(financialPosition.cashUSD, 'USD')} (Caja Actual)</span>
+              <span>+ {formatCurrency(financialPosition.cashARS, 'ARS')} (Caja Actual)</span>
               <span className="text-[10px] text-[#888888]">eq. {formatCurrency(financialPosition.cashEquivalentUSD, 'USD')}</span>
             </div>
           </div>
