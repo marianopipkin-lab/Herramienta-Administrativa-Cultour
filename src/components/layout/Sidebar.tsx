@@ -34,8 +34,28 @@ interface NavGroup {
 }
 
 export const Sidebar: React.FC = () => {
-  const { activeTab, setActiveTab, kpis, currentRole, userProfile, logout } = useApp();
+  const {
+    activeTab,
+    setActiveTab,
+    kpis,
+    currentRole,
+    userProfile,
+    logout,
+    selectedOperationId,
+    setSelectedOperationId,
+    isNewOpModalOpen,
+    setIsNewOpModalOpen,
+    isImportModalOpen,
+    setIsImportModalOpen
+  } = useApp();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  const handleNavClick = (id: string) => {
+    if (selectedOperationId) setSelectedOperationId(null);
+    if (isNewOpModalOpen) setIsNewOpModalOpen(false);
+    if (isImportModalOpen) setIsImportModalOpen(false);
+    setActiveTab(id);
+  };
 
   const handleLogout = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -212,7 +232,7 @@ export const Sidebar: React.FC = () => {
                 return (
                   <button
                     key={item.id}
-                    onClick={() => setActiveTab(item.id)}
+                    onClick={() => handleNavClick(item.id)}
                     className={`w-full flex items-center justify-between px-3 py-1.5 rounded-md text-xs transition-all group cursor-pointer ${
                       isActive
                         ? 'bg-[#E5E5E1] text-[#1A1A1A] font-medium'
@@ -244,7 +264,7 @@ export const Sidebar: React.FC = () => {
         {isLooseImportVisible && (
           <div className="pt-2 border-t border-[#E5E5E1]/80">
             <button
-              onClick={() => setActiveTab(looseImportItem.id)}
+              onClick={() => handleNavClick(looseImportItem.id)}
               className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-xs transition-all group cursor-pointer ${
                 activeTab === looseImportItem.id
                   ? 'bg-[#E5E5E1] text-[#1A1A1A] font-medium'
