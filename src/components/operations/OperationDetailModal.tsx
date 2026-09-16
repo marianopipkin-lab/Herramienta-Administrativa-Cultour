@@ -346,7 +346,7 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in">
+    <div className="fixed inset-y-0 right-0 left-[260px] z-50 bg-black/40 backdrop-blur-xs flex items-center justify-center p-3 sm:p-6 overflow-y-auto animate-in fade-in">
       <div className="bg-white border border-[#E5E7EB] rounded-2xl w-full max-w-5xl max-h-[92vh] flex flex-col shadow-2xl overflow-hidden">
         
         {/* Modal Header */}
