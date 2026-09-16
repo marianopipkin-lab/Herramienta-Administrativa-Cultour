@@ -697,10 +697,14 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     });
 
+    const updatedOpsFull: Operation[] = [];
+
     setOperations(prev => {
       const next = prev.map(op => {
         if (opsToUpdateMap.has(op.id)) {
-          return { ...op, ...opsToUpdateMap.get(op.id), updatedAt: now };
+          const merged = { ...op, ...opsToUpdateMap.get(op.id), updatedAt: now };
+          updatedOpsFull.push(merged);
+          return merged;
         }
         return op;
       });
@@ -712,6 +716,7 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     // Save batch to Supabase
     if (isSupabaseConfigured()) {
       opsToCreate.forEach(op => saveOperationToSupabase(op).catch(console.error));
+      updatedOpsFull.forEach(op => saveOperationToSupabase(op).catch(console.error));
     }
 
     return { created, updated, errors };
