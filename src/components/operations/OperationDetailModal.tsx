@@ -17,7 +17,8 @@ import {
   Edit2,
   Save,
   DollarSign,
-  GraduationCap
+  GraduationCap,
+  Download
 } from 'lucide-react';
 import { useApp } from '../../context/AppContext';
 import {
@@ -34,6 +35,7 @@ import { OperationItineraryView } from './OperationItineraryView';
 import { PassengerChecklistGrid } from './PassengerChecklistGrid';
 import { SupplierChecklistGrid } from './SupplierChecklistGrid';
 import { ShieldCheck, CheckSquare, ListChecks } from 'lucide-react';
+import * as XLSX from 'xlsx';
 
 interface Props {
   operationId: string;
@@ -137,6 +139,81 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
 
   // Filter linked movements
   const linkedMovements = movements.filter(m => m.operationId === operation.id);
+
+  const exportStudentsToExcel = () => {
+    const students = operation.students || [];
+    if (students.length === 0) {
+      alert('No hay estudiantes/pagadores para exportar.');
+      return;
+    }
+    const rows = students.map(s => ({
+      'Estudiante': s.studentName,
+      'DNI Estudiante': s.studentDni || '',
+      'Padre/Madre/Pagador': s.payerName,
+      'DNI Pagador': s.payerDni || '',
+      'Teléfono': s.payerPhone || '',
+      'Monto Esperado': s.expectedAmount,
+      'Monto Pagado': s.paidAmount,
+      'Saldo Pendiente': Math.max(0, s.expectedAmount - s.paidAmount),
+      'Vencimiento': s.paymentDueDate,
+      'Último Pago': s.lastPaymentDate || '',
+      'Medio de Pago': s.paymentMethod || '',
+      'Estado': s.status,
+      'Notas': s.notes || ''
+    }));
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, `Estudiantes_${operation.code}`);
+    XLSX.writeFile(wb, `Nomina_Estudiantes_${operation.code}.xlsx`);
+  };
+
+  const exportIncomesToExcel = () => {
+    const incomes = operation.incomes || [];
+    if (incomes.length === 0) {
+      alert('No hay cobranzas registradas para exportar.');
+      return;
+    }
+    const rows = incomes.map(inc => ({
+      'Fecha': inc.date,
+      'Pagador / Cliente': inc.payerName,
+      'Monto': inc.amount,
+      'Moneda': inc.currency || operation.currency,
+      'Medio de Pago': inc.paymentMethod,
+      'Cuenta Receptora': inc.accountId,
+      'Estado': inc.status,
+      'Referencia': inc.reference || ''
+    }));
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, `Cobranzas_${operation.code}`);
+    XLSX.writeFile(wb, `Cobranzas_${operation.code}.xlsx`);
+  };
+
+  const exportSuppliersToExcel = () => {
+    const supplierCosts = operation.suppliers || [];
+    if (supplierCosts.length === 0) {
+      alert('No hay costos de proveedores para exportar.');
+      return;
+    }
+    const rows = supplierCosts.map(sc => ({
+      'Proveedor': sc.supplierName,
+      'Rubro / Servicio': sc.serviceCategory,
+      'Alias MP': sc.mpAlias || '',
+      'Costo Esperado': sc.expectedCost,
+      'Costo Pagado': sc.paidCost,
+      'Saldo Pendiente': Math.max(0, sc.expectedCost - sc.paidCost),
+      'Moneda': sc.currency || operation.currency,
+      'Fecha Pago Prevista': sc.expectedPaymentDate,
+      'Fecha Pago Real': sc.actualPaymentDate || '',
+      'Cuenta de Pago': sc.paidFromAccountId || '',
+      'Medio de Pago': sc.paymentMethod || '',
+      'Estado': sc.status
+    }));
+    const wb = XLSX.utils.book_new();
+    const ws = XLSX.utils.json_to_sheet(rows);
+    XLSX.utils.book_append_sheet(wb, ws, `Proveedores_${operation.code}`);
+    XLSX.writeFile(wb, `Proveedores_Costos_${operation.code}.xlsx`);
+  };
 
   // Save General Info changes
   const handleSaveInfo = () => {
@@ -574,13 +651,22 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
                   <h3 className="text-sm font-bold text-gray-900">Cronograma y Registro de Cobranzas</h3>
                   <p className="text-xs text-gray-500">Cuentas receptoras, medios de pago y estado de cobro</p>
                 </div>
-                <button
-                  onClick={() => setShowAddIncome(!showAddIncome)}
-                  className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>+ Registrar Cobro</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={exportIncomesToExcel}
+                    className="px-3 py-1.5 rounded-lg bg-white hover:bg-gray-50 border border-gray-200 text-gray-900 text-xs font-medium flex items-center gap-1.5 transition-colors shadow-2xs"
+                  >
+                    <Download className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Exportar Excel</span>
+                  </button>
+                  <button
+                    onClick={() => setShowAddIncome(!showAddIncome)}
+                    className="px-3 py-1.5 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Registrar Cobro</span>
+                  </button>
+                </div>
               </div>
 
               {/* Form add income */}
@@ -731,13 +817,22 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
                   <h3 className="text-sm font-bold text-gray-900">Proveedores y Costos Directos</h3>
                   <p className="text-xs text-gray-500">Detalle de servicios, alias MP, fechas de pago y cuentas de débito</p>
                 </div>
-                <button
-                  onClick={() => setShowAddSupplier(!showAddSupplier)}
-                  className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>+ Agregar Proveedor</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={exportSuppliersToExcel}
+                    className="px-3 py-1.5 rounded-lg bg-white hover:bg-gray-50 border border-gray-200 text-gray-900 text-xs font-medium flex items-center gap-1.5 transition-colors shadow-2xs"
+                  >
+                    <Download className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Exportar Excel</span>
+                  </button>
+                  <button
+                    onClick={() => setShowAddSupplier(!showAddSupplier)}
+                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Agregar Proveedor</span>
+                  </button>
+                </div>
               </div>
 
               {/* Form add supplier cost */}
@@ -905,13 +1000,22 @@ export const OperationDetailModal: React.FC<Props> = ({ operationId, onClose }) 
                     Relación Estudiante ↔ Padre/Madre/Tutor ↔ Cuota ↔ Cobro
                   </p>
                 </div>
-                <button
-                  onClick={() => setShowAddStudent(!showAddStudent)}
-                  className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                  <span>+ Agregar Estudiante</span>
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={exportStudentsToExcel}
+                    className="px-3 py-1.5 rounded-lg bg-white hover:bg-gray-50 border border-gray-200 text-gray-900 text-xs font-medium flex items-center gap-1.5 transition-colors shadow-2xs"
+                  >
+                    <Download className="w-3.5 h-3.5 text-emerald-600" />
+                    <span>Exportar Excel</span>
+                  </button>
+                  <button
+                    onClick={() => setShowAddStudent(!showAddStudent)}
+                    className="px-3 py-1.5 rounded-lg bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-2xs"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>+ Agregar Estudiante</span>
+                  </button>
+                </div>
               </div>
 
               {/* Add student form */}
